@@ -1,6 +1,7 @@
 # Plan de migration vers Unreal Engine 5
 
-> Décision du propriétaire (2026-11-20) : le jeu final se construit dans **Unreal Engine 5.8** (MetaHuman inclus).
+> **EN ATTENTE** — le 2026-11-20, le propriétaire a décidé de **continuer sans Epic/Unreal** : le jeu se poursuit dans le navigateur (Three.js). Ce plan est conservé pour plus tard.
+> Idée d'origine : construire le jeu final dans **Unreal Engine 5.8** (MetaHuman inclus).
 > Méthode : construire **tout le jeu d'abord avec des visuels simples** (greybox), puis remplacer les visuels par MetaHuman et des villes réalistes sur une machine plus puissante.
 > Le prototype navigateur (`game/index.html`) reste la référence pour les règles et le gameplay.
 

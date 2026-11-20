@@ -4,7 +4,7 @@ Ce dépôt est développé à plusieurs : le propriétaire du projet, **Claude**
 
 ## Avant de travailler
 1. `git pull` pour récupérer la dernière version.
-2. Lire, dans cet ordre : `docs/JOURNAL.md` (dernières entrées), `docs/ROADMAP.md`, `docs/PLAN.md`, `docs/DIRECTIVES_REALISME.md` (**obligatoire** pour tout ce qui est visuel), `docs/ARCHITECTURE.md`, `docs/PLAN_UNREAL.md` (le jeu final se construit dans Unreal).
+2. Lire, dans cet ordre : `docs/JOURNAL.md` (dernières entrées), `docs/ROADMAP.md`, `docs/PLAN.md`, `docs/DIRECTIVES_REALISME.md` (**obligatoire** pour tout ce qui est visuel), `docs/ARCHITECTURE.md`, `docs/PLAN_UNREAL.md` (en attente : le jeu continue dans le navigateur).
 3. Prendre la prochaine tâche `[ ]` de la feuille de route, sauf instruction contraire du propriétaire.
 4. La marquer `[~]` dans `docs/ROADMAP.md` et pousser ce changement tout de suite, pour éviter que deux agents fassent la même chose.
 
