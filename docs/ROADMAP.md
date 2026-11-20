@@ -23,6 +23,16 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Façades usées, trottoirs et asphalte texturés, mobilier urbain
 - [ ] Test visuel par un humain
 
+## Passage à Unreal Engine 5.8 — voir `docs/PLAN_UNREAL.md`
+Décision du propriétaire : jeu final dans Unreal ; construire d'abord en visuels simples, réalisme (MetaHuman) ensuite.
+- [~] U0 — installer UE 5.8 (disque nettoyé : 126 Go libres ; licence à accepter par le propriétaire), créer le projet, Git LFS
+- [ ] U1 — horloge de mission, vies, sauvegarde, HUD
+- [ ] U2 — Toronto en greybox
+- [ ] U3 — passants, circulation, jour/nuit, météo
+- [ ] U4 à U9 — voir le plan
+
+> Les blocs 2 à 12 ci-dessous restent la liste des fonctions à construire ; ils seront réalisés dans Unreal (étapes U4 à U9).
+
 ## Bloc 2 — Intérieurs, dialogues, indices `[ ]`
 - [ ] Intérieur de la maison d'Oscar (scène du mot, désordre, premiers indices)
 - [ ] Intérieur du Lina's Diner, habitués interrogeables
@@ -55,4 +65,4 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
 ## Question technique à trancher
 - Rester sur navigateur (Three.js) ou migrer vers Unity/Unreal pour des villes réalistes. Décision du propriétaire du projet.
-- Recommandation depuis les directives de réalisme : **Unreal Engine 5 + MetaHuman** pour le jeu final ; le prototype navigateur reste l'outil de conception du gameplay.
+- **Tranché (2026-11-20)** : Unreal Engine 5.8 + MetaHuman pour le jeu final ; le prototype navigateur reste l'outil de conception du gameplay.

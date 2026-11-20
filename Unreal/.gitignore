@@ -1,0 +1,11 @@
+# Fichiers générés par Unreal — ne jamais committer
+**/Binaries/
+**/Intermediate/
+**/Saved/
+**/DerivedDataCache/
+**/.vs/
+*.sln
+*.VC.db
+*.opensdf
+*.sdf
+*.suo
