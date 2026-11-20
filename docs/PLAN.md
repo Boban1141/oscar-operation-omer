@@ -120,8 +120,13 @@ En cas d'échec : courte cinématique d'Omer (furieux ou moqueur) dans le sous-s
 - Utilisées seulement quand les 3 vies normales du niveau sont perdues. Une vie bonus utilisée est perdue pour toujours.
 - Les tâches prennent du temps : le chronomètre continue.
 
-## 10. Multijoueur
+## 10. Direction artistique : réalisme humain
+Directives maîtresses obligatoires : voir `docs/DIRECTIVES_REALISME.md`.
+Résumé : peau réelle et imparfaite, regard vivant, asymétrie naturelle, mains toujours visibles et occupées, démarche avec poids réel, vêtements froissés et cohérents avec la météo, micro-actions permanentes, lieux habités avec traces de vie, lumière naturelle.
+Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de Cédric ouverts sur la table, tasse à moitié vide, clés, courrier, chaise renversée pendant l'enlèvement, lumière du matin par la fenêtre avec poussière dans l'air.
+
+## 11. Multijoueur
 - Reporté. Objectif futur : architecture capable de supporter **12 000 joueurs**. Voir `docs/ARCHITECTURE.md`.
 
-## 11. Questions ouvertes
+## 12. Questions ouvertes
 Voir `docs/JOURNAL.md` → « Questions ouvertes ».

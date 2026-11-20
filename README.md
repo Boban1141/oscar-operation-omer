@@ -16,4 +16,6 @@ Commandes : ZQSD/WASD se déplacer · Maj courir · Espace sauter · E interagir
 - `docs/JOURNAL.md` — journal de travail et questions ouvertes
 - `AGENTS.md` — règles pour Codex, Claude et tout contributeur
 
-Version actuelle : **0.1.0** (bloc 1 : moteur et Toronto).
+Version actuelle : **0.2.0** (bloc 1 + réalisme humain).
+
+Directives artistiques obligatoires : `docs/DIRECTIVES_REALISME.md`.

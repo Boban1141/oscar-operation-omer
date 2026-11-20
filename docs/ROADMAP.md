@@ -14,6 +14,15 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Écrans titre, pause, échec ; sauvegarde automatique ; minicarte ; objectif « Lina's Diner »
 - [ ] Test visuel complet dans un navigateur (non encore fait par un humain)
 
+## Bloc 1b — Réalisme humain (directives maîtresses) `[x]` (v0.2.0)
+- [x] `docs/DIRECTIVES_REALISME.md` créé et rendu obligatoire dans `AGENTS.md`
+- [x] Squelette organique (coudes, genoux, mains avec doigts), visages avec yeux, sourcils, bouche asymétriques
+- [x] Textures de peau et de tissu imparfaites ; asymétries individuelles
+- [x] Respiration, clignements, regard mobile, transfert de poids, micro-gestes
+- [x] Mains occupées : téléphone, café, sac, poche, parapluie ; gestes en conversation
+- [x] Façades usées, trottoirs et asphalte texturés, mobilier urbain
+- [ ] Test visuel par un humain
+
 ## Bloc 2 — Intérieurs, dialogues, indices `[ ]`
 - [ ] Intérieur de la maison d'Oscar (scène du mot, désordre, premiers indices)
 - [ ] Intérieur du Lina's Diner, habitués interrogeables
@@ -46,3 +55,4 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
 ## Question technique à trancher
 - Rester sur navigateur (Three.js) ou migrer vers Unity/Unreal pour des villes réalistes. Décision du propriétaire du projet.
+- Recommandation depuis les directives de réalisme : **Unreal Engine 5 + MetaHuman** pour le jeu final ; le prototype navigateur reste l'outil de conception du gameplay.
