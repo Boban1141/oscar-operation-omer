@@ -64,6 +64,23 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
 .small{font-size:13px!important}
 .fail h1{color:#ff5a4e;font-size:clamp(52px,10vw,92px)}
 .quote{border-left:3px solid var(--red);padding-left:12px;font-style:italic;color:var(--ink)!important}
+#dialog{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 16px 22px;background:linear-gradient(transparent,rgba(5,8,13,.75) 40%)}
+.dlg{width:min(760px,100%);background:rgba(12,16,22,.92);border:1px solid var(--line);border-top:3px solid var(--red);border-radius:10px;padding:16px 20px 12px}
+.dWho{font:700 20px "Barlow Condensed";color:var(--amber)}
+.dText{font-size:17px;line-height:1.5;margin:6px 0 12px;white-space:pre-line}
+.dChoices{display:grid;gap:8px}
+.dChoices button{display:flex;align-items:center;gap:10px;text-align:left;font:500 16px Barlow;min-height:44px;padding:8px 12px;background:rgba(255,255,255,.06)}
+.dChoices button kbd{font:800 15px "Barlow Condensed";background:var(--ink);color:#0a1018;border-radius:4px;padding:0 7px;flex:none}
+.dChoices button span{flex:1}
+.dChoices button em{font:600 14px "Barlow Condensed";font-style:normal;color:var(--dim);white-space:nowrap}
+.dChoices button:disabled{opacity:.45;cursor:not-allowed}
+.dHint{margin:10px 0 0;font-size:13px;color:var(--dim)}
+#notebook{position:fixed;inset:0;display:grid;place-items:center;padding:20px;background:rgba(5,8,13,.6)}
+.nb{width:min(640px,100%);max-height:86vh;overflow:auto;background:#efe7d6;color:#2a2219;border-radius:8px;padding:20px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.nbHead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.nb h2{font:800 30px "Barlow Condensed";margin:0}.nb h3{font:700 18px "Barlow Condensed";margin:16px 0 4px;color:#7a1d16}
+.nb p{margin:2px 0}.nb .clue{border-left:3px solid #b9a27a;padding:4px 0 4px 10px;margin:8px 0}.nb .clue b{font:700 16px "Barlow Condensed"}
+.nb button{color:#2a2219;background:rgba(0,0,0,.08);border-color:rgba(0,0,0,.2)}
 #boot{position:fixed;inset:0;display:grid;place-items:center;font:600 20px "Barlow Condensed";color:var(--dim);background:#05080d}
 @media(max-width:700px){.obj{display:none}.lvl{width:200px}.lvl-n{font-size:26px}#map{width:120px;height:120px}.vitals{width:220px}.timer strong{font-size:26px}}
 @media(prefers-reduced-motion:reduce){.timer.crit strong{animation:none}}
@@ -85,6 +102,8 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
   <section class="panel vitals">
     <div class="row"><span>Vies du niveau</span><span class="hearts" id="hLives"></span></div>
     <div class="row" style="margin-top:4px"><span>Vies bonus en réserve</span><span id="hBonus">0 · gagnées 0/2</span></div>
+    <div class="row" style="margin-top:4px"><span>Argent</span><span id="hMoney">240 $</span></div>
+    <div class="row" style="margin-top:4px"><span>Lieu</span><span id="hLoc">Dehors</span></div>
     <div class="bar"><label><span>Santé</span><span id="tHealth">100</span></label><i><b id="bHealth" style="background:var(--green)"></b></i></div>
     <div class="bar"><label><span>Chaleur corporelle</span><span id="tHeat">100</span></label><i><b id="bHeat" style="background:var(--cold)"></b></i></div>
     <div class="bar"><label><span>Endurance</span><span id="tStam">100</span></label><i><b id="bStam" style="background:var(--amber)"></b></i></div>
@@ -138,6 +157,20 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
   </div>
 </div>
 
+<div id="dialog" class="hidden">
+  <div class="dlg">
+    <div class="dWho" id="dWho"></div>
+    <p class="dText" id="dText"></p>
+    <div class="dChoices" id="dChoices"></div>
+    <p class="dHint">Touches 1 à 4 pour choisir · Échap pour quitter</p>
+  </div>
+</div>
+<div id="notebook" class="hidden">
+  <div class="nb">
+    <div class="nbHead"><h2>Carnet d’Oscar</h2><button id="nbClose">Fermer (C)</button></div>
+    <div id="nbBody"></div>
+  </div>
+</div>
 <div id="toast"></div>
 <div id="boot">Chargement du moteur 3D…</div>
 <script>
@@ -165,7 +198,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.2.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '0.3.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -187,6 +220,72 @@ const JACKETS=['#2f3e46','#6b2737','#bc6c25','#1d3557','#3a5a40','#7f5539','#4a4
 const PANTS=['#1b263b','#22223b','#3d405b','#4a4e69','#2b2d42','#5e503f','#3a3a3a','#6c757d'];
 const HAIR=['#1a1a1a','#2b1d14','#3b2a1e','#6f4e37','#a67b5b','#d9b382','#8a8a8a'];
 const CAR_COLORS=['#b1121b','#f1f1ee','#1d3557','#26282e','#9aa3ab','#5a6470','#0f0f10','#3d5a80','#6b705c'];
+
+/* ---------------- 1b. STORY DATA (bloc 2) ----------------
+   Indices, dialogues et objectifs du niveau 1. Données pures : on peut les modifier sans toucher au moteur. */
+const START_MONEY=240;
+const CLUES={
+  note:{title:'Le mot d’Omer',text:'« Tu as détruit ce que j’ai bâti il y a un mois. Alors je me venge. Tu vas payer, et tu vas savoir ce qu’est la souffrance. » Écriture penchée, papier épais, une trace de cendre dans le coin.'},
+  phone:{title:'Le téléphone de Cédric',text:'Glissé sous le canapé, écran fissuré. Dernière photo, floue : un VUS noir, plaque partielle « CJ…7 ». Dans la dernière vidéo, on entend un homme parler portugais.'},
+  cigar:{title:'Mégot de cigare',text:'Sur le perron, un cigare de luxe à moitié fumé, écrasé sur la marche. Personne dans cette maison ne fume.'},
+  keys:{title:'Les clés d’Eva',text:'Sur le comptoir, à côté du courrier pas encore ouvert. Elle n’a pas eu le temps de partir.'},
+  homework:{title:'Les devoirs de Cédric',text:'Un exercice de maths à moitié fini. Le crayon est resté en travers de la page.'},
+  neighbor:{title:'Témoignage de M. Henderson',text:'Deux VUS noirs vers 19 h 40. Un homme fumait un cigare sur le perron. Ils parlaient portugais. La veille, les mêmes hommes déjeunaient au Lina’s Diner.'},
+  diner:{title:'Le reçu du Lina’s Diner',text:'Payé avec une carte au nom de « Harbourfront Marine Storage ». Au téléphone, le plus grand a dit : « entrepôt 7, ce soir ».'},
+  taxi:{title:'La course de Marcus',text:'Le chauffeur de taxi a déposé un des hommes à Harbourfront, devant l’entrepôt 7 du port. Payé en billets neufs.'},
+  oldman:{title:'Le vieil habitué',text:'Trois hommes bien habillés, montres en or. Le plus grand fixait le port par la fenêtre, comme s’il attendait un bateau.'},
+};
+// Dialogue nodes: who, text, choices [{t, next|end, min (game minutes), money (cost), need{money,flag,task}, fx{clue,flag,task,bonus}}]
+const DIALOGUES={
+  henderson:{who:'M. Henderson, le voisin',start:S=>S.flags.neighbor?'h9':'h0',nodes:{
+    h0:{text:'Oscar… mon Dieu. J’ai appelé la police hier soir, ils sont repartis il y a une heure. Je suis tellement désolé.',choices:[{t:'Qu’avez-vous vu exactement ?',next:'h1',min:10},{t:'Pas maintenant.',end:true}]},
+    h1:{text:'Deux gros VUS noirs, vers 19 h 40. Des hommes en manteaux sombres. L’un d’eux fumait un cigare sur ton perron, comme s’il était chez lui. Ils parlaient… du portugais, je crois.',choices:[{t:'Vous les aviez déjà vus ?',next:'h2',min:5},{t:'Merci. Je dois y aller.',end:true}]},
+    h2:{text:'Oui, c’est ça qui m’a frappé. La veille, ces mêmes types déjeunaient au Lina’s Diner, sur King Street. Gros pourboires, et ils ne parlaient à personne.',choices:[{t:'Merci, monsieur Henderson.',end:true,fx:{clue:'neighbor',flag:'neighbor'}}]},
+    h9:{text:'Va voir Lina, au diner. Et… ramène-les, Oscar.',choices:[{t:'Je vous le promets.',end:true}]}}},
+  lina:{who:'Lina, propriétaire du Lina’s Diner',start:S=>S.flags.linaAngry?'lA':S.flags.dinerClue?'lD':S.tasks.tip==='found'?'l6':S.flags.linaTold?'l1':'l0',nodes:{
+    l0:{text:'Oscar ? Ça fait des semaines… Tu as une mine affreuse. Assieds-toi, je te sers un café.',choices:[
+      {t:'Ma femme et mon fils ont été enlevés. J’ai besoin de toi, Lina.',next:'l1',min:10,fx:{flag:'linaTold'}},
+      {t:'Trois hommes ont mangé ici avant-hier. Je veux savoir qui.',next:'l2',min:5},
+      {t:'Tu vas me dire qui étaient ces hommes. Maintenant.',next:'l3'}]},
+    l1:{text:'Eva… Cédric… Ils étaient trois. Le plus grand a payé avec une carte d’entreprise. Je garde tous les reçus, mais ce matin un gamin a volé mon pot à pourboires et a tout renversé derrière la caisse. Je n’arrive pas à remettre la main dessus.',choices:[
+      {t:'Je retrouve ton pot. Par où est parti le gamin ?',next:'l4',min:5,need:{noTask:'tip'}},
+      {t:'Cherche ce reçu maintenant, s’il te plaît. Je te dédommage pour le temps perdu.',next:'l5',min:30,money:50},
+      {t:'Je reviendrai.',end:true}]},
+    l2:{text:'On a beaucoup de clients, Oscar. Je ne surveille pas tout le monde.',choices:[{t:'Pardon. C’est ma famille, Lina. Ils ont enlevé Eva et Cédric.',next:'l1',min:5,fx:{flag:'linaTold'}},{t:'Laisse tomber.',end:true}]},
+    l3:{text:'Tu me menaces ? Dans MON restaurant ? Sors d’ici, Oscar.',choices:[{t:'(Partir)',end:true,fx:{flag:'linaAngry'}}]},
+    l4:{text:'Un ado avec un sac à dos vert. Il est parti en courant vers le parc, à l’ouest. Si tu le retrouves… merci.',choices:[{t:'J’y vais.',end:true,fx:{task:['tip','active']}}]},
+    l5:{text:'Le voilà. « Harbourfront Marine Storage ». Et maintenant que j’y pense… le grand a dit au téléphone : « entrepôt 7, ce soir ». Fais attention à toi.',choices:[{t:'Merci, Lina.',end:true,fx:{clue:'diner',flag:['dinerClue','leadPort']}}]},
+    l6:{text:'Oscar ? Tu as l’air d’avoir couru.',choices:[{t:'Voilà ton pot à pourboires. Il était dans le parc.',next:'l7',min:5}]},
+    l7:{text:'Tu l’as retrouvé ! Attends… Le voilà, ce reçu. « Harbourfront Marine Storage ». Le grand a dit au téléphone : « entrepôt 7, ce soir ». Merci. Vraiment.',choices:[{t:'Prends soin de toi, Lina.',end:true,fx:{clue:'diner',flag:['dinerClue','leadPort'],task:['tip','done'],bonus:1}}]},
+    lA:{text:'Je n’ai rien à te dire.',choices:[{t:'(Partir)',end:true}]},
+    lD:{text:'Va au port. Et ramène-les à la maison.',choices:[{t:'Je te le promets.',end:true}]}}},
+  marcus:{who:'Marcus, chauffeur de taxi',start:S=>S.flags.taxiClue?'m9':'m0',nodes:{
+    m0:{text:'Hé. Tu cherches quelque chose ? T’as l’air d’un flic.',choices:[{t:'Trois hommes ont mangé ici avant-hier. Accent brésilien.',next:'m1',min:5},{t:'Rien. Bonne journée.',end:true}]},
+    m1:{text:'Ouais, je vois de qui tu parles. J’en ai conduit un, hier soir. Mais l’information, ça se paie.',choices:[
+      {t:'Voilà 20 $.',next:'m2',min:5,money:20},
+      {t:'Ma famille a été enlevée. Je n’ai pas le temps de négocier.',next:'m3',min:10},
+      {t:'Tu me le dis, ou on règle ça dehors.',next:'m4'}]},
+    m2:{text:'Je l’ai déposé à Harbourfront, près des entrepôts du port. Il m’a fait arrêter devant l’entrepôt 7. Payé en billets tout neufs.',choices:[{t:'Merci.',end:true,fx:{clue:'taxi',flag:['taxiClue','leadPort']}}]},
+    m3:{text:'… Désolé, mec. Je savais pas. Je l’ai déposé à Harbourfront, devant l’entrepôt 7. Il a payé avec des billets neufs. Fais gaffe à toi.',choices:[{t:'Merci, Marcus.',end:true,fx:{clue:'taxi',flag:['taxiClue','leadPort']}}]},
+    m4:{text:'Doucement, soldat. Tu veux de l’aide ou des ennuis ? Reviens quand tu seras calmé.',choices:[{t:'(Partir)',end:true}]},
+    m9:{text:'Harbourfront, entrepôt 7. Je t’ai tout dit.',choices:[{t:'Merci encore.',end:true}]}}},
+  jayden:{who:'Jeune homme nerveux',start:()=>'j0',nodes:{
+    j0:{text:'Quoi ? J’ai rien fait, moi.',choices:[{t:'Calme-toi. Tu as vu un ado voler le pot de Lina ce matin ?',next:'j1',min:5,need:{task:['tip','active']}},{t:'Désolé de t’avoir dérangé.',end:true}]},
+    j1:{text:'Ouais… c’était Tyler. Il a lâché son sac près d’un banc dans le parc, côté est. Il avait peur que les flics le chopent.',choices:[{t:'Merci.',end:true,fx:{flag:'hintPark'}}]}}},
+  kowalski:{who:'M. Kowalski, habitué',start:S=>S.flags.oldClue?'k9':'k0',nodes:{
+    k0:{text:'Le froid arrive plus tôt cette année. Mes genoux me le disent toujours.',choices:[{t:'Vous étiez là avant-hier ?',next:'k1',min:10},{t:'Bonne journée, monsieur.',end:true}]},
+    k1:{text:'Je suis là tous les jours, fiston. Trois types bien habillés, des montres en or. Le plus grand regardait sans arrêt le port par la fenêtre, comme s’il attendait un bateau.',choices:[{t:'Merci, monsieur Kowalski.',end:true,fx:{clue:'oldman',flag:'oldClue'}}]},
+    k9:{text:'Le port, fiston. Toujours le port.',choices:[{t:'Merci.',end:true}]}}},
+};
+const PORT={x:60,z:156};
+function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
+function objective(S){
+  if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
+  if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
+  if(!S.flags.leadPort)return{stage:2,text:'Retrouve les trois hommes vus au Lina’s Diner : interroge Lina et les habitués.',target:'restaurant'};
+  if(!S.flags.atPort)return{stage:3,text:'Piste : l’entrepôt 7 du port (Harbourfront). Rejoins le bord du lac près de la tour CN.',target:'port'};
+  return{stage:4,text:'Tu es au port. Infiltration de l’entrepôt 7 et combat contre le lieutenant d’Omer : bloc 3 (à venir).',target:null};
+}
 
 /* ---------------- 2. CORE ---------------- */
 const mulberry32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
@@ -271,7 +370,7 @@ function createState(levelId){
   return {
     v:GAME_VERSION, level:levelId, clock:L.startMinute, startClock:L.startMinute,
     player:{x:sx,z:sz,y:.15,vx:0,vz:0,vy:0,heading:Math.PI,anim:0,health:100,heat:100,stamina:100,lives:3,bonusLives:0,bonusEarned:0},
-    checkpoint:{x:sx,z:sz},
+    checkpoint:{x:sx,z:sz}, money:START_MONEY, clues:[], tasks:{}, location:'outside',
     camYaw:0, flags:{}, weather:{period:-1,kind:'clear',rain:0,cloud:.1,temp:12,target:{rain:0,cloud:.1}},
     status:'playing'
   };
@@ -284,18 +383,21 @@ const simRand=mulberry32(4242);   // NPC decisions (server-side later)
 const P={x:0,z:0};                // cached player position for agents
 
 function groundHeight(x,z){
+  if(S&&S.location&&S.location!=='outside')return 0;
   for(const cx of CENTERS) if(Math.abs(x-cx)<30.5) for(const cz of CENTERS) if(Math.abs(z-cz)<30.5) return .15;
   if(z>157||z<-157||x>157||x<-157) return .15;
   return 0;
 }
 function collide(o,rad){
-  for(const c of CITY.colliders){
+  const I=S&&S.location&&S.location!=='outside'?INTERIORS[S.location]:null;
+  for(const c of (I?I.cols:CITY.colliders)){
     if(o.x+rad<c.x0||o.x-rad>c.x1||o.z+rad<c.z0||o.z-rad>c.z1)continue;
     const pl=o.x+rad-c.x0, pr=c.x1-(o.x-rad), pt=o.z+rad-c.z0, pb=c.z1-(o.z-rad);
     const m=Math.min(pl,pr,pt,pb);
     if(m===pl)o.x-=pl;else if(m===pr)o.x+=pr;else if(m===pt)o.z-=pt;else o.z+=pb;
   }
-  o.x=clamp(o.x,-BOUND,BOUND);o.z=clamp(o.z,-BOUND,BOUND);
+  if(I){o.x=clamp(o.x,I.ox-I.hw+rad,I.ox+I.hw-rad);o.z=clamp(o.z,I.oz-I.hd+rad,I.oz+I.hd-rad);}
+  else{o.x=clamp(o.x,-BOUND,BOUND);o.z=clamp(o.z,-BOUND,BOUND);}
 }
 
 // Command produced by input each tick — the only way the player affects the world.
@@ -335,7 +437,7 @@ function stepPlayer(dt){
   p.stamina=clamp(p.stamina+(running?-14:9)*dt,0,100);
   // Cold & rain: the climate is an opponent (stronger in later provinces).
   const W=S.weather;
-  const exposure=W.rain*1.0+Math.max(0,(10-W.temp))/10;
+  const exposure=S.location!=='outside'?0:W.rain*1.0+Math.max(0,(10-W.temp))/10;
   const warmth=running?.5:0;
   if(exposure-warmth>.15)p.heat-=(exposure-warmth)*.35*L.coldFactor*dt*Math.max(1,timeScale/4);
   else p.heat+=.6*dt;
@@ -349,10 +451,6 @@ function stepMission(){
   const L=LEVELS[S.level];
   const remaining=L.timeLimitMin-(S.clock-S.startClock);
   if(remaining<=0){bus.emit('fail','Le temps est écoulé : Oscar n’a pas trouvé la piste à temps.');return;}
-  if(!S.flags.reachedRestaurant){
-    const z=CITY.zones.find(z=>z.id==='restaurant');
-    if(Math.hypot(S.player.x-z.x,S.player.z-z.z)<6){S.flags.reachedRestaurant=true;S.checkpoint={x:z.x,z:z.z+3};bus.emit('objective');}
-  }
 }
 bus.on('death',()=>{
   const p=S.player;if(S.status!=='playing')return;
@@ -361,7 +459,7 @@ bus.on('death',()=>{
     if(p.bonusLives>0){p.bonusLives--;p.lives=1;toast('Vie bonus utilisée. Il ne t’en reste plus que '+p.bonusLives+'.');}
     else {bus.emit('fail','Oscar a perdu ses 3 vies.');return;}
   } else toast('Oscar est tombé. Il te reste '+p.lives+(p.lives>1?' vies':' vie')+' dans ce niveau.');
-  p.x=S.checkpoint.x;p.z=S.checkpoint.z;p.health=100;p.heat=100;p.vx=p.vz=0;
+  S.location='outside';applyLocation();p.x=S.checkpoint.x;p.z=S.checkpoint.z;p.y=.15;p.health=100;p.heat=100;p.vx=p.vz=0;
 });
 
 /* --- NPC agents (simulated identically on a future server) --- */
@@ -801,6 +899,9 @@ function animRig(h,dt,t,speed,mode='walk',effort=0,detailsOn=true){
     const p=t*speed*1.4;h.legL.th.rotation.x=-1.2+Math.sin(p)*.35;h.legR.th.rotation.x=-1.2-Math.sin(p)*.35;
     h.legL.kn.rotation.x=1.35-Math.sin(p)*.35;h.legR.kn.rotation.x=1.35+Math.sin(p)*.35;
     uL=uR=-1.0;eL=eR=-.45;zL=-.05;zR=.05;h.head.rotation.x=-.35+st.lookPitch*.4;}
+  if(mode==='sit'){h.hips.position.set(0,.5,0);h.hips.rotation.set(0,0,0);h.spine.rotation.set(.06+L.slouch*.5,0,0);
+    h.legL.th.rotation.x=h.legR.th.rotation.x=-1.52;h.legL.kn.rotation.x=1.5;h.legR.kn.rotation.x=1.42;
+    if(L.prop!=='cup'||!(st.sipOn>0)){uL=-.62;eL=-.95;zL=-.1;}if(L.prop!=='phone'){uR=-.66;eR=-.9;zR=.1;}}
   aL.sh.rotation.set(uL,0,zL);aR.sh.rotation.set(uR,0,zR);aL.el.rotation.x=eL;aR.el.rotation.x=eR;
   aL.wr.rotation.x=-.12*a;if(mode!=='talk')aR.wr.rotation.z=0;
 }
@@ -855,7 +956,7 @@ const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:'#a
 
 const C_DAY=new THREE.Color('#8ec3ef'),C_DUSK=new THREE.Color('#e9895a'),C_NIGHT=new THREE.Color('#0a1226'),C_GREY=new THREE.Color('#7f8b97'),C_GREYN=new THREE.Color('#151a22'),tmpC=new THREE.Color(),tmpC2=new THREE.Color();
 let nightF=0;
-function updateEnvironment(clock,rainAmt,cloud,center,dt,t){
+function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   const m=((clock%1440)+1440)%1440,el=Math.sin((m/1440-.25)*Math.PI*2),az=(m/1440)*Math.PI*2;
   const day=smooth(-.12,.22,el);nightF=1-day;
   const dusk=Math.max(0,1-Math.abs(el)/.28)*(1-cloud*.6);
@@ -881,6 +982,9 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t){
   rain.material.opacity=rainAmt*.55;rain.visible=rainAmt>.02;
   if(rain.visible){const a=rainGeo.attributes.position.array;for(let i=0;i<RAIN_N;i++){const k=i*6;a[k+1]-=dt*26;a[k+4]-=dt*26;if(a[k+4]<0){a[k+1]+=45;a[k+4]+=45;}}
     rainGeo.attributes.position.needsUpdate=true;rain.position.set(center.x,0,center.z);}
+  updateInteriorLights(day*(1-cloud*.5),smooth(.25,.75,nightF));
+  if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=.18+.22*day;hemi.color.set('#f3e6d2');
+    rain.visible=false;stars.material.opacity=0;sunDisc.material.opacity=0;moon.material.opacity=0;}
 }
 
 /* --- per-frame view sync --- */
@@ -889,7 +993,9 @@ function syncView(dt,t){
   oscarMesh.g.position.set(p.x,p.y,p.z);oscarMesh.g.rotation.y=p.heading;
   const effort=clamp((60-p.stamina)/60,0,1)*.8+(p.speed>4?.25:0);
   animRig(oscarMesh,dt,t,p.speed||0,'walk',effort,true);
-  const raining=S.weather.rain>.5,cx=camera.position.x,cz=camera.position.z;
+  const raining=S.weather.rain>.5,cx=camera.position.x,cz=camera.position.z,inside=S.location&&S.location!=='outside';
+  if(inside){for(const h of pedMeshes)h.g.visible=false;for(const m of vehMeshes)m.g.visible=false;for(const m of tramMeshes)m.visible=false;for(const h of idlerMeshes)h.g.visible=false;}
+  else{for(const m of tramMeshes)m.visible=true;
   peds.forEach((a,i)=>{const h=pedMeshes[i];const d=Math.hypot(a.x-cx,a.z-cz);const vis=a.visible&&d<200;h.g.visible=vis;if(!vis)return;
     h.g.position.set(a.x,.15,a.z);h.g.rotation.y=a.heading;if(h.umb)h.umb.visible=raining&&h.look.prop!=='phone';
     animRig(h,dt,t,a.moving?a.speed:0,'walk',0,d<22);});
@@ -898,7 +1004,9 @@ function syncView(dt,t){
     if(m.h)animRig(m.h,dt,t,v.speed,'bike',0,Math.hypot(v.x-cx,v.z-cz)<22);});
   trams.forEach((tr,i)=>{tramMeshes[i].position.set(tr.x,0,tr.z);tramMeshes[i].rotation.y=tr.dir>0?Math.PI/2:-Math.PI/2;});
   idlers.forEach((d,i)=>{const h=idlerMeshes[i];const dd=Math.hypot(d.x-cx,d.z-cz);h.g.visible=dd<200;if(h.g.visible)animRig(h,dt,t+i*1.7,0,i%3===2?'walk':'talk',0,dd<22);});
-  if(M.marker){M.marker.visible=!S.flags.reachedRestaurant;M.marker.position.y=4.2+Math.sin(t*2.5)*.3;M.marker.rotation.y=t*1.5;}
+  }
+  if(M.marker){const tg=S.clues&&!inside?objectiveTarget(objective(S)):null;M.marker.visible=!!tg;if(tg){M.marker.position.set(tg.x,4.2+Math.sin(t*2.5)*.3,tg.z);M.marker.rotation.y=t*1.5;}}
+  if(S.clues)syncStory(dt,t);
 }
 
 /* --- camera --- */
@@ -911,6 +1019,299 @@ function updateCamera(dt){
   const hit=ray.intersectObjects(collidableMeshes,false)[0];if(hit)d=Math.max(1.2,hit.distance-.35);
   tv.copy(head).addScaledVector(dir,d);if(tv.y<.4)tv.y=.4;
   camera.position.lerp(tv,1-Math.exp(-dt*18));camera.lookAt(head.x,head.y-.15,head.z);
+}
+
+/* --- 5b. INTERIORS (bloc 2) ---
+   Lieux habités (directives de réalisme) : traces de vie, objets laissés, lumière du jour par la fenêtre, poussière dans l'air. */
+const INTERIORS={
+  house:{ox:1000,oz:0,hw:6,hd:4.5,spawn:{x:0,z:3.2},exitOut:()=>{const h=CITY.oscarHouse;return{x:h.x,z:h.z+h.d/2+2.6}},cols:[],group:null,lights:[]},
+  diner:{ox:1000,oz:120,hw:7,hd:5,spawn:{x:0,z:3.8},exitOut:()=>{const r=CITY.restaurant;return{x:r.x,z:r.z+r.d/2+2.6}},cols:[],group:null,lights:[]},
+};
+const interiorNPCs=[]; // {id, dlg, h (rig), x,z,a, mode}
+function texCanvas(seed,w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),mulberry32(seed),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;return t}
+const ITEX={
+  wood:texCanvas(31,512,512,(g,r,w,h)=>{for(let y=0;y<h;y+=32){const base=[120+r()*30,82+r()*20,50+r()*15];g.fillStyle=`rgb(${base})`;g.fillRect(0,y,w,32);
+      for(let k=0;k<40;k++){g.strokeStyle=`rgba(40,25,10,${.08+r()*.12})`;g.beginPath();const yy=y+r()*32;g.moveTo(0,yy);g.bezierCurveTo(w*.3,yy+(r()-.5)*6,w*.6,yy+(r()-.5)*6,w,yy+(r()-.5)*4);g.stroke();}
+      g.fillStyle='rgba(20,12,5,.55)';g.fillRect(0,y,w,1.5);const sx=r()*w;g.fillRect(sx,y,1.5,32);}
+    for(let i=0;i<30;i++){g.fillStyle=`rgba(0,0,0,${.04+r()*.06})`;g.beginPath();g.ellipse(r()*w,r()*h,8+r()*30,4+r()*14,r()*3,0,7);g.fill();}}),
+  plaster:texCanvas(32,256,256,(g,r,w,h)=>{g.fillStyle='#ece6da';g.fillRect(0,0,w,h);for(let i=0;i<7000;i++){const v=200+r()*55|0;g.fillStyle=`rgba(${v},${v-6},${v-14},.35)`;g.fillRect(r()*w,r()*h,1,1);}
+    for(let i=0;i<10;i++){g.fillStyle=`rgba(120,100,70,${.03+r()*.05})`;g.beginPath();g.ellipse(r()*w,r()*h,10+r()*40,8+r()*30,0,0,7);g.fill();}}),
+  checker:texCanvas(33,256,256,(g,r,w,h)=>{const s=32;for(let y=0;y<h;y+=s)for(let x=0;x<w;x+=s){g.fillStyle=((x+y)/s)%2?'#1d1d1f':'#e9e4d8';g.fillRect(x,y,s,s);}
+    for(let i=0;i<5000;i++){g.fillStyle=`rgba(0,0,0,${r()*.12})`;g.fillRect(r()*w,r()*h,1+r()*2,1+r()*2);}
+    for(let i=0;i<18;i++){g.fillStyle=`rgba(90,70,40,${.06+r()*.08})`;g.beginPath();g.arc(r()*w,r()*h,3+r()*14,0,7);g.fill();}}),
+  paper:texCanvas(34,128,160,(g,r,w,h)=>{g.fillStyle='#f4f1e8';g.fillRect(0,0,w,h);g.strokeStyle='rgba(80,110,170,.45)';for(let y=20;y<h;y+=9){g.beginPath();g.moveTo(6,y);g.lineTo(w-6,y);g.stroke();}
+    g.strokeStyle='rgba(40,40,60,.75)';for(let y=24;y<h*.6;y+=9){g.beginPath();g.moveTo(10,y);let x=10;while(x<w*(.4+r()*.5)){x+=3+r()*6;g.lineTo(x,y+(r()-.5)*2);}g.stroke();}}),
+  note:texCanvas(35,128,160,(g,r,w,h)=>{g.fillStyle='#e9ddc0';g.fillRect(0,0,w,h);g.strokeStyle='rgba(30,20,20,.85)';g.lineWidth=1.4;for(let y=30;y<110;y+=14){g.beginPath();g.moveTo(14,y);let x=14;while(x<w-16){x+=4+r()*7;g.lineTo(x,y+(r()-.5)*4);}g.stroke();}
+    g.fillStyle='rgba(60,50,40,.25)';g.beginPath();g.arc(w-20,h-18,9,0,7);g.fill();}),
+  news:texCanvas(36,160,110,(g,r,w,h)=>{g.fillStyle='#e6e1d4';g.fillRect(0,0,w,h);g.fillStyle='#222';g.font='bold 14px serif';g.fillText('THE TORONTO DAILY',10,16);for(let c=0;c<3;c++)for(let y=26;y<h-6;y+=5){g.fillStyle=`rgba(30,30,30,${.4+r()*.3})`;g.fillRect(8+c*50,y,40-r()*8,2);}}),
+  menu:texCanvas(37,512,256,(g,r,w,h)=>{g.fillStyle='#1b1d1c';g.fillRect(0,0,w,h);g.fillStyle='#f3e9d2';g.font='700 40px "Barlow Condensed", sans-serif';g.fillText('LINA’S — ALL DAY BREAKFAST',22,50);g.font='500 26px "Barlow Condensed", sans-serif';
+    [['Eggs & Peameal Bacon','11.50'],['Butter Tart','3.75'],['Poutine','9.25'],['Coffee (refill)','2.50'],['Grilled Cheese','8.00']].forEach(([a,b],i)=>{g.fillText(a,30,100+i*31);g.fillText(b,420,100+i*31);});}),
+};
+const IM={
+  plaster:new THREE.MeshStandardMaterial({map:ITEX.plaster,roughness:.95}),
+  wood:new THREE.MeshStandardMaterial({map:ITEX.wood,roughness:.7}),
+  checker:new THREE.MeshStandardMaterial({map:ITEX.checker,roughness:.45}),
+  ceiling:mat('#e8e3d8',{roughness:1}),
+  paper:new THREE.MeshStandardMaterial({map:ITEX.paper,roughness:.95,side:THREE.DoubleSide}),
+  note:new THREE.MeshStandardMaterial({map:ITEX.note,roughness:.95,side:THREE.DoubleSide}),
+  news:new THREE.MeshStandardMaterial({map:ITEX.news,roughness:.95,side:THREE.DoubleSide}),
+};
+ITEX.wood.repeat.set(3,3);ITEX.checker.repeat.set(6,5);ITEX.plaster.repeat.set(3,1);
+const dayMats=[]; // window glass & light shafts brightened by daylight
+function ibox(I,w,h,d,m,x,y,z,ry=0,col=false,shadow=true){
+  const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.y=ry;o.castShadow=shadow;o.receiveShadow=true;I.group.add(o);
+  if(col){const cw=Math.abs(Math.cos(ry))*w+Math.abs(Math.sin(ry))*d,cd=Math.abs(Math.sin(ry))*w+Math.abs(Math.cos(ry))*d;
+    I.cols.push({x0:I.ox+x-cw/2,x1:I.ox+x+cw/2,z0:I.oz+z-cd/2,z1:I.oz+z+cd/2});}
+  return o;
+}
+function icyl(I,rt,rb,h,m,x,y,z,seg=16){const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;I.group.add(o);return o}
+function iplane(I,w,h,m,x,y,z,rx=-Math.PI/2,ry=0,rz=0){const o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.receiveShadow=true;I.group.add(o);return o}
+function shell(I,floorMat,wallMat,H,doorX,windows){
+  const {hw,hd}=I;
+  iplane(I,hw*2,hd*2,floorMat,0,0,0);
+  const ceil=iplane(I,hw*2,hd*2,IM.ceiling,0,H,0,Math.PI/2);collidableMeshes.push(ceil);
+  const wall=(w,x,z,ry)=>{const o=ibox(I,w,H,.2,wallMat,x,H/2,z,ry,true,false);collidableMeshes.push(o);return o};
+  wall(hw*2+.4,0,-hd-.1,0);wall(hd*2,-hw-.1,0,Math.PI/2);wall(hd*2,hw+.1,0,Math.PI/2);
+  // south wall with door gap and window gaps
+  const gaps=[[doorX,1.1,0,2.2],...windows.map(w=>[w.x,w.w/2,w.y0,w.y1])].sort((a,b)=>a[0]-b[0]);
+  let cur=-hw;
+  for(const [gx,gh,y0,y1] of gaps){const a=gx-gh;if(a>cur)wall(a-cur,(a+cur)/2,hd+.1,0);
+    if(y0>0)ibox(I,gh*2,y0,.2,wallMat,gx,y0/2,hd+.1,0,true,false);
+    if(y1<H)ibox(I,gh*2,H-y1,.2,wallMat,gx,(H+y1)/2,hd+.1,0,false,false);cur=gx+gh;}
+  if(cur<hw)wall(hw-cur,(hw+cur)/2,hd+.1,0);
+  I.cols.push({x0:I.ox+doorX-1.1,x1:I.ox+doorX+1.1,z0:I.oz+hd-.05,z1:I.oz+hd+.3});
+  // door
+  ibox(I,1.0,2.15,.06,mat('#5a3a26',{roughness:.6}),doorX,1.08,hd+.02,0,false,false);
+  ibox(I,.08,.08,.08,mat('#c9a84a',{metalness:.8,roughness:.3}),doorX+.38,1.0,hd-.03,0,false,false);
+  // windows: daylight glass, frame, sun beam through, dust in the air
+  for(const w of windows){
+    const gm=new THREE.MeshStandardMaterial({color:'#9fb8cc',emissive:'#dfeeff',emissiveIntensity:1,roughness:.05,metalness:.1,transparent:true,opacity:.85});dayMats.push({m:gm,k:1.6,base:.08});
+    ibox(I,w.w,w.y1-w.y0,.04,gm,w.x,(w.y0+w.y1)/2,hd+.1,0,false,false);
+    const fm=mat('#efeae0',{roughness:.6});ibox(I,w.w+.12,.07,.26,fm,w.x,w.y0,hd+.05);ibox(I,w.w+.12,.07,.26,fm,w.x,w.y1,hd+.05);ibox(I,.06,w.y1-w.y0,.26,fm,w.x,(w.y0+w.y1)/2,hd+.05);
+    const sm=new THREE.MeshBasicMaterial({color:'#fff2d6',transparent:true,opacity:.1,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});dayMats.push({m:sm,k:.11,base:0,opacity:true});
+    const beam=new THREE.Mesh(new THREE.PlaneGeometry(w.w,3.4),sm);beam.position.set(w.x-.4,(w.y0+w.y1)/2-.7,hd-1.4);beam.rotation.set(-.85,0,.12);I.group.add(beam);
+    const sp=new THREE.SpotLight('#fff1d8',40,18,.55,.6,1.6);sp.position.set(I.ox+w.x+1.6,4.6,I.oz+hd+4.5);sp.target.position.set(I.ox+w.x-1,0,I.oz+hd-3);sp.castShadow=true;sp.shadow.mapSize.set(1024,1024);sp.shadow.bias=-.0005;
+    I.group.parent.add(sp.target);I.group.add(sp);sp.position.sub(I.group.position);I.lights.push({l:sp,kind:'sun'});
+    const n=260,pos=new Float32Array(n*3),dr=mulberry32(w.x*100|0);for(let i=0;i<n;i++)pos.set([w.x-1.2+dr()*2.4,.3+dr()*2.2,hd-.2-dr()*3],i*3);
+    const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const dm=new THREE.PointsMaterial({color:'#fff8e8',size:.012,transparent:true,opacity:.5,depthWrite:false});dayMats.push({m:dm,k:.55,base:0,opacity:true});
+    const dust=new THREE.Points(dg,dm);I.group.add(dust);I.dust=dust;}
+}
+function lamp(I,x,y,z,intensity=9,color='#ffd9a3',shade='#e8d9bf'){
+  icyl(I,.01,.01,2.8-y-.1,M.pole,x,y+.1+(2.8-y-.1)/2,z,4);
+  const s=icyl(I,.12,.28,.24,mat(shade,{roughness:.8,emissive:color,emissiveIntensity:.35,side:THREE.DoubleSide}),x,y,z,18);
+  const pl=new THREE.PointLight(color,intensity,9,2);pl.position.set(x,y-.15,z);I.group.add(pl);I.lights.push({l:pl,kind:'lamp',base:intensity});return s;
+}
+function npc(I,id,dlg,look,lx,lz,a,mode){
+  const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+  interiorNPCs.push({id,dlg,h,x:I.ox+lx,z:I.oz+lz,a,mode,loc:I===INTERIORS.house?'house':'diner'});
+  if(mode!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h;
+}
+function buildHouseInterior(){
+  const I=INTERIORS.house;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  shell(I,IM.wood,IM.plaster,2.8,0,[{x:3.4,w:2.2,y0:.95,y1:2.3}]);
+  // rug, baseboards
+  iplane(I,3.2,2.2,mat('#7b3b2c',{roughness:1}),3.4,.005,.3);
+  // kitchen along north wall: counters, sink, fridge, kettle, keys + mail
+  const cab=mat('#d9d2c4',{roughness:.6}),top=mat('#4a4642',{roughness:.35});
+  ibox(I,4.4,.9,.62,cab,-3.6,.45,-4.15,0,true);ibox(I,4.5,.05,.68,top,-3.6,.93,-4.13);
+  ibox(I,.6,.04,.4,mat('#9aa1a6',{metalness:.8,roughness:.25}),-4.4,.94,-4.12);
+  ibox(I,.78,1.85,.7,mat('#e7e7e4',{roughness:.3,metalness:.2}),-.95,.93,-4.1,0,true);
+  icyl(I,.08,.09,.2,mat('#2f3b45',{metalness:.6,roughness:.3}),-2.6,1.05,-4.1);
+  ibox(I,1.6,.7,.33,cab,-3.6,1.95,-4.33);
+  iplane(I,.22,.3,IM.paper,-2.0,.96,-4.0,-Math.PI/2,0,.35);iplane(I,.22,.3,IM.paper,-1.9,.965,-3.95,-Math.PI/2,0,-.2); // mail
+  ibox(I,.1,.02,.04,mat('#b9b9b9',{metalness:.9,roughness:.2}),-2.2,.96,-3.95,.6);ibox(I,.05,.02,.05,mat('#7a1d1d'),-2.25,.96,-3.92); // keys
+  // table + chairs (one knocked over during the abduction)
+  const tw=mat('#8a6a48',{roughness:.55});
+  ibox(I,1.7,.05,.95,tw,-3,.76,-.8,0,true);for(const [dx,dz] of [[-.75,-.4],[.75,-.4],[-.75,.4],[.75,.4]])ibox(I,.06,.74,.06,tw,-3+dx,.37,-.8+dz);
+  const chair=(x,z,ry,fallen)=>{const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;I.group.add(g);
+    const add=(w,h,d,px,py,pz)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),tw);o.position.set(px,py,pz);o.castShadow=true;g.add(o)};
+    add(.44,.04,.44,0,.46,0);add(.44,.5,.04,0,.72,-.2);for(const [a,b] of [[-.19,-.19],[.19,-.19],[-.19,.19],[.19,.19]])add(.035,.46,.035,a,.23,b);
+    if(fallen){g.rotation.z=Math.PI/2;g.rotation.x=.25;g.position.y=.22;}return g};
+  chair(-3.8,-1.55,0);chair(-2.2,-1.55,0);const evaChair=chair(-3.8,-.05,Math.PI);chair(-1.6,.6,Math.PI*.6,true);
+  // Eva's jacket hanging off her chair back
+  const jk=new THREE.Mesh(new THREE.BoxGeometry(.48,.55,.07),clothMat('#7a4a3a'));jk.position.set(0,.68,.26);jk.rotation.x=.12;jk.castShadow=true;evaChair.add(jk);
+  // on the table: half cup, homework, pencil, the note
+  icyl(I,.045,.038,.1,mat('#f1ede4'),-2.55,.83,-.6);icyl(I,.039,.039,.005,mat('#3b2414',{roughness:.1}),-2.55,.86,-.6);
+  iplane(I,.3,.38,IM.paper,-3.3,.79,-.75,-Math.PI/2,0,.18);iplane(I,.3,.38,IM.paper,-3.15,.792,-.65,-Math.PI/2,0,-.1);
+  ibox(I,.16,.01,.01,mat('#e7b31d'),-3.2,.8,-.5,.9);
+  const note=iplane(I,.18,.24,IM.note,-2.75,.795,-1.0,-Math.PI/2,0,.5);I.note=note;
+  // living room: sofa, cushions, coffee table, TV, bookshelf, lamp, plant, photos, Cédric's backpack + shoes
+  const sofaM=clothMat('#4c5a63',.95);
+  ibox(I,.9,.45,2.3,sofaM,5.35,.32,.3,0,true);ibox(I,.25,.5,2.3,sofaM,5.7,.7,.3);ibox(I,.9,.6,.22,sofaM,5.35,.45,-.95);ibox(I,.9,.6,.22,sofaM,5.35,.45,1.55);
+  for(const [z,r] of [[-.3,.25],[.75,-.35]]){const c=ibox(I,.18,.42,.45,clothMat('#c9a227'),5.5,.72,z,r);c.rotation.z=.2;}
+  ibox(I,.9,.4,.55,tw,3.6,.2,.3,0,true);iplane(I,.24,.3,IM.news,3.5,.405,.2,-Math.PI/2,0,.4);
+  ibox(I,1.6,.5,.4,mat('#2b2b2b'),1.5,.25,.3,Math.PI/2,true);ibox(I,1.2,.7,.05,mat('#0b0d10',{roughness:.15,metalness:.4}),1.55,.86,.3,Math.PI/2);
+  ibox(I,1.9,2.1,.34,tw,3.6,1.05,-4.2,0,true);
+  const br=mulberry32(77),books=[];for(let s=0;s<4;s++){let x=2.75;while(x<4.45){const w=.03+br()*.05,h=.2+br()*.12;books.push([x+w/2,.2+s*.5+h/2,-4.15,w,h,br()<.12?.25:0]);x+=w+.005;}}
+  const bm=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({roughness:.8}),books.length),bo=new THREE.Object3D(),bc=['#7a2e2e','#24476b','#2f5d3a','#c9a227','#3b3b3b','#e7e0d0','#5b2a5e','#b5651d'].map(c=>new THREE.Color(c));
+  books.forEach((b,i)=>{bo.position.set(b[0],b[1],b[2]);bo.rotation.set(0,0,b[5]);bo.scale.set(b[3],b[4],.22);bo.updateMatrix();bm.setMatrixAt(i,bo.matrix);bm.setColorAt(i,pick(br,bc));});bm.castShadow=true;I.group.add(bm);
+  for(let s=0;s<4;s++)ibox(I,1.84,.03,.3,tw,3.6,.2+s*.5-.015,-4.15,0,false,false);
+  icyl(I,.14,.11,.32,mat('#8a5a3a'),5.6,.16,-3.9);const leaves=new THREE.Mesh(new THREE.IcosahedronGeometry(.42,1),new THREE.MeshStandardMaterial({color:'#3f6a35',flatShading:true,roughness:.9}));leaves.position.set(5.6,.75,-3.9);leaves.scale.y=1.4;leaves.castShadow=true;I.group.add(leaves);
+  for(const [x,y,c] of [[-4.8,1.7,'#c8b48a'],[-4.2,1.85,'#8aa0b5'],[1.2,1.6,'#b58a8a']]){ibox(I,.34,.42,.03,mat('#2a2018'),x,y,-4.35,0,false,false);ibox(I,.27,.35,.01,mat(c,{roughness:.4}),x,y,-4.33,0,false,false);}
+  ibox(I,.32,.4,.18,clothMat('#2f6b46'),-1.4,.2,3.9,.4);ibox(I,.11,.08,.26,mat('#e44'),-.9,.04,4.1,.2);ibox(I,.11,.08,.26,mat('#e44'),-.72,.04,4.05,-.1);
+  ibox(I,.12,.1,.3,mat('#3b2a1e'),.9,.05,4.1,.1);ibox(I,.12,.1,.3,mat('#3b2a1e'),1.08,.05,4.12,-.15);
+  lamp(I,-3,1.95,-.8,7);lamp(I,4.2,2.2,-1.6,6,'#ffcf8a','#efe6d2');
+  // collision: table area, sofa, TV stand, bookshelf
+  I.cols.push({x0:I.ox-3.9,x1:I.ox-2.1,z0:I.oz-1.3,z1:I.oz-.3});
+  I.cols.push({x0:I.ox+4.85,x1:I.ox+6,z0:I.oz-1.1,z1:I.oz+1.7},{x0:I.ox+1.25,x1:I.ox+1.75,z0:I.oz-.5,z1:I.oz+1.1},{x0:I.ox+3.3,x1:I.ox+3.9,z0:I.oz+.02,z1:I.oz+.58});
+  I.group.visible=false;
+}
+function buildDinerInterior(){
+  const I=INTERIORS.diner;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const cream=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#f3e3c8',roughness:.9});
+  shell(I,IM.checker,cream,3.1,0,[{x:-3.9,w:4.2,y0:.9,y1:2.5},{x:3.9,w:4.2,y0:.9,y1:2.5}]);
+  const red=mat('#9e1b1b',{roughness:.5}),chrome=mat('#c8ccd0',{metalness:.85,roughness:.25}),dark=mat('#2a1d16',{roughness:.6});
+  ibox(I,14,.9,.06,mat('#7a1d1d',{roughness:.6}),0,.45,-4.96,0,false,false);
+  // counter + stools + back bar
+  ibox(I,5.6,1.02,.7,mat('#d8cfc0',{roughness:.5}),3.8,.51,-2.7,0,true);ibox(I,5.7,.06,.82,mat('#e9e6df',{roughness:.2}),3.8,1.04,-2.68);ibox(I,5.6,.08,.04,chrome,3.8,.9,-2.33);
+  for(let i=0;i<5;i++){const x=1.6+i*1.05;icyl(I,.05,.07,.66,chrome,x,.33,-1.85,10);icyl(I,.22,.22,.09,red,x,.7,-1.85,18);}
+  ibox(I,5.6,.9,.5,dark,3.8,.45,-4.7,0,true);ibox(I,5.6,.04,.52,mat('#5a5148'),3.8,.92,-4.7);
+  ibox(I,.5,.55,.42,chrome,5.8,1.22,-4.7);icyl(I,.06,.05,.22,mat('#1b1b1b'),5.65,1.06,-4.55);icyl(I,.06,.05,.22,mat('#1b1b1b'),5.95,1.06,-4.55);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(.28,16,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:'#ffffff',transparent:true,opacity:.25,roughness:.05}));dome.position.set(2.6,1.07,-2.6);I.group.add(dome);
+  icyl(I,.22,.22,.06,mat('#c98a3a'),2.6,1.1,-2.6);
+  for(let i=0;i<8;i++)icyl(I,.045,.038,.1,mat('#f1ede4'),1.6+i*.18,1.0,-4.55);
+  const menu=iplane(I,2.6,1.3,new THREE.MeshStandardMaterial({map:ITEX.menu,roughness:.8,emissive:'#ffffff',emissiveMap:ITEX.menu,emissiveIntensity:.15}),3.8,2.25,-4.97,0);
+  // booths along the west wall
+  for(const z of [-3.2,-.4,2.4]){ibox(I,1.1,.05,.75,mat('#e9e6df',{roughness:.25}),-6.2,.76,z,0,true);icyl(I,.05,.05,.74,chrome,-6.2,.37,z,8);
+    for(const s of [-1,1]){ibox(I,1.2,.45,.5,red,-6.25,.22,z+s*.72,0,true);ibox(I,1.2,.7,.14,red,-6.25,.8,z+s*.98);}
+    icyl(I,.045,.038,.1,mat('#f1ede4'),-6.0,.83,z+.15);ibox(I,.3,.01,.22,mat('#f5f5f5'),-6.35,.79,z-.1);}
+  // center tables
+  for(const [x,z] of [[-1.8,1.4],[1.2,2.6]]){icyl(I,.45,.45,.04,mat('#e9e6df',{roughness:.25}),x,.76,z,20);icyl(I,.05,.2,.74,chrome,x,.37,z,10);
+    I.cols.push({x0:I.ox+x-.5,x1:I.ox+x+.5,z0:I.oz+z-.5,z1:I.oz+z+.5});
+    for(const a of [0,Math.PI]){const cx=x+Math.sin(a)*.75,cz=z+Math.cos(a)*.75;ibox(I,.42,.04,.42,red,cx,.46,cz);icyl(I,.03,.03,.45,chrome,cx,.23,cz,6);}}
+  // jukebox
+  ibox(I,.9,1.5,.55,mat('#5b2a1e',{roughness:.4}),-1.2,.75,-4.6,0,true);ibox(I,.7,.5,.05,new THREE.MeshStandardMaterial({color:'#ffb347',emissive:'#ff9a2a',emissiveIntensity:1.2}),-1.2,1.2,-4.32);
+  for(let i=0;i<3;i++)lamp(I,2+i*1.8,2.2,-2.4,8,'#ffcf8a','#9e1b1b');
+  lamp(I,-6.2,2.1,-.4,6,'#ffd9a3','#e8d9bf');lamp(I,-1.8,2.2,1.4,5);
+  // collisions: counter, booths, back bar, jukebox
+  I.cols.push({x0:I.ox+1,x1:I.ox+6.6,z0:I.oz-3.05,z1:I.oz-2.35},{x0:I.ox+1,x1:I.ox+6.6,z0:I.oz-5,z1:I.oz-4.4},{x0:I.ox-7,x1:I.ox-5.6,z0:I.oz-4.3,z1:I.oz+3.5},{x0:I.ox-1.65,x1:I.ox-.75,z0:I.oz-5,z1:I.oz-4.3});
+  I.group.visible=false;
+}
+function buildStoryActors(){
+  buildHouseInterior();buildDinerInterior();
+  const D=INTERIORS.diner;
+  npc(D,'lina','lina',{skin:'#d4a373',jacket:'#2f3e46',pants:'#22223b',hair:'#2b1d14',bald:false,long:true,beard:false,height:.97,build:.95,slouch:.06,shAsym:-.015,browAsym:.2,headTilt:.04,swingL:1,swingR:1,breath:1.6,prop:'none',rolled:1,collarTilt:-.3},3.6,-3.55,0,'talk');
+  npc(D,'marcus','marcus',{skin:'#5c3a21',jacket:'#3a3a3a',pants:'#1b263b',hair:'#1a1a1a',bald:true,long:false,beard:true,height:1.02,build:1.12,slouch:.12,shAsym:.02,browAsym:-.25,headTilt:-.03,swingL:1,swingR:1,breath:1.4,prop:'cup',rolled:0,collarTilt:.4},-6.25,-.95,0,'sit');
+  npc(D,'jayden','jayden',{skin:'#e0ac69',jacket:'#9d0208',pants:'#3d405b',hair:'#3b2a1e',bald:false,long:false,beard:false,height:.98,build:.88,slouch:.18,shAsym:.025,browAsym:.3,headTilt:.06,swingL:1.1,swingR:.9,breath:2.1,prop:'phone',rolled:0,collarTilt:.2},6.4,-1.5,-Math.PI/2.4,'walk');
+  npc(D,'kowalski','kowalski',{skin:'#f1c27d',jacket:'#7f5539',pants:'#5e503f',hair:'#8a8a8a',bald:false,long:false,beard:false,height:.94,build:.98,slouch:.2,shAsym:-.02,browAsym:-.2,headTilt:-.05,swingL:.9,swingR:.9,breath:1.3,prop:'none',rolled:0,collarTilt:0},-1.8,.65,0,'sit');
+  const k=interiorNPCs.find(n=>n.id==='kowalski').h;const paper=new THREE.Mesh(new THREE.PlaneGeometry(.42,.3),IM.news);paper.position.set(-.06,-.12,.06);paper.rotation.set(-.2,Math.PI,0);k.armR.wr.add(paper);
+  // outdoor: the neighbour on his walk, with a cup of tea
+  const h=CITY.oscarHouse,nx=h.x+12,nz=h.z+h.d/2+2.4;
+  const hen=createHuman({skin:'#ffdbac',jacket:'#6b705c',pants:'#4a4e69',hair:'#d9d9d9',bald:false,long:false,beard:false,height:.95,build:1.02,slouch:.17,shAsym:.02,browAsym:.25,headTilt:.05,swingL:.9,swingR:.9,breath:1.5,prop:'cup',rolled:0,collarTilt:.1});
+  hen.g.position.set(nx,.17,nz);hen.g.rotation.y=-Math.PI/2+.35;scene.add(hen.g);
+  interiorNPCs.push({id:'henderson',dlg:'henderson',h:hen,x:nx,z:nz,a:-Math.PI/2+.35,mode:'walk',loc:'outside'});CITY.colliders.push({x0:nx-.3,x1:nx+.3,z0:nz-.3,z1:nz+.3});
+  // cigar butt on the porch, Lina's stolen tip jar in a backpack in the park
+  const cig=new THREE.Mesh(new THREE.CylinderGeometry(.018,.02,.11,8),mat('#5a3a22'));cig.rotation.z=Math.PI/2;cig.position.set(h.x+1.1,.3,h.z+h.d/2+.9);scene.add(cig);STORY_PROPS.cigar=cig;
+  const pk=CITY.park,bag=new THREE.Group();bag.position.set(pk.cx+7.3,.2,pk.cz-12.4);
+  const b1=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.2,4,8).scale(1.1,1,.6),clothMat('#3a6b2f'));b1.position.y=.2;b1.rotation.z=.9;b1.castShadow=true;bag.add(b1);
+  const jar=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.16,12),new THREE.MeshStandardMaterial({color:'#cfe8f0',transparent:true,opacity:.6,roughness:.05}));jar.position.set(.22,.08,.1);bag.add(jar);
+  bag.visible=false;scene.add(bag);STORY_PROPS.bag=bag;
+}
+const STORY_PROPS={};
+/* --- interaction zones (outside + interiors) --- */
+function storyZones(){
+  const h=CITY.oscarHouse,r=CITY.restaurant,H=INTERIORS.house,D=INTERIORS.diner,pk=CITY.park;
+  const Z=[];
+  const z=(o)=>{Z.push(o);return o};
+  z({loc:'outside',x:h.x,z:h.z+h.d/2+1.3,r:1.6,label:()=>'Entrer dans la maison',act:()=>enterInterior('house')});
+  z({loc:'outside',x:r.x,z:r.z+r.d/2+1.2,r:2.2,label:()=>'Entrer dans le Lina’s Diner',act:()=>enterInterior('diner')});
+  z({loc:'outside',x:h.x+1.1,z:h.z+h.d/2+.9,r:1.1,label:()=>S.clues.includes('cigar')?'Mégot de cigare (déjà examiné)':'Examiner le perron',act:()=>findClue('cigar',5)});
+  z({loc:'outside',x:pk.cx+7.3,z:pk.cz-12.4,r:1.5,cond:()=>S.tasks.tip==='active',label:()=>'Fouiller le sac à dos abandonné',act:()=>{S.tasks.tip='found';addMinutes(5);STORY_PROPS.bag.visible=false;toast('Le pot à pourboires de Lina est dans le sac. Rapporte-le-lui au diner.');}});
+  z({loc:'outside',x:PORT.x,z:PORT.z,r:9,auto:true,cond:()=>S.flags.leadPort&&!S.flags.atPort,act:()=>{S.flags.atPort=true;S.checkpoint={x:PORT.x,z:PORT.z-4};toast('Harbourfront. Les entrepôts sont là, de l’autre côté de la clôture. L’infiltration de l’entrepôt 7 arrive au bloc 3.');store.save(S);}});
+  z({loc:'house',x:H.ox,z:H.oz+H.hd-.7,r:1.2,label:()=>'Sortir de la maison',act:()=>exitInterior()});
+  z({loc:'house',x:H.ox-2.75,z:H.oz-.1,r:1.1,label:()=>S.clues.includes('note')?'Relire le mot d’Omer':'Prendre le mot sur la table',act:()=>readNote()});
+  z({loc:'house',x:H.ox-3.3,z:H.oz-1.95,r:1,label:()=>'Regarder les devoirs de Cédric',act:()=>findClue('homework',2)});
+  z({loc:'house',x:H.ox+4.5,z:H.oz+.4,r:1.2,label:()=>S.clues.includes('phone')?'Canapé (déjà fouillé)':'Fouiller sous le canapé',act:()=>findClue('phone',10)});
+  z({loc:'house',x:H.ox-2.1,z:H.oz-3.4,r:1,label:()=>'Regarder le comptoir',act:()=>findClue('keys',3)});
+  z({loc:'diner',x:D.ox,z:D.oz+D.hd-.7,r:1.2,label:()=>'Sortir du diner',act:()=>exitInterior()});
+  for(const n of interiorNPCs){const d=DIALOGUES[n.dlg];const lx=n.id==='lina'?n.x:n.id==='marcus'?n.x+1.5:n.id==='kowalski'?n.x+.95:n.x;const lz=n.id==='lina'?n.z+1.9:n.id==='marcus'?n.z+.9:n.id==='kowalski'?n.z:n.z;
+    z({loc:n.loc,x:lx,z:lz,r:1.5,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
+  return Z;
+}
+let ZONES=[];
+function addMinutes(m){if(m)S.clock+=m;}
+function findClue(id,min){
+  if(S.clues.includes(id)){showReading(CLUES[id].title,CLUES[id].text);return;}
+  S.clues.push(id);addMinutes(min);if(id==='cigar')STORY_PROPS.cigar.visible=false;
+  showReading(CLUES[id].title,CLUES[id].text,'Indice ajouté au carnet · '+min+' min');checkObjective();
+}
+function readNote(){
+  if(!S.clues.includes('note')){S.clues.push('note');addMinutes(3);if(INTERIORS.house.note)INTERIORS.house.note.visible=false;checkObjective();}
+  showReading('Le mot d’Omer',CLUES.note.text,'Tes mains tremblent en le relisant.');
+}
+let lastStage=-1;
+function checkObjective(){const o=objective(S);if(o.stage!==lastStage){if(lastStage>=0&&o.stage>lastStage){toast('Nouvel objectif : '+o.text);store.save(S);}lastStage=o.stage;}}
+function objectiveTarget(o){
+  if(!o.target)return null;
+  if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
+  if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
+  if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
+  if(o.target==='port')return{x:PORT.x,z:PORT.z};
+}
+function enterInterior(id){
+  const I=INTERIORS[id],p=S.player;S.location=id;p.x=I.ox+I.spawn.x;p.z=I.oz+I.spawn.z;p.y=0;p.vx=p.vz=0;p.heading=Math.PI;camYaw=0;camDist=Math.min(camDist,3.6);
+  applyLocation();camera.position.set(p.x,1.9,p.z+2.5);addMinutes(1);
+}
+function exitInterior(){
+  const I=INTERIORS[S.location],o=I.exitOut(),p=S.player;S.location='outside';p.x=o.x;p.z=o.z;p.y=.15;p.vx=p.vz=0;p.heading=0;camYaw=Math.PI;
+  applyLocation();camera.position.set(p.x,p.y+3,p.z-6);addMinutes(1);
+}
+function applyLocation(){
+  const loc=S.location||'outside';world.visible=loc==='outside';
+  for(const k in INTERIORS)INTERIORS[k].group.visible=k===loc;
+  for(const n of interiorNPCs)n.h.g.visible=n.loc===loc;
+  STORY_PROPS.cigar.visible=loc==='outside'&&!S.clues.includes('cigar');
+  if(INTERIORS.house.note)INTERIORS.house.note.visible=!S.clues.includes('note');
+  STORY_PROPS.bag.visible=loc==='outside'&&S.tasks.tip==='active';
+}
+function updateInteriorLights(day,night){
+  for(const d of dayMats){if(d.opacity)d.m.opacity=d.base+d.k*day;else d.m.emissiveIntensity=d.base+d.k*day;}
+  for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.base*(.45+.75*night);
+}
+function syncStory(dt,t){
+  for(const n of interiorNPCs){if(!n.h.g.visible)continue;
+    if(n.mode!=='sit'){const dx=S.player.x-n.x,dz=S.player.z-n.z,d=Math.hypot(dx,dz);
+      const target=d<4?Math.atan2(dx,dz):n.a;n.h.g.rotation.y=angLerp(n.h.g.rotation.y,target,1-Math.exp(-dt*(d<4?2.5:1)));}
+    animRig(n.h,dt,t+n.x,0,n.mode,0,true);}
+  const I=INTERIORS[S.location];if(I&&I.dust){const a=I.dust.geometry.attributes.position.array;for(let i=0;i<a.length;i+=3){a[i+1]+=Math.sin(t*.3+i)*.0006;a[i]+=Math.cos(t*.2+i*.7)*.0004;}I.dust.geometry.attributes.position.needsUpdate=true;}
+}
+/* --- dialogue, reading, notebook UI --- */
+let dlgState=null,uiPrev='play';
+function openUI(){if(mode==='play'){mode='ui';keys.clear();if(document.pointerLockElement)document.exitPointerLock();}}
+function closeUI(){show('dialog',false);show('notebook',false);dlgState=null;if(mode==='ui'){mode='play';lockPointer();}}
+function openDialogue(id){const D=DIALOGUES[id];dlgState={id,node:D.start(S)};openUI();renderDialogue();}
+function meets(c){const n=c.need||{};if(c.money&&S.money<c.money)return false;if(n.task){const [k,v]=n.task;if((S.tasks[k]||'none')!==v)return false;}if(n.noTask&&S.tasks[n.noTask])return false;return true;}
+function renderDialogue(){
+  const D=DIALOGUES[dlgState.id],N=D.nodes[dlgState.node];
+  $('dWho').textContent=D.who;$('dText').textContent=N.text;
+  const vis=N.choices.filter(c=>!(c.need&&c.need.task&&!meets({need:c.need}))&&!(c.need&&c.need.noTask&&!meets({need:c.need})));
+  dlgState.vis=vis;
+  $('dChoices').innerHTML=vis.map((c,i)=>{const ok=meets(c);const cost=[c.min?c.min+' min':'',c.money?'−'+c.money+' $':''].filter(Boolean).join(' · ');
+    return `<button data-i="${i}" ${ok?'':'disabled'}><kbd>${i+1}</kbd><span>${c.t}</span>${cost?`<em>${cost}${!ok&&c.money?' (pas assez d’argent)':''}</em>`:''}</button>`}).join('');
+  $('dChoices').querySelectorAll('button').forEach(b=>b.onclick=()=>choose(+b.dataset.i));
+  show('dialog',true);
+}
+function choose(i){
+  const c=dlgState&&dlgState.vis[i];if(!c||!meets(c))return;
+  addMinutes(c.min);if(c.money)S.money-=c.money;
+  const fx=c.fx||{};
+  if(fx.clue&&!S.clues.includes(fx.clue)){S.clues.push(fx.clue);toast('Indice ajouté au carnet : '+CLUES[fx.clue].title);}
+  if(fx.flag)[].concat(fx.flag).forEach(f=>S.flags[f]=true);
+  if(fx.task){S.tasks[fx.task[0]]=fx.task[1];}
+  if(fx.bonus){const p=S.player;if(p.bonusEarned<2){p.bonusEarned++;p.bonusLives++;setTimeout(()=>toast('Tâche accomplie : vie bonus gagnée ('+p.bonusEarned+'/2). Elle te suit dans tous les niveaux.'),2600);}}
+  checkObjective();
+  if(c.end){closeUI();return;}
+  dlgState.node=c.next;renderDialogue();
+}
+function showReading(title,text,foot=''){dlgState={reading:true};$('dWho').textContent=title;$('dText').textContent=text;
+  $('dChoices').innerHTML=`<button data-i="0"><kbd>1</kbd><span>Continuer</span>${foot?`<em>${foot}</em>`:''}</button>`;$('dChoices').querySelector('button').onclick=closeUI;openUI();show('dialog',true);}
+function openNotebook(){
+  const o=objective(S);
+  $('nbBody').innerHTML=`<h3>Objectif</h3><p>${o.text}</p><h3>Argent</h3><p>${S.money} $</p>
+  <h3>Indices (${S.clues.length})</h3>${S.clues.length?S.clues.map(c=>`<div class="clue"><b>${CLUES[c].title}</b><p>${CLUES[c].text}</p></div>`).join(''):'<p>Aucun indice pour l’instant.</p>'}
+  <h3>Tâches</h3><p>${S.tasks.tip==='active'?'Retrouver le pot à pourboires volé de Lina (un ado au sac vert, vers le parc à l’ouest).':S.tasks.tip==='found'?'Rapporter le pot à pourboires à Lina.':S.tasks.tip==='done'?'Pot à pourboires rendu à Lina. ✔':'Aucune tâche en cours.'}</p>`;
+  dlgState={reading:true};openUI();show('notebook',true);
 }
 
 /* ---------------- 6. UI ---------------- */
@@ -930,9 +1331,9 @@ function updateHUD(){
   $('hLives').innerHTML=[0,1,2].map(i=>HEART.replace('FILL',i<p.lives?'#d52b1e':'rgba(255,255,255,.12)')).join('');
   $('hBonus').textContent=p.bonusLives+' · gagnées '+p.bonusEarned+'/2';
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
-  $('hObj').textContent=S.flags.reachedRestaurant?L.objective.done:L.objective.text;
-  const z=CITY.zones.find(z=>z.id==='restaurant');
-  $('hDist').textContent=S.flags.reachedRestaurant?'':'Distance : '+Math.round(Math.hypot(p.x-z.x,p.z-z.z))+' m · marqueur rouge sur la carte';
+  const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
+  $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
+  $('hMoney').textContent=S.money+' $';$('hLoc').textContent={outside:'Dehors',house:'Maison d’Oscar',diner:'Lina’s Diner'}[S.location];
   $('speedTag').classList.toggle('hidden',timeScale===1);
   drawMap();
 }
@@ -951,7 +1352,8 @@ function drawMapBg(){
 }
 function drawMap(){
   mg.drawImage(mapBg,0,0);const p=S.player;
-  if(!S.flags.reachedRestaurant){const z=CITY.zones.find(z=>z.id==='restaurant');mg.strokeStyle='#ff4b3e';mg.lineWidth=3;mg.beginPath();mg.arc(mx(z.x),mz(z.z),7+Math.sin(performance.now()/250)*2,0,7);mg.stroke();}
+  const tg=objectiveTarget(objective(S));if(tg){mg.strokeStyle='#ff4b3e';mg.lineWidth=3;mg.beginPath();mg.arc(mx(tg.x),mz(tg.z),7+Math.sin(performance.now()/250)*2,0,7);mg.stroke();}
+  if(S.location!=='outside'){mg.fillStyle='rgba(8,12,18,.72)';mg.fillRect(0,0,360,360);mg.fillStyle='#fff';mg.font='700 30px "Barlow Condensed"';mg.textAlign='center';mg.fillText('Intérieur',180,175);mg.font='500 22px "Barlow Condensed"';mg.fillText({house:'Maison d’Oscar',diner:'Lina’s Diner'}[S.location],180,205);mg.textAlign='left';return;}
   mg.fillStyle='rgba(255,220,120,.8)';for(const v of vehicles)if(v.visible&&v.kind!=='bike')mg.fillRect(mx(v.x)-1.5,mz(v.z)-1.5,3,3);
   mg.save();mg.translate(mx(p.x),mz(p.z));mg.rotate(-p.heading+Math.PI);mg.fillStyle='#fff';mg.strokeStyle='#000';mg.lineWidth=1.5;
   mg.beginPath();mg.moveTo(0,-9);mg.lineTo(6,7);mg.lineTo(0,3);mg.lineTo(-6,7);mg.closePath();mg.fill();mg.stroke();mg.restore();
@@ -960,7 +1362,12 @@ function drawMap(){
 /* --- input → commands --- */
 const keys=new Set();let timeScale=1,mode='title',dragLook=false,pointerLocked=false;
 addEventListener('keydown',e=>{
+  if(mode==='ui'){
+    if(e.code==='Escape'||(e.code==='KeyC'&&!$('notebook').classList.contains('hidden'))){if(dlgState&&!dlgState.reading&&dlgState.vis){}closeUI();return;}
+    const d=/^(Digit|Numpad)([1-9])$/.exec(e.code);if(d){const i=+d[2]-1;if(dlgState&&dlgState.reading){closeUI();}else choose(i);}
+    return;}
   if(mode!=='play')return;
+  if(e.code==='KeyC'){openNotebook();return;}
   keys.add(e.code);
   if(e.code==='Space'){cmd.jump=true;e.preventDefault();}
   if(e.code==='KeyE')interact();
@@ -977,29 +1384,31 @@ function readInput(){
 canvas.addEventListener('mousedown',()=>{if(mode==='play'&&!pointerLocked)dragLook=true;});
 addEventListener('mouseup',()=>dragLook=false);
 addEventListener('mousemove',e=>{if(mode!=='play'||!(pointerLocked||dragLook))return;camYaw-=e.movementX*.0028;camPitch=clamp(camPitch+e.movementY*.0022,-.15,1.2);});
-canvas.addEventListener('wheel',e=>{camDist=clamp(camDist+e.deltaY*.006,2.6,16);e.preventDefault();},{passive:false});
+canvas.addEventListener('wheel',e=>{camDist=clamp(camDist+e.deltaY*.006,2.2,S&&S.location!=='outside'?4.5:16);e.preventDefault();},{passive:false});
 document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===canvas;if(!pointerLocked&&mode==='play')pause();});
 function lockPointer(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){} canvas.focus();}
 let activeZone=null;
-function interact(){if(activeZone)toast(activeZone.msg);}
+function interact(){if(activeZone&&activeZone.act)activeZone.act();}
 
 /* --- game flow --- */
 function show(id,on){$(id).classList.toggle('hidden',!on)}
 function startLevel(fromSave){
   S=fromSave||createState('toronto');S.status='playing';
   camYaw=S.camYaw||0;timeScale=1;
+  S.location=S.location||'outside';S.money??=START_MONEY;S.clues??=[];S.tasks??={};
+  applyLocation();lastStage=-1;checkObjective();dlgState=null;show('dialog',false);show('notebook',false);
   oscarMesh.g.visible=true;const p0=S.player;camera.position.set(p0.x+Math.sin(camYaw)*7,p0.y+4,p0.z+Math.cos(camYaw)*7);
   mode='play';show('title',false);show('fail',false);show('pause',false);show('hud',true);
   lockPointer();updateHUD();
-  if(!fromSave)toast('Toronto. La maison est vide. Le mot d’Omer est sur la table. Trouve la piste avant qu’il ne soit trop tard.');
+  if(!fromSave)toast('Toronto, 7 h 30. Tu rentres du Brésil. La porte est entrouverte, la maison silencieuse. Entre et cherche des indices.');
 }
 function pause(){if(mode!=='play')return;mode='pause';const di=dayInfo(S.clock);$('pauseInfo').textContent='Niveau 1 · Toronto · Jour '+di.day+', '+fmtClock(di.min)+'.';show('pause',true);store.save(S);if(document.pointerLockElement)document.exitPointerLock();}
 function resume(){if(mode!=='pause')return;mode='play';show('pause',false);lockPointer();}
 bus.on('fail',reason=>{if(S.status!=='playing')return;S.status='failed';mode='fail';$('failReason').textContent=reason;show('fail',true);store.clear();if(document.pointerLockElement)document.exitPointerLock();});
-bus.on('objective',()=>{toast('Tu es devant le Lina’s Diner. Objectif atteint, point de sauvegarde enregistré.');store.save(S);});
 $('bStart').onclick=()=>{store.clear();startLevel(null)};
 $('bContinue').onclick=()=>{const s=store.load();if(s)startLevel(s);};
 $('bResume').onclick=resume;
+$('nbClose').onclick=closeUI;
 $('bRestart').onclick=()=>{store.clear();startLevel(null)};
 $('bRetry').onclick=()=>{store.clear();startLevel(null)};
 $('bQuality').onclick=()=>{quality=quality==='high'?'low':'high';sun.castShadow=quality==='high';renderer.setPixelRatio(quality==='high'?Math.min(devicePixelRatio,1.5):.75);$('bQuality').textContent='Qualité : '+(quality==='high'?'haute':'basse');resize();};
@@ -1017,17 +1426,21 @@ function frame(now){
     while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);stepAgents(STEP);stepMission();acc-=STEP;n++;}
     if(n===6)acc=0;
     updateCamera(dt);syncView(dt,t);
-    activeZone=CITY.zones.find(z=>Math.hypot(S.player.x-z.x,S.player.z-z.z)<z.r)||null;
-    const pr=$('prompt');if(activeZone){pr.innerHTML='<kbd>E</kbd>'+activeZone.label;pr.classList.remove('hidden');}else pr.classList.add('hidden');
+    activeZone=null;let best=1e9;
+    for(const z of ZONES){if(z.loc!==S.location||(z.cond&&!z.cond()))continue;const d=Math.hypot(S.player.x-z.x,S.player.z-z.z);if(d>=z.r)continue;
+      if(z.auto){z.act();continue;}if(d<best){best=d;activeZone=z;}}
+    const pr=$('prompt');if(activeZone&&mode==='play'){pr.innerHTML='<kbd>E</kbd>'+activeZone.label();pr.classList.remove('hidden');}else pr.classList.add('hidden');
     hudT-=dt;if(hudT<=0){hudT=.1;updateHUD();}
     saveT+=dt;if(saveT>10){saveT=0;store.save(S);}
-    updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,dt,t);
+    updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,dt,t,S.location!=='outside');
   } else if(mode==='title'){
     viewClock+=dt*9;if(!S)stepAgentsTitle(dt);
     const a=t*.05;camera.position.set(40+Math.cos(a)*190,85,40+Math.sin(a)*190);camera.lookAt(60,40,60);
     updateEnvironment(viewClock,0,.15,{x:40,z:40},dt,t);syncTitle(dt,t);
   } else {
-    updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,0,t);
+    if(mode==='ui'){syncView(dt,t);updateCamera(dt);$('prompt').classList.add('hidden');}
+    updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,0,t,S.location!=='outside');
+    if(mode==='ui'){hudT-=dt;if(hudT<=0){hudT=.2;updateHUD();}}
   }
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classList.remove('on');}
   renderer.render(scene,camera);
@@ -1039,10 +1452,12 @@ function syncTitle(dt,t){
   const prev=S;S=fake;syncView(dt,t);S=prev;oscarMesh.g.visible=false;
 }
 
+// test hook (used by automated checks and by Codex/Claude to debug)
+window.__oscar={get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();ZONES=storyZones();drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});

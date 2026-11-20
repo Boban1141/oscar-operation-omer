@@ -1,6 +1,6 @@
 # Architecture technique
 
-## État actuel (v0.2.0)
+## État actuel (v0.3.0)
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.
 - Lancer en local : servir le dossier `game/` (`python3 -m http.server -d game 8000`) puis ouvrir `http://localhost:8000`.
@@ -14,6 +14,13 @@
 | 4. SIM | `step*()` à pas fixe 60 Hz : horloge, météo, joueur, PNJ, trafic, mission | Ne touche **jamais** à Three.js. Le joueur agit uniquement via l'objet `cmd`. |
 | 5. VIEW | Construction des meshes, `syncView`, environnement, caméra | Lit l'état, ne le modifie pas (sauf la caméra). |
 | 6. UI | HUD, menus, minicarte, entrées clavier/souris → `cmd` | |
+
+## Systèmes du bloc 2
+- **Données d'histoire** (`CLUES`, `DIALOGUES`, `objective()`) : section « 1b. STORY DATA ». Ajouter un dialogue = ajouter des nœuds `{text, choices:[{t, next|end, min, money, need, fx}]}`.
+- **Intérieurs** (`INTERIORS`, section « 5b ») : chaque lieu est un groupe placé loin de la ville (x = 1000), avec ses propres collisions, lumières (lampes + soleil par la fenêtre) et zones. `enterInterior / exitInterior / applyLocation`.
+- **Zones d'interaction** (`storyZones()`) : `{loc, x, z, r, label(), act(), cond?, auto?}` ; la plus proche est proposée avec la touche E.
+- **État** : `S.location`, `S.money`, `S.clues[]`, `S.tasks{}`, `S.flags{}` (sauvegardés).
+- **Accès de test** : `window.__oscar` (état et fonctions) ; test automatique `tests/run_logic_tests.py` (faux moteur Three.js, Chrome headless).
 
 ## Principes à respecter
 1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.

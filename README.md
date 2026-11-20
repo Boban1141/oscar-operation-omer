@@ -16,6 +16,8 @@ Commandes : ZQSD/WASD se déplacer · Maj courir · Espace sauter · E interagir
 - `docs/JOURNAL.md` — journal de travail et questions ouvertes
 - `AGENTS.md` — règles pour Codex, Claude et tout contributeur
 
-Version actuelle : **0.2.0** (bloc 1 + réalisme humain).
+Version actuelle : **0.3.0** (blocs 1, 1b et 2 : Toronto, réalisme humain, intérieurs, dialogues, indices).
+
+Test logique : `python3 tests/run_logic_tests.py`. Commandes en plus : E interagir, C carnet, 1 à 4 choisir une réponse.
 
 Directives artistiques obligatoires : `docs/DIRECTIVES_REALISME.md`.

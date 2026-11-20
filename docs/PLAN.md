@@ -125,6 +125,18 @@ Directives maîtresses obligatoires : voir `docs/DIRECTIVES_REALISME.md`.
 Résumé : peau réelle et imparfaite, regard vivant, asymétrie naturelle, mains toujours visibles et occupées, démarche avec poids réel, vêtements froissés et cohérents avec la météo, micro-actions permanentes, lieux habités avec traces de vie, lumière naturelle.
 Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de Cédric ouverts sur la table, tasse à moitié vide, clés, courrier, chaise renversée pendant l'enlèvement, lumière du matin par la fenêtre avec poussière dans l'air.
 
+## 10b. Niveau 1 — Toronto : déroulement de l'enquête (bloc 2)
+> Contenu **proposé par Claude**, à valider par le propriétaire (voir `docs/JOURNAL.md`).
+1. **La maison** : Oscar fouille. Indices : le mot d'Omer, le téléphone de Cédric sous le canapé (photo d'un VUS noir, plaque « CJ…7 », voix en portugais), le mégot de cigare sur le perron. Détails émotionnels : les clés d'Eva, les devoirs de Cédric. Il faut 2 indices principaux sur 3.
+2. **Le voisin, M. Henderson** : deux VUS noirs vers 19 h 40, des hommes parlant portugais, vus la veille au Lina's Diner.
+3. **Le Lina's Diner** (sur King Street) — plusieurs façons d'obtenir la piste :
+   - **Lina**, la propriétaire : dire la vérité ouvre la discussion ; la menacer la fâche et ferme cette piste. Elle a le reçu des hommes mais ne le retrouve pas : soit Oscar la dédommage (50 $, 30 min), soit il retrouve son pot à pourboires volé (tâche secondaire → **vie bonus**).
+   - **Marcus**, chauffeur de taxi : a conduit un des hommes au port. 20 $, ou la vérité (plus long).
+   - **Jayden**, jeune nerveux : sait où le voleur a jeté le sac (dans le parc).
+   - **M. Kowalski**, vieil habitué : témoignage d'ambiance (le plus grand regardait le port).
+4. **La piste** : « Harbourfront Marine Storage », **entrepôt 7** au port → suite au bloc 3 (infiltration et combat contre le lieutenant d'Omer).
+- Chaque action coûte du temps de jeu (fouiller, parler). Oscar commence avec **240 $**.
+
 ## 11. Multijoueur
 - Reporté. Objectif futur : architecture capable de supporter **12 000 joueurs**. Voir `docs/ARCHITECTURE.md`.
 

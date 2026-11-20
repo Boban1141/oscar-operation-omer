@@ -26,13 +26,16 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 ## Moteur
 **Décision du propriétaire (2026-11-20) : on continue sans Epic/Unreal**, dans le navigateur (Three.js). Le plan Unreal est conservé en attente dans `docs/PLAN_UNREAL.md`.
 
-## Bloc 2 — Intérieurs, dialogues, indices `[ ]`
-- [ ] Intérieur de la maison d'Oscar (scène du mot, désordre, premiers indices)
-- [ ] Intérieur du Lina's Diner, habitués interrogeables
-- [ ] Système de dialogue à choix (confiance, argent, menace) avec conséquences
-- [ ] Inventaire et carnet d'indices
-- [ ] Voisin témoin ; informateur lié aux gangs brésiliens
-- [ ] Première tâche secondaire donnant une vie bonus
+## Bloc 2 — Intérieurs, dialogues, indices `[x]` (v0.3.0)
+- [x] Intérieur de la maison d'Oscar, habité (veste d'Eva sur la chaise, chaise renversée, devoirs de Cédric, tasse à moitié vide, clés et courrier, lumière du matin et poussière dans l'air)
+- [x] Intérieur du Lina's Diner (comptoir, banquettes, juke-box, menu, lampes) avec 4 habitués à qui parler
+- [x] Système de dialogue à choix (vérité, argent, menace) avec coût en temps et en argent, conséquences (Lina se fâche si on la menace)
+- [x] Carnet d'indices (touche C), argent (240 $ au départ)
+- [x] Voisin témoin (M. Henderson) ; chaîne d'indices maison → voisin → diner → port
+- [x] Première tâche secondaire : retrouver le pot à pourboires volé de Lina → vie bonus (règle du maximum 2 respectée)
+- [x] Objectifs dynamiques avec marqueur 3D et minicarte ; points de sauvegarde
+- [x] Test logique automatique : `tests/run_logic_tests.py`
+- [ ] Test visuel par un humain
 
 ## Bloc 3 — Combat `[ ]`
 - [ ] Combat à mains nues (poings, pieds, esquive, blocage)
