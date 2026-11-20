@@ -37,11 +37,18 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Test logique automatique : `tests/run_logic_tests.py`
 - [ ] Test visuel par un humain
 
-## Bloc 3 — Combat `[ ]`
-- [ ] Combat à mains nues (poings, pieds, esquive, blocage)
-- [ ] Armes : obtention, munitions, visée, enrayement par le froid
-- [ ] IA ennemie (poursuite, couverture, alerte), dégâts et mort d'Oscar
-- [ ] Lieutenant d'Omer de Toronto (combat de fin de niveau)
+## Bloc 3 — Port, infiltration, combat `[x]` (v0.4.0) — **niveau 1 jouable de bout en bout**
+- [x] Zone portuaire de Harbourfront : conteneurs, grue, cargo, projecteurs, clôture, entrepôt 7 (intérieur)
+- [x] Entrée au choix : soudoyer le garde (100 $), lui mentir (reçu du diner), le provoquer, ou passer par le trou de la clôture
+- [x] Discrétion : champ de vision des gardes, jauge de repérage, s'accroupir, nuit et pluie qui réduisent la vue, gilet de docker (déguisement), corps découverts → alerte
+- [x] Neutralisation silencieuse par derrière (F), fouille des corps (armes, munitions, argent)
+- [x] Combat à mains nues : poing, coup de pied, blocage ; armes : pistolet, fusil d'assaut, visée, recharge, tirs à la tête
+- [x] IA ennemie : patrouille, enquête, combat (distance, déplacement latéral, rafales), corps à corps
+- [x] Lieutenant d'Omer, Tiago « Faca » Moreira : négociation avant le combat, combat (couteau + pistolet), interrogatoire → piste de Vancouver
+- [x] Fin du niveau 1 : écran de bilan, progression sauvegardée (vies bonus conservées)
+- [x] Sons synthétisés (tirs, coups, sirène d'alerte)
+- [x] Test automatique étendu : 19 vérifications
+- [ ] Test visuel et réglage de la difficulté par un humain
 
 ## Bloc 4 — Cinématiques `[ ]`
 - [ ] Assaut au Brésil

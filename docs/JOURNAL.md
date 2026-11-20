@@ -3,6 +3,8 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À valider** : Tiago « Faca » Moreira, le port, « le Pasteur » et la piste de Vancouver (`docs/PLAN.md` §10c).
+- **À régler après test humain** : difficulté (vitesse de repérage, précision des gardes), durée du chronomètre du niveau 1 (72 h de jeu = 72 minutes réelles).
 - **À valider** : le contenu de l'enquête du niveau 1 (personnages Henderson, Lina, Marcus, Jayden, Kowalski ; indices ; piste de l'entrepôt 7) a été proposé par Claude — voir `docs/PLAN.md` §10b.
 - ~~Moteur final~~ → **tranché : on continue dans le navigateur (Three.js)**, sans Epic. Unreal reste possible plus tard (`docs/PLAN_UNREAL.md`).
 - Identité du personnage mystérieux : révélée à la fin ou mystère gardé ?
@@ -11,6 +13,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Bloc 3 : port, infiltration, combat (v0.4.0) — niveau 1 complet
+- Fait : zone portuaire (conteneurs, grue, cargo, entrepôt 7), 4 façons d'entrer, discrétion (vision des gardes, jauge, accroupi, déguisement, corps découverts), neutralisation silencieuse, fouille, combat mains nues (poing, pied, blocage), pistolet et fusil (visée, recharge, tête), IA ennemie, lieutenant Tiago (négociation, combat, interrogatoire), écran de fin de niveau, sons synthétisés, minicarte du port avec gardes.
+- Fichiers : `game/index.html` (0.4.0, anciennes sauvegardes ignorées), `docs/*`, `tests/run_logic_tests.py`.
+- Testé : 19/19 vérifications automatiques (de la maison jusqu'à l'écran de fin), repérage d'un garde en ~2 s à découvert, tirs ennemis, mort et réapparition au point de sauvegarde du port. **Rendu visuel et sensations de combat non testés par un humain.**
+- Reste à faire : bloc 4 (cinématiques), niveau 2 (Colombie-Britannique).
 
 ## 2026-11-20 — Claude — Bloc 2 : intérieurs, dialogues, indices (v0.3.0)
 - Fait : maison d'Oscar et Lina's Diner jouables de l'intérieur (lieux habités, soleil par la fenêtre, poussière, lampes) ; 5 personnages avec dialogues à choix (vérité / argent / menace, coût en temps et en argent) ; carnet d'indices (touche C) ; argent ; objectifs dynamiques avec marqueur ; tâche secondaire avec vie bonus ; voisin dehors ; mode « assis » pour les personnages.

@@ -137,6 +137,17 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 4. **La piste** : « Harbourfront Marine Storage », **entrepôt 7** au port → suite au bloc 3 (infiltration et combat contre le lieutenant d'Omer).
 - Chaque action coûte du temps de jeu (fouiller, parler). Oscar commence avec **240 $**.
 
+## 10c. Niveau 1 — Toronto : le port (bloc 3)
+> Contenu **proposé par Claude**, à valider.
+- **Harbourfront Marine Storage**, zone portuaire gardée. Entrée : soudoyer le garde (100 $), lui mentir avec le nom de la société (si on a le reçu du diner), le provoquer (combat), ou se faufiler par un trou dans la clôture à l'ouest.
+- **Infiltration** : 7 gardes (patrouilles et postes fixes). Se faire repérer déclenche l'alerte (sirène) : tous les gardes attaquent. Un **gilet de docker** près du bureau de chantier rend Oscar moins suspect (s'il ne court pas et n'a pas d'arme en main).
+- **Armes** : Oscar n'en a pas au départ. Il les prend sur les gardes neutralisés ou dans la caisse d'armes de l'entrepôt.
+- **Tiago « Faca » Moreira**, lieutenant d'Omer à Toronto (crâne rasé, bouc, chaîne en or), avec 2 gardes du corps. **Négociation** possible avant le combat (il refuse), combat, puis **interrogatoire** : il révèle le manifeste.
+- **Piste du niveau 2** : conteneur MSKU 448127 parti pour le **port de Vancouver**, où attend un homme d'Omer surnommé **« le Pasteur »**. Eva et Cédric n'étaient pas à Toronto.
+
+## Commandes (v0.4)
+ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
+
 ## 11. Multijoueur
 - Reporté. Objectif futur : architecture capable de supporter **12 000 joueurs**. Voir `docs/ARCHITECTURE.md`.
 

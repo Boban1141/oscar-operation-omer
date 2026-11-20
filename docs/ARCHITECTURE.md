@@ -1,6 +1,6 @@
 # Architecture technique
 
-## État actuel (v0.3.0)
+## État actuel (v0.4.0)
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.
 - Lancer en local : servir le dossier `game/` (`python3 -m http.server -d game 8000`) puis ouvrir `http://localhost:8000`.
@@ -21,6 +21,13 @@
 - **Zones d'interaction** (`storyZones()`) : `{loc, x, z, r, label(), act(), cond?, auto?}` ; la plus proche est proposée avec la touche E.
 - **État** : `S.location`, `S.money`, `S.clues[]`, `S.tasks{}`, `S.flags{}` (sauvegardés).
 - **Accès de test** : `window.__oscar` (état et fonctions) ; test automatique `tests/run_logic_tests.py` (faux moteur Three.js, Chrome headless).
+
+## Systèmes du bloc 3
+- **Lieux extérieurs séparés** : `INTERIORS.port` (`indoor:false`) garde le ciel, la météo et les ombres ; `house` et `diner` ont `indoor:true`.
+- **Ennemis** : `ENEMY_DEFS` (données : type, route ou poste) + `ETYPE` (vie, vitesse, dégâts, cadence, précision). État dans `S.port.enemies` (sauvegardé). IA dans `stepCombat()` : perception (champ de vision, portée selon nuit/pluie, `losClear()` contre les collisions), jauge de repérage, états `patrol / investigate / combat / flee`.
+- **Combat** : objet `CB` (cadences, visée, blocage, accroupi, recharge) ; `playerAttack`, `tryFire` (rayon depuis la caméra, tête ×2,2), `takedownOrLoot`, `hurtPlayer`, `damageEnemy`, `alarm`. Armes dans `WEAPONS`.
+- **Appels de dialogue** : un choix peut déclencher une action du jeu avec `fx.call` → `CALLS` (`openGate`, `gateFight`, `bossFight`, `levelComplete`).
+- **Mode test** : `window.__oscarGod = true` rend Oscar invincible ; `__oscar.tick(sec)` fait avancer l'IA.
 
 ## Principes à respecter
 1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.
