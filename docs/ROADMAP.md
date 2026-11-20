@@ -3,6 +3,12 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
+## État au 2026-11-20 (v0.4.0)
+- **Niveau 1 (Toronto) jouable de bout en bout** : blocs 1, 1b, 2 et 3 terminés.
+- **Prochaine étape proposée** : bloc 4 (cinématiques d'ouverture), puis bloc 6 (niveau 2, Colombie-Britannique).
+- **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
+- **Dépôt GitHub** (`Boban1141/DUXIA`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
+
 ## Bloc 1 — Moteur et Toronto 3D `[x]` (v0.1.0)
 - [x] Architecture en couches : DATA / CORE / STATE / SIM / VIEW / UI
 - [x] Ville générée de façon déterministe (graine) : quartiers résidentiel, commerçant, tours, parc
@@ -11,7 +17,7 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Cycle jour/nuit (soleil, lune, étoiles, fenêtres et lampadaires), météo (soleil, nuages, averses), température
 - [x] Oscar jouable à la 3e personne, caméra avec anticollision
 - [x] Chronomètre de niveau, 3 vies, vies bonus (max 2, persistantes), santé, chaleur, endurance
-- [x] Écrans titre, pause, échec ; sauvegarde automatique ; minicarte ; objectif « Lina's Diner »
+- [x] Écrans titre, pause, échec ; sauvegarde automatique ; minicarte ; premier objectif (remplacé par l'enquête complète au bloc 2)
 - [ ] Test visuel complet dans un navigateur (non encore fait par un humain)
 
 ## Bloc 1b — Réalisme humain (directives maîtresses) `[x]` (v0.2.0)
@@ -57,7 +63,11 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [ ] Repaire d'Omer à Montréal
 - [ ] Vidéos d'Omer pendant le jeu ; cinématique d'échec
 
-## Bloc 5 — Infiltration et négociation avancées `[ ]`
+## Bloc 5 — Infiltration et négociation avancées `[~]`
+- [x] Bases faites au bloc 3 : vision des gardes, déguisement, neutralisation silencieuse, négociation avec le garde et le lieutenant
+- [ ] Se faire passer pour un bandit dans un cercle criminel (réputation, mots de passe, épreuves)
+- [ ] Négociations à enjeux (otages, échanges, mensonges détectés)
+- [ ] Gardes qui communiquent par radio, alarme qui se calme si Oscar se cache longtemps
 
 ## Blocs 6 à 11 — Provinces `[ ]`
 - [ ] 6 Colombie-Britannique · [ ] 7 Terre-Neuve · [ ] 8 Alberta · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
@@ -66,6 +76,3 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 ## Bloc 12 — Multijoueur `[ ]`
 - [ ] Serveur autoritaire, comptes, sauvegardes serveur — voir `docs/ARCHITECTURE.md`
 
-## Question technique à trancher
-- Rester sur navigateur (Three.js) ou migrer vers Unity/Unreal pour des villes réalistes. Décision du propriétaire du projet.
-- **Tranché (2026-11-20)** : on continue dans le navigateur (Three.js). Unreal + MetaHuman reste une option future (`docs/PLAN_UNREAL.md`).
