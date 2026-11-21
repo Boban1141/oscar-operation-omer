@@ -3,6 +3,7 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À valider** : tout le niveau 5 (Gisèle, Chloé, Sam, Bernie, le Notaire, le Bras droit à Winnipeg) — `docs/PLAN.md` §10h.
 - **À valider** : tout le niveau 4 (Priya, Dale, l'Éleveur, le Notaire, Westmount) — `docs/PLAN.md` §10g.
 - **À valider** : tout le niveau 3 (Bridget, Wilf, Liam, la doris, le capitaine Roy, « l'Éleveur ») — `docs/PLAN.md` §10f.
 - **À valider** : tout le niveau 2 (Earl, Josh, Maggie, le Pasteur, l'Église de la Dernière Lumière, le « Marie-Galante », le dessin de Cédric) — `docs/PLAN.md` §10e.
@@ -16,6 +17,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Niveau 5 : Nouvelle-Écosse (v0.9.0)
+- Fait : verglas (glissade, chutes, crampons), équipement conservé entre niveaux, caméras + coupure de courant, cloisons basses, ouverture de la porte à la relève de 23 h, déchiqueteuse à retardement ; front de mer d'Halifax, Mission des marins, cabinet du Notaire ; cinématique ; piste de Winnipeg.
+- Fichiers : `game/index.html` (0.9.0), `docs/*`, `tests/run_logic_tests.py`.
+- Testé : 79/79 vérifications automatiques (niveaux 1 à 5), passage réel niveau 4 → 5, chute sur le verglas en courant. **Rendu visuel non vu par un humain.**
+- Reste à faire : niveau 6 (Manitoba), puis le final à Montréal.
 
 ## 2026-11-20 — Claude — Niveau 4 : Alberta (v0.8.0)
 - Fait : neige (chute, sol, neige profonde, traces suivies par les gardes, buée, brouillard), froid extrême avec givre à l'écran et mains engourdies ; équipement d'hiver **à trouver** (décision du propriétaire) ; gare de triage d'Alyth, relais routier, ranch Bow Valley, l'Éleveur ; cinématique ; piste d'Halifax + indice de Westmount.

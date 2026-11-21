@@ -175,6 +175,14 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - **Ranch Bow Valley** au pied des Rocheuses. **L'Éleveur** (chapeau, manteau en peau de mouton) : négociation, combat, interrogatoire. **Piste du niveau 5** : « **le Notaire** », un cabinet du port d'**Halifax** qui blanchit l'argent d'Omer. **Indice final** : une facture d'électricité pour une maison de **Westmount** (Montréal).
 - Neige : traces de pas suivies par les gardes ; neige profonde hors des chemins déneigés.
 
+## 10h. Niveau 5 — Nouvelle-Écosse (bloc 9)
+> Contenu **proposé par Claude**, à valider.
+- **Halifax, mi-décembre, 21 h, pluie verglaçante** (−5 à 0 °C). Chronomètre : 48 h. L'équipement trouvé en Alberta est conservé.
+- **Mission des marins** : **Gisèle**, bénévole acadienne (la carte magnétique de sa fille Chloé, qui fait le ménage chez le Notaire ; des crampons dans la boîte des dons) ; **Sam**, journaliste d'enquête (le plan de l'étage, contre l'histoire ou 150 $) ; **Bernie**, ancien combattant (la relève de 23 h).
+- **Entrer** : carte magnétique, porte de service entre 23 h et 23 h 10, ou l'escalier de secours glacé (risque de chute sans crampons).
+- **Cabinet Doucet & Associés** : caméras, tableau de fusibles, cloisons basses, gardes. **Le Notaire** : il négocie, appelle la sécurité et court vers la **déchiqueteuse**. Si l'alerte dure plus d'environ 50 s, l'adresse de Montréal est détruite.
+- **Piste du niveau 6** : le **« Bras droit »** d'Omer, à **Winnipeg**, payé chaque mois, garde les codes de la maison de **Westmount** (sous-sol aménagé).
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 

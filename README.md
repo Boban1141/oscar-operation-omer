@@ -16,7 +16,7 @@ Commandes : ZQSD/WASD se déplacer · Maj courir · Espace sauter · E interagir
 - `docs/JOURNAL.md` — journal de travail et questions ouvertes
 - `AGENTS.md` — règles pour Codex, Claude et tout contributeur
 
-Version actuelle : **0.8.0** — niveaux 1 à 4 jouables et enchaînés : Toronto, Colombie-Britannique, Terre-Neuve, Alberta.
+Version actuelle : **0.9.0** — niveaux 1 à 5 jouables et enchaînés : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse.
 
 Test logique : `python3 tests/run_logic_tests.py`. Commandes complètes : voir `docs/PLAN.md` (section Commandes).
 

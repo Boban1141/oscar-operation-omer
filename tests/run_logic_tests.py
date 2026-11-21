@@ -86,7 +86,24 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
         o.S.player.x=4000;o.S.player.z=420-50;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','l’Éleveur : négociation');o.choose(0);o.choose(0);
         const el=o.S.arenas.ranch.enemies.find(e=>e.id==='boss');o.damage(el,400);ok(o.S.flags.bossDown,'Éleveur vaincu');
         o.openDialogue('eleveurI');o.choose(0);o.choose(0);ok(o.S.clues.includes('registre'),'registre : piste d’Halifax et de Westmount');
-        return winOk().then(w4=>{ok(w4,'écran de fin de niveau 4');return r;});});});});
+        return winOk().then(w4=>{ok(w4,'écran de fin de niveau 4');
+          o.startLevel(null,'ns');ok(o.S.level==='ns'&&o.S.location==='halifax','niveau 5 : front de mer d’Halifax');
+          ok(o.S.flags.parka&&o.S.flags.gloves,'équipement d’hiver conservé depuis l’Alberta');
+          o.weather(.1);o.S.weather.temp=-3;o.S.player.vx=6;o.S.player.vz=0;const vx0=o.S.player.vx;o.player(1/60);ok(o.S.player.vx>vx0*.9,'verglas : Oscar garde son élan (glisse)');
+          o.S.player.x=5000+32.5;o.S.player.z=10.6;let zz=zone('service');zz.act();ok(o.S.location==='halifax','porte de service verrouillée sans carte');
+          o.S.player.x=5000-30;o.S.player.z=31.6;zone('Mission').act();ok(o.S.location==='mission','Mission des marins');
+          o.openDialogue('gisele');o.choose(0);o.choose(0);o.choose(0);ok(o.S.flags.keycard,'Gisèle prête la carte de Chloé');
+          zone('crampons').act();ok(o.S.flags.crampons,'crampons trouvés');
+          o.openDialogue('sam');o.choose(0);o.choose(0);o.choose(0);ok(o.S.flags.plan,'plan des bureaux (journaliste)');
+          o.openDialogue('bernie');o.choose(0);o.choose(0);ok(o.S.flags.shiftKnown,'Bernie : relève de 23 h');
+          zone('Sortir').act();o.S.player.x=5000+32.5;o.S.player.z=10.6;zone('service').act();ok(o.S.location==='office','entrée de service avec la carte');
+          o.S.player.x=5000-25;o.S.player.z=400-12;zone('fusibles').act();ok(o.S.flags.powerCut,'courant coupé : caméras aveugles');
+          o.S.arenas.office.alarm=false;for(const e of o.S.arenas.office.enemies){if(!e.down){e.state='patrol';e.meter=0;}}
+          o.S.player.x=5000+18;o.S.player.z=400-8;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','le Notaire : négociation');o.choose(0);o.choose(0);
+          o.tick2(55);ok(o.S.flags.shredded,'alerte trop longue : dossiers déchiquetés');
+          const nb=o.S.arenas.office.enemies.find(e=>e.id==='boss');o.damage(nb,400);ok(o.S.flags.bossDown,'Notaire neutralisé');
+          o.openDialogue('notaireI');o.choose(0);o.choose(0);ok(o.S.clues.includes('acte2'),'dossiers partiels : piste de Winnipeg');
+          return winOk().then(w5=>{ok(w5,'écran de fin de niveau 5');return r;});});});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

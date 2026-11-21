@@ -3,9 +3,9 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.8.0)
-- **Niveaux 1 à 4 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta) : blocs 1 à 4 et 6 à 8 terminés.
-- **Prochaine étape proposée** : bloc 9 (niveau 5, Nouvelle-Écosse : tempête côtière et verglas).
+## État au 2026-11-20 (v0.9.0)
+- **Niveaux 1 à 5 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse) : blocs 1 à 4 et 6 à 9 terminés.
+- **Prochaine étape proposée** : bloc 10 (niveau 6, Manitoba : blizzard à −40 °C, le Bras droit d'Omer).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
 - **Dépôt GitHub** (`Boban1141/DUXIA`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
 
@@ -109,8 +109,20 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Cinématique d'arrivée ; tests : 63 vérifications (niveaux 1 à 4)
 - [ ] Test visuel et réglage par un humain
 
-## Blocs 9 à 11 — Provinces `[ ]`
-- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
+## Bloc 9 — Niveau 5 : Nouvelle-Écosse `[x]` (v0.9.0)
+- [x] **Verglas** : Oscar glisse (garde son élan), peut tomber s'il court ; **crampons** à trouver (boîte des dons) ; pluie verglaçante, glaçons sur les toits
+- [x] **Équipement conservé d'un niveau à l'autre** (parka, mitaines, tuque, bottes, crampons)
+- [x] **Caméras de surveillance** qui balaient les couloirs (cône visible) ; **coupure de courant** au tableau de fusibles (caméras aveugles, pénombre, gardes moins efficaces)
+- [x] **Cloisons basses** : accroupi, Oscar est caché derrière les bureaux
+- [x] **Relève de 23 h** : la porte de service reste ouverte dix minutes (le temps de jeu compte)
+- [x] **Déchiqueteuse** : si l'alerte dure trop, le Notaire détruit une partie des preuves (fin différente des dossiers)
+- [x] Front de mer d'Halifax (entrepôts historiques, horloge de la Citadelle), Mission des marins (Gisèle, Sam le journaliste, Bernie l'ancien combattant), cabinet Doucet & Associés
+- [x] Piste du niveau 6 : le « Bras droit » d'Omer à Winnipeg (il garde les codes de la maison de Westmount)
+- [x] Cinématique d'arrivée ; tests : 79 vérifications (niveaux 1 à 5)
+- [ ] Test visuel et réglage par un humain
+
+## Blocs 10 et 11 — Provinces `[ ]`
+- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [x] 9 Nouvelle-Écosse (v0.9.0) · [ ] 10 Manitoba · [ ] 11 Montréal (final)
 - Systèmes d'hiver : neige, verglas, blizzard, équipement d'hiver
 
 ## Bloc 12 — Multijoueur `[ ]`

@@ -253,7 +253,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.8.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '0.9.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -300,10 +300,23 @@ const LEVELS = {
     wind:{base:.12, gust:.3, dir:2.2},
     density:{peds:0, cars:0, taxis:0, bikes:0},
     start:{loc:'yard',x:0,z:39},
-    next:null,
+    next:'ns',
     ready:{kicker:'Calgary · jour 1 · 6 h 45 · −22 °C',title:'Le froid est l’ennemi n°1.',text:'Sans équipement, ton corps se refroidit en quelques minutes. Trouve parka, mitaines, tuque et bottes ; réchauffe-toi près des feux. Dans la neige, tes traces de pas peuvent te trahir.'},
-    win:{kicker:'Ranch Bow Valley, Rocheuses',title:'Niveau 4 terminé',text:'Le registre de l’Éleveur : l’argent d’Omer passe par « le Notaire », à Halifax. Et une facture d’électricité déchirée : une maison à Westmount, à Montréal.',next:'Niveau 5 · Nouvelle-Écosse · hiver, tempête côtière et verglas : en construction.'},
+    win:{kicker:'Ranch Bow Valley, Rocheuses',title:'Niveau 4 terminé',text:'Le registre de l’Éleveur : l’argent d’Omer passe par « le Notaire », à Halifax. Et une facture d’électricité déchirée : une maison à Westmount, à Montréal.',next:'Niveau 5 · Nouvelle-Écosse · hiver, tempête côtière et verglas.'},
     startToast:'Calgary, 6 h 45, −22 °C. Tu descends d’un wagon de marchandises, en blouson. Trouve vite de quoi te couvrir.'
+  },
+  ns: {
+    id:'ns', index:5, name:'Nouvelle-Écosse', region:'Halifax', season:'Hiver', seed:1749,
+    startMinute: 21*60, timeLimitMin: 48*60,
+    temp:{min:-5, max:0}, coldFactor:0.4,
+    weather:{clear:.08, cloudy:.3, rain:.62},
+    wind:{base:.3, gust:.45, dir:-1.8},
+    density:{peds:0, cars:0, taxis:0, bikes:0},
+    start:{loc:'halifax',x:0,z:-4},
+    next:null,
+    ready:{kicker:'Halifax · jour 1 · 21 h · pluie verglaçante',title:'Le sol est une patinoire.',text:'Sur le verglas, tu glisses et tu peux tomber si tu cours : avance doucement, ou trouve des crampons. Le Notaire d’Omer travaille tard. Ses dossiers mènent à Omer.'},
+    win:{kicker:'Halifax, Nouvelle-Écosse',title:'Niveau 5 terminé',text:'Les dossiers du Notaire : une maison de Westmount payée comptant, avec un sous-sol aménagé, et des virements au « Bras droit » d’Omer, à Winnipeg. C’est lui qui garde les codes de la maison.',next:'Niveau 6 · Manitoba · plein hiver, blizzard à −40 °C : en construction.'},
+    startToast:'Halifax, 21 h. Pluie verglaçante sur le front de mer. Le cabinet Doucet & Associés est éclairé au deuxième étage.'
   }
 };
 const ROADS=[-150,-75,0,75,150], CENTERS=[-112.5,-37.5,37.5,112.5], LOT=26.5, BOUND=163;
@@ -401,7 +414,7 @@ const DIALOGUES={
 };
 const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
-function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):objectiveToronto(S);}
+function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):S.level==='ns'?objectiveNS(S):objectiveToronto(S);}
 function objectiveToronto(S){
   if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
@@ -501,7 +514,7 @@ function createState(levelId){
     v:GAME_VERSION, level:levelId, clock:L.startMinute, startClock:L.startMinute,
     player:{x:sx,z:sz,y:loc==='outside'?.15:0,vx:0,vz:0,vy:0,heading:Math.PI,anim:0,health:100,heat:100,stamina:100,lives:3,bonusLives:pr.bonusLives||0,bonusEarned:pr.bonusEarned||0,weapon:'fists',weapons:[],ammo:{pistol:{mag:0,res:0},rifle:{mag:0,res:0}}},
     checkpoint:{x:sx,z:sz,loc}, money:pr.money??START_MONEY, clues:[], tasks:{}, location:loc,
-    camYaw:0, flags:{}, weather:{period:-1,kind:'clear',rain:0,cloud:.1,temp:12,target:{rain:0,cloud:.1}},
+    camYaw:0, flags:{...(pr.gear||{})}, weather:{period:-1,kind:'clear',rain:0,cloud:.1,temp:12,target:{rain:0,cloud:.1}},
     status:'playing'
   };
 }
@@ -556,7 +569,8 @@ function stepPlayer(dt){
   if(CB.lockT>0){mx=0;mz=0;}
   const running=cmd.run&&ml>0&&p.stamina>4&&!CB.crouch&&!CB.aim&&!CB.block&&CB.lockT<=0;
   const sp=(ml>0&&CB.lockT<=0)?(running?6.6:CB.crouch?1.7:3.2)*(CB.aim?.6:1)*(CB.block?.5:1):0;
-  const k=1-Math.exp(-dt*10);
+  const icy=INTERIORS[S.location]&&INTERIORS[S.location].ice&&!S.flags.crampons&&S.weather.temp<=1;
+  const k=1-Math.exp(-dt*(icy?1.8:10));
   const indoorNow=INTERIORS[S.location]&&INTERIORS[S.location].indoor,ws=indoorNow?0:(S.weather.windStr||0),wdx=Math.sin(S.weather.windDir||0),wdz=Math.cos(S.weather.windDir||0);
   const against=ml>0?Math.max(0,-(mx*wdx+mz*wdz)):0;const deep=INTERIORS[S.location]&&INTERIORS[S.location].snow&&!onPlowed(p.x,p.z)?(S.flags.boots?.85:.62):1;const spW=sp*(1-.45*ws*against)*deep;
   p.vx=lerp(p.vx,mx*spW,k);p.vz=lerp(p.vz,mz*spW,k);p.x+=wdx*ws*ws*.6*dt;p.z+=wdz*ws*ws*.6*dt;
@@ -568,7 +582,8 @@ function stepPlayer(dt){
   if(cmd.jump&&p.y<=g+.01&&!CB.crouch){p.vy=5.2;}
   cmd.jump=false;
   p.vy-=15*dt;p.y+=p.vy*dt;if(p.y<=g){p.y=g;p.vy=0;}
-  p.anim+=gs*dt*2.4;p.speed=gs;if(gs>.5)stepFootprints(p);
+  p.anim+=gs*dt*2.4;p.speed=gs;
+  if(icy&&running&&gs>4.2&&CB.lockT<=0&&Math.random()<dt*.4){CB.lockT=1.4;CB.fall=1.4;p.health=Math.max(1,p.health-6);sfx('down');if(!S.flags.slipToast||S.clock-S.flags.slipToast>60){S.flags.slipToast=S.clock;toast('Tu glisses sur le verglas et tu tombes ! Ne cours pas sur la glace.');}}if(gs>.5)stepFootprints(p);
   p.stamina=clamp(p.stamina+(running?-14:9)*dt,0,100);
   // Cold & rain: the climate is an opponent (stronger in later provinces).
   const W=S.weather;
@@ -1398,6 +1413,7 @@ function objectiveTarget(o){
   if(S.level==='bc'){const bt=bcTarget(o);if(bt!==undefined)return bt;}
   if(S.level==='nl'){const nt=nlTarget(o);if(nt!==undefined)return nt;}
   if(S.level==='ab'){const at=abTarget(o);if(at!==undefined)return at;}
+  if(S.level==='ns'){const nt2=nsTarget(o);if(nt2!==undefined)return nt2;}
   if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
@@ -1426,9 +1442,10 @@ function applyLocation(){
 }
 function updateInteriorLights(day,night){
   for(const d of dayMats){if(d.opacity)d.m.opacity=d.base+d.k*day;else d.m.emissiveIntensity=d.base+d.k*day;}
-  for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.night?L.base*night:L.base*(.45+.75*night);
+  for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.kind==='office'?L.base*(S&&S.flags.powerCut?.15:1):L.night?L.base*night:L.base*(.45+.75*night);
 }
 function syncStory(dt,t){
+  if(S.location==='halifax')animWaves(HFX,t,S.weather.windStr||.4);
   if(S.location==='harbour'||S.location==='trawler'){animWaves(INTERIORS[S.location],t,S.weather.windStr||.5);if(TRAWL.wheel)TRAWL.wheel.rotation.x=Math.sin(t*.8)*.6;}
   if(S.location==='forest'&&FOREST.fire){FOREST.fire.scale.y=.8+Math.sin(t*11)*.25;FOREST.fireLight.intensity=16+Math.sin(t*17)*5;}
   for(const n of interiorNPCs){if(!n.h.g.visible)continue;
@@ -1502,7 +1519,7 @@ const ENEMY_DEFS=[
 ];
 const ETYPE={melee:{hp:100,spd:3.7,dmg:11},pistol:{hp:100,spd:3.3,dmg:9,rate:.75,acc:.45,range:28},rifle:{hp:110,spd:3.1,dmg:7,rate:.16,acc:.38,range:34,burst:4},boss:{hp:320,spd:3.5,dmg:11,rate:.8,acc:.5,range:24,knife:17}};
 function newArenaState(id){const AD=ARENAS[id],A=AD.area;return{alarm:false,enemies:AD.defs.map(d=>{const p=d.post?{x:d.post[0],z:d.post[1]}:{x:d.route[0][0],z:d.route[0][1]};
-  return{id:d.id,type:d.type,x:A.ox+p.x,z:A.oz+p.z,heading:d.post?d.post[2]:0,hp:ETYPE[d.type].hp,state:'patrol',meter:0,wp:1,down:false,looted:false,lx:0,lz:0,cool:0,burst:0,atk:0,sx:A.ox+p.x,sz:A.oz+p.z,stuck:0,bodySeen:false,surrender:false,friendly:!!d.friendly}})}}
+  return{id:d.id,type:d.type,x:A.ox+p.x,z:A.oz+p.z,heading:d.post?d.post[2]:0,hp:d.hp||ETYPE[d.type].hp,state:'patrol',meter:0,wp:1,down:false,looted:false,lx:0,lz:0,cool:0,burst:0,atk:0,sx:A.ox+p.x,sz:A.oz+p.z,stuck:0,bodySeen:false,surrender:false,friendly:!!d.friendly}})}}
 const ARENAS={port:{area:PORTA,defs:ENEMY_DEFS,room:WH,lvl:'toronto',boss:{dlg:'tiago',spot:'tiagoSpot',interro:'tiagoI',clue:'manifest',name:'Tiago',cp:[18,6],down:'Tiago tombe à genoux. « Assez… assez ! » Interroge-le (touche E).'},
   water:{z:47,side:1},
   onStep(p){if(!S.flags.portInside&&p.z-PORTA.oz>-41.5){S.flags.portInside=true;S.checkpoint={x:p.x,z:p.z,loc:'port'};checkObjective();store.save(S);}}}};
@@ -1615,7 +1632,7 @@ function siren(on){if(!actx)return;try{if(on&&!sirenOsc){sirenOsc=actx.createOsc
   if(!on&&sirenOsc){sirenOsc.stop();sirenOsc=null;}}catch(e){}}
 /* --- line of sight & helpers --- */
 function losClear(ax,az,bx,bz){
-  const AA=AR().area;for(const c of AA.cols){let t0=0,t1=1;const dx=bx-ax,dz=bz-az;let ok=true;
+  const AA=AR().area;for(const c of AA.cols){if(c.low&&!CB.crouch)continue;let t0=0,t1=1;const dx=bx-ax,dz=bz-az;let ok=true;
     for(const [p,q] of [[-dx,ax-c.x0],[dx,c.x1-ax],[-dz,az-c.z0],[dz,c.z1-az]]){if(p===0){if(q<0){ok=false;break}}else{const t=q/p;if(p<0){if(t>t1){ok=false;break}if(t>t0)t0=t}else{if(t<t0){ok=false;break}if(t<t1)t1=t}}}
     if(ok&&t0<=t1&&!(c===AA.gateCol))return false;}
   return true;
@@ -1638,7 +1655,7 @@ function damageEnemy(e,n,how){
 }
 /* --- player actions --- */
 function playerAttack(kind){
-  if(INTERIORS[S.location]&&INTERIORS[S.location].indoor)return;if(CB.lockT>0||CB.block)return;
+  if(INTERIORS[S.location]&&INTERIORS[S.location].indoor&&!AR())return;if(CB.lockT>0||CB.block)return;
   const w=playerWeapon();
   if(kind==='primary'&&w!=='fists'){CB.firing=true;tryFire();return;}
   if(CB.meleeCd>0)return;const kick=kind==='secondary';CB.meleeCd=kick?.8:.45;CB.atk={kind:kick?'kick':'punch',t:0};
@@ -1684,7 +1701,7 @@ function takedownOrLoot(){
 }
 /* --- enemy AI --- */
 function stepCombat(dt){
-  CB.fireCd=Math.max(0,CB.fireCd-dt);CB.meleeCd=Math.max(0,CB.meleeCd-dt);CB.lockT=Math.max(0,CB.lockT-dt);CB.flash=Math.max(0,CB.flash-dt*.9);CB.shake=Math.max(0,CB.shake-dt);
+  CB.fall=Math.max(0,(CB.fall||0)-dt);CB.fireCd=Math.max(0,CB.fireCd-dt);CB.meleeCd=Math.max(0,CB.meleeCd-dt);CB.lockT=Math.max(0,CB.lockT-dt);CB.flash=Math.max(0,CB.flash-dt*.9);CB.shake=Math.max(0,CB.shake-dt);
   if(CB.atk){CB.atk.t+=dt;if(CB.atk.t>(CB.atk.kind==='choke'?1.2:.45))CB.atk=null;}
   if(CB.reloadT>0){CB.reloadT-=dt;if(CB.reloadT<=0){const w=playerWeapon(),A=S.player.ammo[w],W=WEAPONS[w];const n=Math.min(W.mag-A.mag,A.res);A.mag+=n;A.res-=n;}}
   if(CB.firing&&WEAPONS[playerWeapon()]&&WEAPONS[playerWeapon()].auto)tryFire();
@@ -1697,7 +1714,7 @@ function stepCombat(dt){
     const T=ETYPE[e.type];if(e.down)continue;if(e.friendly){continue;}
     const dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz);
     // perception
-    const fov=e.state==='combat'?Math.PI*1.6:Math.PI*.42,range=(e.state==='combat'?40:night?12:17)*(1-W.rain*.25)*(1-(W.windStr||0)*.25);
+    const fov=e.state==='combat'?Math.PI*1.6:Math.PI*.42,range=(e.state==='combat'?40:night?12:17)*(1-W.rain*.25)*(1-(W.windStr||0)*.25)*(S.location==='office'&&S.flags.powerCut?.65:1);
     const ang=Math.acos(clamp((dx*Math.sin(e.heading)+dz*Math.cos(e.heading))/Math.max(d,.001),-1,1));
     const sees=d<range&&ang<fov&&losClear(e.x,e.z,p.x,p.z);
     if(e.gate&&S.flags.gateOpen&&!P2.alarm){e.meter=0;}
@@ -1761,6 +1778,7 @@ function syncCombat(dt,t){
   // Oscar's weapon & poses
   const w=playerWeapon();for(const k of ['pistol','rifle'])if(oscarMesh.guns&&oscarMesh.guns[k])oscarMesh.guns[k].visible=w===k;
   const h=oscarMesh;
+  if(CB.fall>0){h.g.rotation.order='YXZ';h.g.rotation.x=-1.35*Math.min(1,(1.4-CB.fall)*5)*Math.min(1,CB.fall*2.5);h.g.position.y+=.15;}else h.g.rotation.x=0;
   if(CB.crouch){h.hips.position.y-=.32;h.legL.th.rotation.x-=.9;h.legR.th.rotation.x-=.7;h.legL.kn.rotation.x+=1.2;h.legR.kn.rotation.x+=1.0;h.spine.rotation.x+=.3;}
   if(w!=='fists'&&(CB.aim||CB.fireCd>0))poseAim(h,w==='rifle');
   else if(w!=='fists'){h.armR.sh.rotation.set(-.55,0,.1);h.armR.el.rotation.x=-.9;if(w==='rifle'){h.armL.sh.rotation.set(-.7,0,.4);h.armL.el.rotation.x=-1.1;}}
@@ -1786,7 +1804,7 @@ function syncCombat(dt,t){
     if(m.hit>0){m.hit-=dt;m.h.spine.rotation.x-=.3*(m.hit/.25);}
     m.flash.intensity=Math.max(0,m.flash.intensity-dt*60);
     m.bar.position.set(e.x,2.25,e.z);m.bar.scale.set(.7*e.meter/100+.05,.08,1);m.bar.material.color.set(e.meter>=40?'#ff4b3e':'#ffd166');m.bar.material.opacity=.9;}
-  $('vignette').style.opacity=CB.flash.toFixed(2);
+  $('vignette').style.opacity=CB.flash.toFixed(2);syncCameras();
 }
 
 const CALLS={
@@ -1811,7 +1829,8 @@ function levelComplete(){
   const used=S.clock-S.startClock,p=S.player;
   const L=LEVELS[S.level];$('winKicker').textContent=L.win.kicker;$('winTitle').textContent=L.win.title;$('winText').textContent=L.win.text;$('winNext').textContent=L.win.next;show('bNext',!!L.next);
   $('winStats').innerHTML=`<div><b>${Math.floor(used/60)} h ${String(Math.floor(used%60)).padStart(2,'0')}</b><span>temps utilisé sur ${L.timeLimitMin/60} h</span></div><div><b>${S.clues.length}</b><span>indices trouvés</span></div><div><b>${p.bonusLives}</b><span>vies bonus en réserve</span></div><div><b>${S.money} $</b><span>argent restant</span></div>`;
-  const pr=loadProgress();const done=[...new Set([...(pr.levelsDone||[]),S.level])];try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:done,bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money}))}catch(e){}
+  const pr=loadProgress();const done=[...new Set([...(pr.levelsDone||[]),S.level])];const gear={...(pr.gear||{})};for(const g of ['parka','gloves','tuque','boots','crampons'])if(S.flags[g])gear[g]=true;
+  try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:done,bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money,gear}))}catch(e){}
   S.flags.levelDone=true;store.save(S);show('win',true);
 }
 
@@ -2462,6 +2481,187 @@ function CINES_abIntro(){const Y=YARD;return[
     sub:[[.6,'Oscar','Moins vingt-deux… et moi en blouson du Brésil.'],[4.2,'Oscar','Trouver de quoi me couvrir. Puis le wagon.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(Y.ox,0,Y.oz+39);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.6,true);oc.armL.sh.rotation.set(-.7,0,.6);oc.armR.sh.rotation.set(-.7,0,-.6);oc.armL.el.rotation.x=-1.9;oc.armR.el.rotation.x=-1.9;}}];}
 
+/* --- 5h. NIVEAU 5 : NOUVELLE-ÉCOSSE (verglas, caméras, bureaux du Notaire) --- */
+const HFX={ox:5000,oz:0,hw:70,hd:50,indoor:false,label:'Front de mer d’Halifax',cols:[],group:null,lights:[],ice:true};
+const MISSION={ox:5000,oz:200,hw:7,hd:5.5,indoor:true,label:'Mission des marins',spawn:{x:0,z:4.3},exitLoc:'halifax',exitOut:()=>({x:HFX.ox-30,z:HFX.oz+33.5}),cols:[],group:null,lights:[]};
+const OFFICE={ox:5000,oz:400,hw:26,hd:16,indoor:true,label:'Cabinet du Notaire',cols:[],group:null,lights:[]};
+INTERIORS.halifax=HFX;INTERIORS.mission=MISSION;INTERIORS.office=OFFICE;
+const NOTROOM={x0:12,x1:25,z0:-15,z1:-5};
+ETYPE.notary={hp:70,spd:2.2,dmg:5,rate:1.5,acc:.2,range:12};
+ARENAS.halifax={area:HFX,lvl:'ns',water:{z:-14,side:-1},ground:'#3a4048',
+  defs:[{id:'h1',type:'pistol',post:[24,8.5,0]},{id:'h2',type:'melee',route:[[-40,-8],[40,-8]]},{id:'h3',type:'pistol',route:[[10,18],[36,18],[36,4],[10,4]]}],
+  elook:{melee:{jacket:'#1b1f26',pants:'#1b1b1f'},pistol:{jacket:'#22262e',pants:'#1b1b1f'}}};
+ARENAS.office={area:OFFICE,lvl:'ns',room:NOTROOM,roomLabel:'Bureau',ground:'#5a5d62',needPlan:true,
+  defs:[{id:'o1',type:'pistol',route:[[-22,10],[8,10],[8,0],[-22,0]]},{id:'o2',type:'rifle',post:[-2,13.5,Math.PI]},{id:'o3',type:'pistol',route:[[-22,-12],[6,-12],[6,-4]]},
+    {id:'b1',type:'rifle',post:[14,-6.5,0]},{id:'boss',type:'boss',post:[22,-12,-Math.PI/2],hp:70}],
+  cams:[{x:-24.6,z:13,a:.9,sw:.7},{x:-6,z:-15.6,a:0,sw:.9},{x:9.6,z:5,a:-Math.PI/2,sw:.6}],
+  elook:{pistol:{jacket:'#1b1b1f',pants:'#1b1b1f'},rifle:{jacket:'#22262e',pants:'#1b1b1f'}},
+  bossLook:{skin:'#f1c27d',hair:'#d9d9d9',bald:false,beard:false,height:.97,build:.95,jacket:'#2a2a33',pants:'#2a2a33',slouch:.18},
+  bossDeco(h){const tie=new THREE.Mesh(new THREE.BoxGeometry(.05,.3,.02),mat('#7a1d1d'));tie.position.set(0,.38,.13);h.spine.add(tie);const gl=new THREE.Mesh(new THREE.TorusGeometry(.03,.006,6,12),mat('#c9a227',{metalness:.9}));gl.position.set(.04,.05,.115);h.head.add(gl);const gl2=gl.clone();gl2.position.x=-.04;h.head.add(gl2);},
+  boss:{dlg:'notaire',spot:'notaireSpot',interro:'notaireI',clue:'acte',name:'le Notaire',cp:[6,-9],down:'Le Notaire lève les mains, tremblant. « Je ne suis qu’un comptable ! » Interroge-le (touche E).'}};
+/* --- builders --- */
+const iceMat=new THREE.MeshStandardMaterial({color:'#3a4552',roughness:.06,metalness:.35});
+function icicles(I,x0,x1,y,z){const g=new THREE.ConeGeometry(.05,1,5);g.rotateX(Math.PI);const n=Math.floor((x1-x0)/.5),im=new THREE.InstancedMesh(g,new THREE.MeshStandardMaterial({color:'#dff2ff',roughness:.05,transparent:true,opacity:.8}),n),o=new THREE.Object3D(),r=mulberry32(x0*7|0);
+  for(let i=0;i<n;i++){o.position.set(x0+i*.5+r()*.3,y-.2,z);o.scale.set(1,.3+r()*.9,1);o.updateMatrix();im.setMatrixAt(i,o.matrix);}I.group.add(im);}
+function buildHalifax(){
+  const I=HFX;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  iplane(I,150,70,iceMat,0,0,21);
+  const bw=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#5a4a3a',roughness:.15,metalness:.2});iplane(I,150,8,bw,0,.02,-9);
+  waveMesh(I,320,160,60,-1.2,'#1f3340');I.waves.position.z=-14-80;
+  ibox(I,150,1.2,1,M.concrete,0,-.5,-13.5,0,false,false);I.cols.push({x0:I.ox-75,x1:I.ox+75,z0:I.oz-20,z1:I.oz-13.2});
+  for(const [a,b,c,d] of [[-71,-70,-20,50],[70,71,-20,50],[-71,71,49,50]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  // Historic Properties: stone and brick warehouses, the Notaire's building
+  const stone=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#8a8478',roughness:.9}),brick=facadeMat('brick',812,'#7a3a2a',8,8,.5);
+  for(const [x,z,w,d,h,m] of [[-52,34,18,14,10,'b'],[-30,40,14,14,12,'s'],[-8,40,16,14,9,'b'],[24,20,18,16,13,'s'],[50,36,16,14,10,'b']]){
+    let o;if(m==='b'){o=new THREE.Mesh(facadeBox(w,h,d,brick.tw,brick.th),brick.m);}else o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),stone);
+    o.position.set(x,h/2,z);o.castShadow=o.receiveShadow=true;I.group.add(o);collidableMeshes.push(o);I.cols.push({x0:I.ox+x-w/2,x1:I.ox+x+w/2,z0:I.oz+z-d/2,z1:I.oz+z+d/2});
+    ibox(I,w+.4,.3,d+.4,mat('#e8eef4',{roughness:.3}),x,h+.15,z);icicles(I,x-w/2,x+w/2,h,z+d/2+.05);}
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(6,.9),new THREE.MeshStandardMaterial({map:signTex('DOUCET & ASSOCIÉS — NOTAIRES','#1b1b1f','#c9a227')}));pl.position.set(24,4,11.95);pl.rotation.y=Math.PI;I.group.add(pl);pl.rotation.y=0;pl.position.z=12.02;
+  ibox(I,1.6,2.4,.1,mat('#2a2a2a'),24,1.2,11.98,0,false,false);ibox(I,1.2,2.2,.1,mat('#3a3a3a'),32.5,1.1,11.98,0,false,false);
+  ibox(I,.8,.9,.25,mat('#6a6a6a'),15.5,2.8,11.9,0,false,false);
+  const mis=new THREE.Mesh(new THREE.PlaneGeometry(5,.8),new THREE.MeshStandardMaterial({map:signTex('MISSION DES MARINS','#1d3557','#f2f2f2')}));mis.position.set(-30,4.5,33.02);I.group.add(mis);ibox(I,1.2,2.2,.1,mat('#2a1a12'),-30,1.1,32.98,0,false,false);
+  // Citadel Hill & the Old Town Clock, Macdonald bridge lights
+  const hill=new THREE.Mesh(new THREE.SphereGeometry(70,16,10,0,Math.PI*2,0,Math.PI/2),mat('#4a5a48',{flatShading:true}));hill.scale.y=.4;hill.position.set(-20,0,130);I.group.add(hill);
+  const clock=new THREE.Group();clock.position.set(-20,26,92);I.group.add(clock);gb(clock,4,6,4,mat('#efe9dc'),0,3,0);gb(clock,3,3,3,mat('#efe9dc'),0,7.5,0);
+  const face=new THREE.Mesh(new THREE.CircleGeometry(.9,20),new THREE.MeshStandardMaterial({color:'#fff8e6',emissive:'#fff2cc',emissiveIntensity:.8}));face.position.set(0,7.5,-1.52);face.rotation.y=Math.PI;clock.add(face);
+  const br=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(Array.from({length:150},(_,i)=>i%3===0?120+i*1.4:i%3===1?18-Math.abs(i-75)*.12:-200)),3)),new THREE.PointsMaterial({color:'#ffcf7a',size:3,sizeAttenuation:false}));I.group.add(br);
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#ffd59a',emissiveIntensity:0}),0,3.5);
+  for(let x=-60;x<=60;x+=15){icyl(I,.08,.12,5,M.pole,x,2.5,-4,8);ibox(I,.4,.2,.6,headM,x,5.1,-4);const pp=new THREE.Mesh(new THREE.PlaneGeometry(10,10),M.pools);pp.rotation.x=-Math.PI/2;pp.position.set(x,.03,-4);I.group.add(pp);}
+  for(const x of [-30,0,30]){const l=new THREE.PointLight('#ffd9a3',30,22,2);l.position.set(x,5,-4);I.group.add(l);I.lights.push({l,kind:'lamp',base:30,night:true});}
+  const car=createCar('car','#111');car.position.set(18,0,6);car.rotation.y=Math.PI/2;I.group.add(car);I.cols.push({x0:I.ox+15.8,x1:I.ox+20.2,z0:I.oz+5,z1:I.oz+7});
+  I.group.visible=false;
+}
+function buildMission(){
+  const I=MISSION;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  shell(I,new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#8a6a4a',roughness:.6}),new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#d8d0c0',roughness:.9}),3,0,[{x:-4,w:2.6,y0:1,y1:2.3},{x:4,w:2.6,y0:1,y1:2.3}]);
+  for(const [x,z] of [[-3,-1],[3,-1],[-3,1.8]]){ibox(I,2.4,.06,.9,mat('#6b4a2f'),x,.76,z,0,true);for(const s of [-1,1])ibox(I,2.2,.45,.35,mat('#5a3a22'),x,.22,z+s*.75,0,true);I.cols.push({x0:I.ox+x-1.3,x1:I.ox+x+1.3,z0:I.oz+z-1,z1:I.oz+z+1});}
+  ibox(I,3,1,.7,mat('#d9d2c4'),3.5,.5,-4.4,0,true);I.cols.push({x0:I.ox+2,x1:I.ox+5,z0:I.oz-4.8,z1:I.oz-4});icyl(I,.25,.25,.4,mat('#9aa1a6',{metalness:.7}),3,1.2,-4.4,14);
+  ibox(I,1.2,.8,.8,mat('#6b5a45'),-5.8,.4,-4.2,0,true);MISSION.box={x:I.ox-5.8,z:I.oz-3.5};
+  const anchor=new THREE.Mesh(new THREE.TorusGeometry(.35,.06,6,16,Math.PI),mat('#3a3a3a',{metalness:.6}));anchor.position.set(0,2.2,-5.36);anchor.rotation.z=Math.PI;I.group.add(anchor);
+  lamp(I,-3,2.2,0,6);lamp(I,3,2.2,0,6);
+  I.group.visible=false;
+}
+function buildOffice(){
+  const I=OFFICE;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const carpet=new THREE.MeshStandardMaterial({map:ITEX.checker,color:'#3a4150',roughness:.95});const wallM=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#e9e6df',roughness:.9});
+  iplane(I,52,32,carpet,0,0,0);const ceil=iplane(I,52,32,IM.ceiling,0,3,0,Math.PI/2);collidableMeshes.push(ceil);
+  const W=(x0,z0,x1,z1,low)=>{const w=Math.max(.15,x1-x0),d=Math.max(.15,z1-z0),h=low?1.3:3;const m=ibox(I,w,h,d,low?mat('#6a7280',{roughness:.9}):wallM,(x0+x1)/2,h/2,(z0+z1)/2,0,true);if(!low)collidableMeshes.push(m);const c={x0:I.ox+x0,x1:I.ox+x1,z0:I.oz+z0,z1:I.oz+z1,low:!!low};I.cols.push(c);};
+  W(-26,-16.1,26,-15.9);W(-26,15.9,26,16.1);W(-26.1,-16,-25.9,16);W(25.9,-16,26.1,16);
+  // notary's office (room) with door on the west side
+  W(11.9,-15,12.1,-11.6);W(11.9,-9.4,12.1,-5);W(12,-5.1,25,-4.9);
+  // corridors & cubicles (low partitions hide a crouching Oscar)
+  for(const x of [-18,-10,-2])for(const z of [-8,4]){W(x-3,z-.06,x+3,z+.06,true);W(x-.06,z-2.5,x+.06,z+2.5,true);
+    for(const [dx,dz] of [[-1.5,-1.3],[1.5,-1.3],[-1.5,1.3],[1.5,1.3]]){ibox(I,1.2,.05,.7,mat('#d9d2c4'),x+dx,.74,z+dz,0,false);const sc=ibox(I,.5,.32,.03,new THREE.MeshStandardMaterial({color:'#111',emissive:'#9ec5ff',emissiveIntensity:.5}),x+dx,1.0,z+dz-.2,0,false,false);}}
+  W(14,4,24,4.2);W(14,4.2,14.2,9.5);ibox(I,10,2.6,.1,new THREE.MeshStandardMaterial({color:'#9ec5ff',transparent:true,opacity:.25,roughness:.05}),19,1.3,9.5,0,false,false);
+  for(let i=0;i<4;i++){ibox(I,.7,2.1,1,mat('#1b1b1f',{metalness:.4}),16+i*2,1.05,6.5,0,true);for(let k=0;k<6;k++)ibox(I,.02,.03,.02,new THREE.MeshBasicMaterial({color:k%2?'#3aff6a':'#ff3a3a'}),16.36+i*2,.5+k*.25,6.2,0,false,false);}
+  I.cols.push({x0:I.ox+15.6,x1:I.ox+22.4,z0:I.oz+6,z1:I.oz+7});
+  // inside the notary's office: desk, safe, shredder, bookcase
+  ibox(I,2.4,.08,1.1,mat('#4a2a1a',{roughness:.35}),19,.78,-10,0,true);I.cols.push({x0:I.ox+17.8,x1:I.ox+20.2,z0:I.oz-10.6,z1:I.oz-9.4});
+  ibox(I,.9,1.1,.8,mat('#2a2a2a',{metalness:.7,roughness:.35}),24.3,.55,-14.3,0,true);ibox(I,.5,.8,.4,mat('#555'),16,.4,-14.4,0,true);OFFICE.shredder={x:I.ox+16,z:I.oz-13.8};
+  ibox(I,4,2.4,.4,mat('#5a3a22'),19,1.2,-14.7,0,true);iplane(I,.4,.3,IM.paper,19,.83,-10,-Math.PI/2,0,.1);
+  // lobby & service corridor, fuse box
+  ibox(I,3,1.1,.8,mat('#c9c4bb'),-2,.55,14.3,0,true);I.cols.push({x0:I.ox-3.5,x1:I.ox-.5,z0:I.oz+13.9,z1:I.oz+14.7});
+  ibox(I,.6,.8,.2,mat('#7a8288',{metalness:.5}),-25.8,1.5,-12,Math.PI/2,false,false);OFFICE.fuse={x:I.ox-25,z:I.oz-12};
+  // office lighting (dims when the power is cut)
+  for(const [x,z] of [[-18,-6],[-2,-6],[-18,8],[-2,8],[19,-10],[19,10]]){const l=new THREE.PointLight('#eef4ff',9,14,2);l.position.set(x,2.8,z);I.group.add(l);I.lights.push({l,kind:'office',base:9});
+    ibox(I,1.4,.04,.4,new THREE.MeshStandardMaterial({color:'#fff',emissive:'#ffffff',emissiveIntensity:1.2}),x,2.97,z,0,false,false);}
+  // security cameras
+  OFFICE.camMeshes=[];for(const c of ARENAS.office.cams){const g=new THREE.Group();g.position.set(c.x,2.7,c.z);I.group.add(g);gb(g,.18,.14,.3,mat('#ddd'),0,0,0,0,false);
+    const led=new THREE.Mesh(new THREE.SphereGeometry(.025,6,6),new THREE.MeshBasicMaterial({color:'#ff2a2a'}));led.position.set(0,.05,.16);g.add(led);
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(4.6,11,20,1,true),new THREE.MeshBasicMaterial({color:'#ff3a3a',transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+    cone.geometry.translate(0,-5.5,0);cone.rotation.x=-Math.PI/2+.42;g.add(cone);OFFICE.camMeshes.push({g,cone,led});}
+  I.group.visible=false;
+}
+function buildNSActors(){
+  buildHalifax();buildMission();buildOffice();
+  const add=(id,look,lx,lz,a,md,loc,I)=>{const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+    interiorNPCs.push({id,dlg:id,h,x:I.ox+lx,z:I.oz+lz,a,mode:md,loc,lvl:'ns'});if(md!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h};
+  const base={prop:'none',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.5,shAsym:0,browAsym:.1,headTilt:0,bald:false,long:false,beard:false,height:1,build:1,slouch:.08};
+  add('gisele',{...base,skin:'#f1c27d',jacket:'#5c4d7d',pants:'#3d405b',hair:'#8a8a8a',long:false,height:.94,build:1.02,slouch:.14,browAsym:.2},3.4,-3.6,0,'talk','mission',MISSION);
+  add('sam',{...base,skin:'#5c3a21',jacket:'#2f3e46',pants:'#22223b',hair:'#1a1a1a',height:1.01,build:.94,prop:'phone',slouch:.12},-3,-.25,Math.PI,'sit','mission',MISSION);
+  add('bernie',{...base,skin:'#e8b9a4',jacket:'#4b5330',pants:'#3a3a3a',hair:'#c0c0c0',beard:true,height:.97,build:.92,slouch:.3,prop:'cup',headTilt:.08},3,-.25,Math.PI,'sit','mission',MISSION);
+}
+/* --- story --- */
+Object.assign(CLUES,{
+  carte:{title:'La carte magnétique de Chloé',text:'Chloé, la fille de Gisèle, fait le ménage chez Doucet & Associés. Sa carte ouvre l’entrée de service, à droite de la porte principale.'},
+  plan:{title:'Le plan des bureaux',text:'Le journaliste a dessiné l’étage : trois caméras, un tableau de fusibles au fond du couloir de service (couper le courant éteint les caméras), le bureau du Notaire à l’angle nord-est.'},
+  releve:{title:'La relève de 23 h',text:'Bernie l’a remarqué : à 23 h, les gardes changent d’équipe, et l’entrée de service reste ouverte une dizaine de minutes.'},
+  acte:{title:'Les dossiers du Notaire',text:'L’acte d’achat d’une maison de Westmount, payée comptant par une société écran d’Omer, avec un sous-sol « aménagé ». Et des virements mensuels au « Bras droit » d’Omer, à Winnipeg : c’est lui qui garde les codes de la maison.'},
+  acte2:{title:'Les dossiers à moitié déchiquetés',text:'La plupart des pages sont en lambeaux. Il reste des virements mensuels au « Bras droit » d’Omer, à Winnipeg. L’adresse de Montréal a été détruite.'},
+});
+Object.assign(DIALOGUES,{
+  gisele:{who:'Gisèle, bénévole acadienne',start:S=>S.flags.keycard?'g9':'g0',nodes:{
+    g0:{text:'Entre, mon pauvre, tu vas attraper ton coup de mort dehors. Une soupe ? Ici, on refuse personne.',choices:[{t:'Merci. Je cherche quelqu’un qui connaît le cabinet Doucet, sur le quai.',next:'g1',min:5},{t:'Une soupe, avec plaisir.',end:true,min:15,fx:{call:'warm'}},{t:'Merci, ça ira.',end:true}]},
+    g1:{text:'Doucet ? Ma fille Chloé fait le ménage là-bas, la nuit. Elle est malade ce soir… Pourquoi tu demandes ça ?',choices:[{t:'Ma femme et mon fils ont été enlevés. Cet homme gère l’argent de leur ravisseur.',next:'g2',min:10},{t:'C’est pour un travail.',next:'g3',min:3}]},
+    g2:{text:'(Elle te regarde longtemps.) … Tiens. La carte de Chloé, pour l’entrée de service. Promets-moi qu’elle aura pas d’ennuis. Et prends ce qu’il te faut dans la boîte des dons, il y a des crampons pour la glace.',choices:[{t:'Je te le promets, Gisèle.',end:true,fx:{flag:['keycard','donations'],clue:'carte'}}]},
+    g3:{text:'Un travail, à cette heure-là ? Non, mon gars. Je prête pas la carte de ma fille à un inconnu.',choices:[{t:'Pardon. La vérité, c’est que ma famille a été enlevée.',next:'g2',min:5},{t:'Tant pis.',end:true}]},
+    g9:{text:'Fais attention à toi. Et ramène-moi la carte de Chloé.',choices:[{t:'Promis.',end:true}]}}},
+  sam:{who:'Sam, journaliste d’enquête',start:S=>S.flags.plan?'s9':'s0',nodes:{
+    s0:{text:'(Il lève les yeux de son téléphone.) Tu regardes le cabinet Doucet depuis tout à l’heure. Moi aussi. Ça fait un an que j’enquête sur eux.',choices:[{t:'J’ai besoin de savoir comment c’est à l’intérieur.',next:'s1',min:5},{t:'Je ne sais pas de quoi tu parles.',end:true}]},
+    s1:{text:'J’ai un plan de l’étage. Mais rien n’est gratuit : je veux l’histoire. Tout ce que tu trouveras là-dedans, je le publie.',choices:[{t:'Marché conclu. Tu auras tout, après.',next:'s2',min:10},{t:'150 $ pour le plan, et tu oublies ma tête.',next:'s2',money:150},{t:'Je me débrouillerai.',end:true}]},
+    s2:{text:'(Il te tend une feuille pliée.) Trois caméras. Le tableau de fusibles est au fond du couloir de service : coupe le courant, et elles sont aveugles. Le bureau du Notaire est à l’angle nord-est.',choices:[{t:'Merci, Sam.',end:true,fx:{flag:'plan',clue:'plan'}}]},
+    s9:{text:'Rappelle-toi : je veux l’histoire.',choices:[{t:'Tu l’auras.',end:true}]}}},
+  bernie:{who:'Bernie, ancien combattant',start:S=>S.flags.shiftKnown?'b9':'b0',nodes:{
+    b0:{text:'(Il tient son bol à deux mains.) Afghanistan, deux tours. Je reconnais un soldat quand j’en vois un. Qu’est-ce que tu cherches, sergent ?',choices:[{t:'Le cabinet Doucet. Les gardes, leurs habitudes.',next:'b1',min:10},{t:'Rien. Reposez-vous.',end:true}]},
+    b1:{text:'Je dors sous le porche d’en face. À 23 h, relève de la garde : l’entrée de service reste ouverte dix minutes, le temps qu’ils fument. Après, c’est la carte ou rien.',choices:[{t:'Merci, Bernie.',end:true,fx:{flag:'shiftKnown',clue:'releve'}}]},
+    b9:{text:'23 h, sergent. Pas une minute de plus.',choices:[{t:'Compris.',end:true}]}}},
+  notaire:{who:'Le Notaire',start:()=>'n0',nodes:{
+    n0:{text:'(Il referme un dossier, très calme.) Monsieur… Oscar, je présume. Je gère des chiffres, pas des enlèvements. Nous pouvons sûrement trouver un arrangement.',choices:[{t:'Où est Omer ?',next:'n1',min:1},{t:'Tes dossiers, ou tu finis tes jours en prison.',next:'n2',min:1},{t:'(Attaquer)',end:true,fx:{call:'bossFight'}}]},
+    n1:{text:'Je n’ai jamais vu cet homme. (Il appuie discrètement sur un bouton sous son bureau.) Messieurs !',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]},
+    n2:{text:'La prison ? (Il sourit et recule vers la déchiqueteuse.) Sans preuves, monsieur, il n’y a pas de prison.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  notaireSpot:{who:'Le Notaire',start:()=>'s0',nodes:{s0:{text:'Un intrus ! Sécurité ! (Il se précipite vers la déchiqueteuse.)',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  notaireI:{who:'Le Notaire, les mains levées',start:S=>S.flags.shredded?'x0':'i0',nodes:{
+    i0:{text:'Je ne suis qu’un comptable ! Les dossiers… tout est dans le coffre. Je vous donne le code.',choices:[{t:'Le code. Et pas d’entourloupe.',next:'i1',min:5}]},
+    i1:{text:'(Le coffre s’ouvre.) Une maison à Westmount, payée comptant, avec un sous-sol aménagé. Et des virements au « Bras droit » d’Omer, à Winnipeg. C’est lui qui garde les codes de la maison.',choices:[{t:'(Prendre les dossiers)',end:true,fx:{clue:'acte',flag:['acte','notaryDone'],call:'levelComplete'}}]},
+    x0:{text:'(Il fixe la déchiqueteuse qui ronronne encore.) Trop tard, monsieur. Il ne reste presque rien.',choices:[{t:'Ce qui reste. Tout de suite.',next:'x1',min:5}]},
+    x1:{text:'(Tu fouilles les lambeaux.) Des virements au « Bras droit » d’Omer, à Winnipeg. L’adresse de Montréal… détruite.',choices:[{t:'(Prendre ce qui reste)',end:true,fx:{clue:'acte2',call:'nsDone'}}]}}},
+});
+Object.assign(CALLS,{nsDone:()=>{S.flags.notaryDone=true;CALLS.levelComplete();}});
+function objectiveNS(S){
+  if(S.location!=='office'&&!S.flags.inOffice){const way=S.flags.keycard?'Tu as la carte de Chloé : entrée de service, à droite de la porte principale.':S.flags.shiftKnown?'À 23 h, l’entrée de service reste ouverte dix minutes.':'Renseigne-toi à la Mission des marins, sur le quai.';
+    return{stage:0,text:'Entre dans le cabinet du Notaire (Doucet & Associés). '+way+(S.flags.crampons?'':' Attention au verglas : ne cours pas.'),target:S.flags.keycard||S.flags.shiftKnown?'service':'mission'};}
+  if(!S.flags.bossMet)return{stage:1,text:'Rejoins le bureau du Notaire (angle nord-est). Accroupis-toi derrière les cloisons basses ; évite les caméras ou coupe le courant au tableau de fusibles.',target:'notroom'};
+  if(!S.flags.bossDown)return{stage:2,text:'Neutralise la sécurité et le Notaire avant qu’il ne déchiquette tout !',target:'boss'};
+  if(!S.flags.notaryDone)return{stage:3,text:'Interroge le Notaire (touche E).',target:'boss'};
+  return{stage:4,text:'Niveau 5 terminé. La piste mène au « Bras droit » d’Omer, à Winnipeg, Manitoba (en construction).',target:null};
+}
+function nsTarget(o){const t=o.target;
+  if(t==='mission')return S.location==='halifax'?{x:HFX.ox-30,z:HFX.oz+32}:null;
+  if(t==='service')return S.location==='halifax'?{x:HFX.ox+32.5,z:HFX.oz+10.6}:null;
+  if(t==='notroom')return S.location==='office'?{x:OFFICE.ox+11,z:OFFICE.oz-10.5}:null;
+  return undefined;}
+function serviceOpenByShift(){const m=((S.clock%1440)+1440)%1440;return m>=23*60&&m<23*60+10;}
+function nsZones(){
+  const H=HFX,O=OFFICE,Z=[];const z=o=>{Z.push({lvl:'ns',...o});};
+  z({loc:'halifax',x:H.ox-30,z:H.oz+31.6,r:1.8,label:()=>'Entrer à la Mission des marins',act:()=>enterInterior('mission')});
+  z({loc:'mission',x:MISSION.ox,z:MISSION.oz+MISSION.hd-.7,r:1.2,label:()=>'Sortir',act:()=>exitInterior()});
+  z({loc:'mission',x:MISSION.box.x,z:MISSION.box.z+.5,r:1.4,cond:()=>S.flags.donations&&!S.flags.crampons,label:()=>'Prendre des crampons dans la boîte des dons',act:()=>{S.flags.crampons=true;addMinutes(3);toast('Crampons fixés sous tes bottes : tu ne glisseras plus sur le verglas.');}});
+  z({loc:'halifax',x:H.ox+32.5,z:H.oz+10.6,r:1.6,label:()=>S.flags.keycard?'Badger avec la carte de Chloé (entrée de service)':serviceOpenByShift()?'Entrer : la porte de service est restée ouverte (relève)':'Porte de service (verrouillée)',
+    act:()=>{if(S.flags.keycard||serviceOpenByShift()){S.flags.inOffice=true;travelTo('office',2,-23.5,-14,'Le couloir de service sent le produit d’entretien. Quelque part, un téléviseur de surveillance grésille.');}else toast(S.flags.shiftKnown?'Verrouillée. La relève est à 23 h.':'Verrouillée. Il faut une carte magnétique.');}});
+  z({loc:'halifax',x:H.ox+15.5,z:H.oz+10.8,r:1.6,label:()=>'Escalader l’escalier de secours glacé (risqué)',act:()=>{addMinutes(10);if(!S.flags.crampons&&Math.random()<.5){hurtPlayer(30,false);toast('Tu glisses sur une marche gelée et tu retombes lourdement !');return;}S.flags.inOffice=true;travelTo('office',0,-2,-14.5,'Tu forces la fenêtre du palier. L’alarme ne s’est pas déclenchée… cette fois.');}});
+  z({loc:'office',x:O.fuse.x,z:O.fuse.z,r:1.5,cond:()=>!S.flags.powerCut,label:()=>'Couper le courant au tableau de fusibles',act:()=>{S.flags.powerCut=true;addMinutes(1);sfx('down');toast('Clac. L’étage plonge dans la pénombre : les caméras sont aveugles et les gardes y voient moins bien.');}});
+  z({loc:'office',x:O.ox-24,z:O.oz-14,r:1.2,label:()=>'Ressortir par l’entrée de service',act:()=>{S.location='office';exitTo('halifax',H.ox+32.5,H.oz+12.4);}});
+  for(const n of interiorNPCs)if(n.lvl==='ns'){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.x,z:n.z+(n.id==='gisele'?1.3:.95),r:1.6,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
+  return Z;
+}
+function exitTo(loc,x,z){const p=S.player;S.location=loc;p.x=x;p.z=z;p.y=0;p.vx=p.vz=0;applyLocation();camera.position.set(x,2.5,z+5);}
+// cameras: state lives in S.arenas.office.cams
+function stepCameras(dt){const ARn=AR();if(!ARn||!ARn.cams)return;const st=AS();st.cams??=ARn.cams.map(()=>({meter:0}));const p=S.player;
+  ARn.cams.forEach((c,i)=>{const cs=st.cams[i],t=S.clock*.35+i*2,ang=c.a+Math.sin(t)*c.sw;cs.ang=ang;if(S.flags.powerCut||st.alarm){cs.meter=0;return;}
+    const cx=ARn.area.ox+c.x,cz=ARn.area.oz+c.z,dx=p.x-cx,dz=p.z-cz,d=Math.hypot(dx,dz);const a=Math.acos(clamp((dx*Math.sin(ang)+dz*Math.cos(ang))/Math.max(d,.01),-1,1));
+    if(d<11&&a<.42&&losClear(cx,cz,p.x,p.z)){cs.meter+=(CB.crouch?45:90)*dt;if(cs.meter>=100){cs.meter=100;alarm('Une caméra t’a filmé.');}}else cs.meter=Math.max(0,cs.meter-30*dt);});}
+function syncCameras(){if(!OFFICE.camMeshes)return;const st=S&&S.arenas&&S.arenas.office;OFFICE.camMeshes.forEach((m,i)=>{const cs=st&&st.cams&&st.cams[i];const ang=cs?cs.ang:ARENAS.office.cams[i].a;m.g.rotation.y=ang;
+  const off=S&&S.flags.powerCut;m.cone.visible=!off;m.led.material.color.set(off?'#222':cs&&cs.meter>30?'#ffee00':'#ff2a2a');if(cs)m.cone.material.opacity=.06+cs.meter/100*.2;});}
+function stepShredder(dt){if(S.location!=='office'||S.flags.bossDown||S.flags.shredded)return;const st=AS();if(!st||!st.alarm)return;
+  S.flags.shredT=(S.flags.shredT||0)+dt;if(!S.flags.shredWarn){S.flags.shredWarn=1;toast('Le Notaire se rue vers la déchiqueteuse ! Fais vite !');}
+  if(S.flags.shredT>50){S.flags.shredded=true;toast('Trop tard : la déchiqueteuse a avalé une bonne partie des dossiers.');}}
+function CINES_nsIntro(){const H=HFX;return[
+  {set:'halifax',d:7,clock:21*60,rain:.7,cloud:.9,wind:.5,center:{x:H.ox,z:H.oz},title:'Halifax, Nouvelle-Écosse — mi-décembre, 21 h. Pluie verglaçante.',
+    cam:[[H.ox-50,14,H.oz-40],[H.ox-30,9,H.oz-30],[H.ox+10,4,H.oz+15],[H.ox+24,4,H.oz+16]],upd(t,k,dt,T){animWaves(H,T,.6);}},
+  {set:'halifax',d:8,clock:21*60+2,rain:.7,cloud:.9,wind:.5,center:{x:H.ox,z:H.oz},cam:[[H.ox+3,1.7,H.oz-1],[H.ox+2.2,1.7,H.oz-1.6],[H.ox,1.5,H.oz-4],[H.ox+24,3,H.oz+12]],
+    sub:[[.5,'Oscar','Doucet & Associés. Le Notaire d’Omer.'],[4,'Oscar','Le sol est une patinoire… Doucement.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(H.ox,0,H.oz-4);oc.g.rotation.set(0,.6,0);animRig(oc,dt,T,0,'walk',.4,true);animWaves(H,T,.6);}}];}
+
 /* --- 5d. CINÉMATIQUES (bloc 4) ---
    Moteur de plans : décor, acteurs, caméra (mouvement + caméra à l'épaule), sous-titres, titres, bandes noires.
    Mise en scène fidèle au plan du jeu (docs/PLAN.md §4) et aux directives de réalisme. */
@@ -2745,7 +2945,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
-  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
+  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
@@ -2826,7 +3026,8 @@ function drawPortMap(){
   if(AD.mapPaths){mg.strokeStyle='rgba(200,180,140,.55)';mg.lineWidth=5;for(const path of AD.mapPaths){mg.beginPath();path.forEach(([x,z],i)=>i?mg.lineTo(sx(A.ox+x),sz(A.oz+z)):mg.moveTo(sx(A.ox+x),sz(A.oz+z)));mg.stroke();}}
   mg.fillStyle='rgba(0,0,0,.45)';for(const c of A.cols)mg.fillRect(sx(c.x0),sz(c.z0),Math.max(2,(c.x1-c.x0)*sc),Math.max(2,(c.z1-c.z0)*sc));
   if(AD.room){const W=AD.room;mg.strokeStyle='#ffd166';mg.lineWidth=2;mg.strokeRect(sx(A.ox+W.x0),sz(A.oz+W.z0),(W.x1-W.x0)*sc,(W.z1-W.z0)*sc);if(AD.roomLabel){mg.fillStyle='#ffd166';mg.font='700 20px "Barlow Condensed"';mg.fillText(AD.roomLabel,sx(A.ox+W.x0)+5,sz(A.oz+W.z0)+20);}}
-  for(const e of AS().enemies){if((e.down&&!e.surrender)||e.friendly&&e.state!=='combat')continue;mg.fillStyle=e.state==='combat'?'#ff4b3e':e.meter>=40?'#ffb347':'#e8e8e8';mg.beginPath();mg.arc(sx(e.x),sz(e.z),4,0,7);mg.fill();}
+  if(AD.cams&&S.flags.plan&&!S.flags.powerCut){mg.fillStyle='#ff4b3e';for(const c of AD.cams){mg.fillRect(sx(A.ox+c.x)-3,sz(A.oz+c.z)-3,6,6);}}
+  for(const e of AS().enemies){if(AD.needPlan&&!S.flags.plan&&e.state!=='combat')continue;if((e.down&&!e.surrender)||e.friendly&&e.state!=='combat')continue;mg.fillStyle=e.state==='combat'?'#ff4b3e':e.meter>=40?'#ffb347':'#e8e8e8';mg.beginPath();mg.arc(sx(e.x),sz(e.z),4,0,7);mg.fill();}
   const tg=objectiveTarget(objective(S));if(tg){mg.strokeStyle='#ff4b3e';mg.lineWidth=3;mg.beginPath();mg.arc(sx(tg.x),sz(tg.z),8+Math.sin(performance.now()/250)*2,0,7);mg.stroke();}
   const p=S.player;mg.save();mg.translate(sx(p.x),sz(p.z));mg.rotate(-p.heading+Math.PI);mg.fillStyle='#6cc4ff';mg.strokeStyle='#000';mg.beginPath();mg.moveTo(0,-9);mg.lineTo(6,7);mg.lineTo(0,3);mg.lineTo(-6,7);mg.closePath();mg.fill();mg.stroke();mg.restore();
 }
@@ -2919,7 +3120,7 @@ function frame(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;
   if(mode==='play'){
     readInput();acc+=dt;let n=0;
-    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto')stepAgents(STEP);stepCombat(STEP);stepMission();acc-=STEP;n++;}
+    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto')stepAgents(STEP);stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);stepMission();acc-=STEP;n++;}
     if(n===6)acc=0;
     updateCamera(dt);syncView(dt,t);
     activeZone=null;let best=1e9;
@@ -2958,11 +3159,11 @@ function syncTitle(dt,t){
 }
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});
