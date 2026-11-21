@@ -305,7 +305,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.4.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.4.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3746,6 +3746,18 @@ const wp=o=>v=>o.getWorldPosition(v);
 const shinEnd=kn=>v=>{kn.updateWorldMatrix(true,false);return kn.localToWorld(v.set(0,-.46,0));};
 // keep animations in place: the game moves Oscar, not the clip
 function inPlace(clip){for(const t of clip.tracks)if(/Hips\.position$/.test(t.name)){const v=t.values;for(let i=3;i<v.length;i+=3){v[i]=v[0];v[i+2]=v[2];}}return clip;}
+// the example soldier's skeleton hangs under a node turned 90° (Z-up export): turn its root-bone keys into the target's frame
+function reorientClips(clips,srcRoot,dstRoot){
+  const hs=srcRoot.getObjectByName('mixamorigHips'),hd=dstRoot.getObjectByName('mixamorigHips');if(!hs||!hd)return clips;
+  srcRoot.updateMatrixWorld(true);dstRoot.updateMatrixWorld(true);
+  const qs=new THREE.Quaternion(),qd=new THREE.Quaternion(),tmp=new THREE.Quaternion(),v=new THREE.Vector3(),qr=new THREE.Quaternion();
+  hs.parent.getWorldQuaternion(qs);srcRoot.getWorldQuaternion(tmp);qs.premultiply(tmp.invert());
+  hd.parent.getWorldQuaternion(qd);dstRoot.getWorldQuaternion(tmp);qd.premultiply(tmp.invert());
+  qr.copy(qd).invert().multiply(qs);if(Math.abs(qr.w)>.9999)return clips;
+  return clips.map(c=>{const k=c.clone();for(const t of k.tracks){
+    if(/Hips\.quaternion$/.test(t.name)){const a=t.values;for(let i=0;i<a.length;i+=4){tmp.fromArray(a,i).premultiply(qr).toArray(a,i);}}
+    else if(/Hips\.position$/.test(t.name)){const a=t.values;for(let i=0;i<a.length;i+=3){v.fromArray(a,i).applyQuaternion(qr).toArray(a,i);}}}
+    return k;});}
 async function firstOk(urls,load){for(const u of urls){try{const r=await load(u);if(r)return r;}catch(e){}}return null;}
 async function loadOscarModel(){
   if(SET.oscarModel==='classic'||OM.ready)return;
@@ -3753,9 +3765,9 @@ async function loadOscarModel(){
     const [{GLTFLoader},{FBXLoader}]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/loaders/FBXLoader.js')]);
     const fbx=new FBXLoader(),glb=new GLTFLoader();
     const [charObj,soldier]=await Promise.all([firstOk(OSCAR_CHAR,u=>fbx.loadAsync(u)),firstOk(OSCAR_GLB,u=>glb.loadAsync(u))]);
-    const loco=(soldier&&soldier.animations||[]).filter(a=>['Idle','Walk','Run'].includes(a.name)).map(inPlace);
+    const loco=(soldier&&soldier.animations||[]).filter(a=>['Idle','Walk','Run'].includes(a.name));
     if(charObj&&charObj.getObjectByName){
-      const clips=[...loco];
+      const clips=soldier?reorientClips(loco,soldier.scene,charObj):[];
       await Promise.all(Object.entries(OSCAR_CLIPS).map(async([name,path])=>{
         const o=await firstOk(['assets/'+path,'../assets/'+path],u=>fbx.loadAsync(u));
         if(o&&o.animations&&o.animations[0]){const c=inPlace(o.animations[0]);c.name=name;clips.push(c);}}));
