@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-20 — Claude — Oscar en modèle 3D (v1.2.0)
+- Fait : Oscar affiché par un modèle squelettique animé (Soldier.glb des exemples three.js, rig Mixamo : Idle/Walk/Run) chargé depuis le CDN. L'ancien squelette tourne en coulisse ; ses poses (coups, blocage, visée, accroupi, chute, cinématiques) sont recopiées sur le modèle par alignement des os (`retarget`, section 8). Orientation, taille et côtés mesurés au chargement. Repli automatique sur l'Oscar classique ; option « Personnage d'Oscar » (nouveau / classique).
+- Vérifié sur le vrai rendu (PC de Boban) : repos, marche, accroupi, blocage, visée.
+- Limites : le modèle d'exemple porte une armure futuriste (pas un soldat canadien) ; licence Mixamo à vérifier avant toute commercialisation ; sur ce PC la qualité graphique baisse automatiquement (moins de 26 images/s).
+- Suite proposée : créer le vrai Oscar (uniforme, visage, barbe) sur un compte Mixamo et ajouter des animations de combat capturées.
+
 ## 2026-11-20 — Claude — Premier test visuel réel (v1.1.1)
 - Testé dans le navigateur intégré, sur le PC de Boban (vrai rendu, Intel Iris Xe) : écran titre, Toronto, diner, intro, Manitoba, Montréal, salon d'Omer.
 - Corrigé : le HUD restait affiché par-dessus les cinématiques ; la caméra sortait des petites pièces (entrée du diner) ; Westmount et la maison d'Omer presque noirs (lumière d'appoint `nightFill`, lampes plus fortes) ; la météo promise (blizzard au Manitoba, verglas à Montréal) n'était pas garantie au début (`firstWeather`) ; cinématiques de nuit éclaircies.

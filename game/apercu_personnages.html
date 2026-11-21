@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Aperçu des personnages — Oscar</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;background:#15181d;color:#e9e6df;font:15px system-ui,sans-serif;overflow:hidden}
+  #labels{position:fixed;left:0;right:0;bottom:12px;display:flex;justify-content:space-around;pointer-events:none}
+  #labels div{background:rgba(0,0,0,.65);padding:6px 12px;border-radius:8px;text-align:center}
+  #status{position:fixed;top:10px;left:12px;background:rgba(0,0,0,.6);padding:6px 10px;border-radius:6px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="status">Chargement des personnages…</div>
+<div id="labels"></div>
+<script type="module">
+// Page d'aperçu : affiche les personnages Mixamo réduits (assets/characters) côte à côte, chacun avec son animation.
+// ?set=soldats (défaut) | autres  ·  ?anim=0 pour figer en pose de départ
+import * as THREE from 'three';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+const SETS={
+  soldats:[['candidat1_uniforme_bleu','1 · Uniforme bleu marine'],['candidat5_camouflage','5 · Camouflage'],['candidat6_tactique_noir','6 · Tactique noir']],
+  autres:[['gangster_tshirt_rouge','Gangster (Omer ?)'],['cedric_enfant','Enfant (Cédric ?)']]};
+const q=new URLSearchParams(location.search),list=SETS[q.get('set')]||SETS.soldats,animate=q.get('anim')!=='0';
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#2a2f36');
+const cam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.1,100);cam.position.set(0,1.45,5.6);cam.lookAt(0,1.05,0);
+scene.add(new THREE.HemisphereLight('#dfe8ff','#3a3226',1.1));const sun=new THREE.DirectionalLight('#fff4e0',2.4);sun.position.set(2,5,4);sun.castShadow=true;scene.add(sun);
+const floor=new THREE.Mesh(new THREE.CircleGeometry(6,48),new THREE.MeshStandardMaterial({color:'#4a4f57',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const mixers=[],loader=new FBXLoader(),gap=1.25,labels=document.getElementById('labels');
+let done=0;const status=document.getElementById('status');
+list.forEach(([file,label],i)=>{
+  const d=document.createElement('div');d.textContent=label;labels.appendChild(d);
+  loader.load('../assets/characters/'+file+'.fbx',obj=>{
+    obj.scale.setScalar(.01);obj.position.x=(i-(list.length-1)/2)*gap;
+    obj.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(obj);
+    if(animate&&obj.animations.length){const m=new THREE.AnimationMixer(obj);m.clipAction(obj.animations[0]).play();mixers.push(m);}
+    done++;status.textContent=done<list.length?'Chargé : '+done+' / '+list.length:'Personnages chargés ('+done+')';
+  },undefined,e=>{status.textContent='Erreur de chargement : '+file;console.error(e);});
+});
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();});
+const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{const dt=clock.getDelta();mixers.forEach(m=>m.update(dt));renderer.render(scene,cam);});
+window.__apercu={get loaded(){return done},scene};
+</script>
+</body>
+</html>

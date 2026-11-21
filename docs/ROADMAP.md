@@ -161,6 +161,12 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 ## Bloc 13 — Premier test visuel réel `[x]` (v1.1.1)
 - [x] HUD caché pendant les cinématiques ; caméra gardée dans les petites pièces ; Montréal jouable dans la panne ; météo du début de niveau garantie
 
+## Bloc 14 — Oscar en modèle 3D animé `[x]` (v1.2.0)
+- [x] Modèle squelettique (rig Mixamo) : repos, marche, course capturés ; poses du jeu recopiées (coups, blocage, visée, accroupi, cinématiques)
+- [x] Repli automatique + option « Classique » ; vérifié sur le vrai rendu
+- [ ] Vrai Oscar (uniforme canadien, visage, barbe) via un compte Mixamo ; animations de combat capturées
+- [ ] Puis : Eva, Cédric, Omer, gardes
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)
