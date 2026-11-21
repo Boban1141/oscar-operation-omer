@@ -177,7 +177,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
       <div><kbd>T</kbd> accélérer le temps</div>
       <div><kbd>Échap</kbd> pause</div>
     </div>
-    <p class="small">Version 1.3 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
+    <p class="small">Version 1.4 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
   </div>
 </div>
 
@@ -197,6 +197,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <label for="oSubs">Taille des sous-titres et dialogues</label><select id="oSubs"><option value="normal">Normale</option><option value="large">Grande</option></select>
     <label for="oHints">Indices du numéro masqué</label><select id="oHints"><option value="auto">Automatiques (si tu bloques 5 min)</option><option value="ask">Sur demande seulement (touche I)</option><option value="off">Désactivés</option></select>
     <label for="oModel">Personnage d’Oscar</label><select id="oModel"><option value="new">Soldat 3D animé (Mixamo)</option><option value="classic">Classique (plus léger)</option></select>
+    <label for="oReal">Matières photographiques (lieux réels)</label><input id="oReal" type="checkbox">
     <label for="oTips">Astuces à l’écran</label><input id="oTips" type="checkbox">
     <label for="oFps">Afficher les images par seconde</label><input id="oFps" type="checkbox">
   </div>
@@ -304,7 +305,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.3.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.4.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -799,12 +800,21 @@ const STYLES={
   concrete:{wall:'#b6aea1',glass:['#242a32','#2d353f'],mx:.2,my:.22,lit:.4,rough:.88,metal:0,uw:3.4,uh:3.4},
 };
 const LIGHTS=['#ffd38a','#ffe7b5','#fff3d8','#d2e5ff','#ffc275'];
+const FACADES=[];
 function facade(style,seed,wall,cols=8,rows=8,litOverride){
+  const S2=512,c=document.createElement('canvas');c.width=c.height=S2;const e=document.createElement('canvas');e.width=e.height=S2;
+  const st=paintFacade(c,e,style,seed,wall,cols,rows,litOverride);
+  const mk=cv=>{const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t};
+  const F={map:mk(c),em:mk(e),tw:cols*st.uw,th:rows*st.uh,st};FACADES.push({c,e,F,args:[style,seed,wall,cols,rows,litOverride]});return F;
+}
+function paintFacade(c,e,style,seed,wall,cols=8,rows=8,litOverride){
   const st=STYLES[style]||STYLES.concrete, r=mulberry32(seed), S2=512;
-  const c=document.createElement('canvas');c.width=c.height=S2;const g=c.getContext('2d');
-  const e=document.createElement('canvas');e.width=e.height=S2;const ge=e.getContext('2d');
+  const g=c.getContext('2d'),ge=e.getContext('2d');g.globalCompositeOperation='source-over';g.globalAlpha=1;
   g.fillStyle=wall||st.wall;g.fillRect(0,0,S2,S2);ge.fillStyle='#000';ge.fillRect(0,0,S2,S2);
-  if(style==='brick'){g.globalAlpha=.12;for(let y=0;y<S2;y+=6){g.fillStyle=y%12?'#000':'#fff';g.fillRect(0,y,S2,1)}g.globalAlpha=1;}
+  const P=typeof REAL!=='undefined'&&REAL.fac[style];
+  if(P){const tc=document.createElement('canvas');tc.width=Math.max(8,Math.round(S2*2.6/(cols*st.uw)));tc.height=Math.max(8,Math.round(S2*2.6/(rows*st.uh)));tc.getContext('2d').drawImage(P,0,0,tc.width,tc.height);
+    g.globalCompositeOperation='multiply';g.fillStyle=g.createPattern(tc,'repeat');g.fillRect(0,0,S2,S2);g.globalCompositeOperation='source-over';}
+  else if(style==='brick'){g.globalAlpha=.12;for(let y=0;y<S2;y+=6){g.fillStyle=y%12?'#000':'#fff';g.fillRect(0,y,S2,1)}g.globalAlpha=1;}
   const cw=S2/cols,ch=S2/rows,lit=litOverride??st.lit;
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     const wx=x*cw+cw*st.mx,wy=y*ch+ch*st.my,ww=cw*(1-2*st.mx),wh=ch*(1-2*st.my);
@@ -819,8 +829,7 @@ function facade(style,seed,wall,cols=8,rows=8,litOverride){
     gr.addColorStop(0,`rgba(20,18,15,${.1+r()*.14})`);gr.addColorStop(1,'rgba(20,18,15,0)');g.fillStyle=gr;g.fillRect(x,y,w,h);}
   for(let i=0;i<28;i++){g.fillStyle=`rgba(${r()<.5?30:200},${r()<.5?28:190},${r()<.5?24:170},${.03+r()*.05})`;g.beginPath();g.ellipse(r()*S2,r()*S2,10+r()*45,6+r()*30,r()*3,0,7);g.fill();}
   for(let i=0;i<5000;i++){g.fillStyle=`rgba(0,0,0,${r()*.07})`;g.fillRect(r()*S2,r()*S2,1+r()*1.5,1+r()*1.5);}
-  const mk=cv=>{const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t};
-  return{map:mk(c),em:mk(e),tw:cols*st.uw,th:rows*st.uh,st};
+  return st;
 }
 function facadeBox(w,h,d,tw,th){
   const g=new THREE.BoxGeometry(w,h,d),uv=g.attributes.uv;
@@ -3819,8 +3828,45 @@ function updateOscarModel(dt){
     OM.gunAnchor.position.copy(oscarMesh.g.worldToLocal(_ga.clone()));OM.gunAnchor.quaternion.setFromUnitVectors(_gy,_gd);}
 }
 
+/* ---------------- 9. LIEUX RÉALISTES : matières photographiées (Poly Haven, licence CC0) ----------------
+   Les textures dessinées par programme sont remplacées par de vraies photos de matières, ramenées à la même
+   luminosité moyenne et teintées par la couleur d'origine : les couleurs choisies pour chaque lieu restent justes.
+   Les façades gardent leurs fenêtres (et leurs lumières la nuit) ; la photo sert de fond de mur (briques, béton).
+   Relief : cartes de normales sur les sols et les murs intérieurs. Sans internet, rien ne change. */
+const PHURL=(id,kind)=>`https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/${id}/${id}_${kind}_1k.jpg`;
+const REAL={fac:{},count:0,done:false};
+function loadImg(url){return new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=url;});}
+function meanColor(src){const c=document.createElement('canvas');c.width=c.height=32;const g=c.getContext('2d');g.drawImage(src,0,0,32,32);const p=g.getImageData(0,0,32,32).data;let r=0,gg=0,b=0;for(let i=0;i<p.length;i+=4){r+=p[i];gg+=p[i+1];b+=p[i+2];}const n=p.length/4;return[r/n,gg/n,b/n];}
+// photo -> canvas with the target mean colour, keeping the photo's light/shadow detail and a little of its own colour
+function detailCanvas(img,target,sat){const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const g=c.getContext('2d');g.drawImage(img,0,0);
+  const d=g.getImageData(0,0,c.width,c.height),p=d.data;let s=0;for(let i=0;i<p.length;i+=4)s+=.299*p[i]+.587*p[i+1]+.114*p[i+2];const m=Math.max(1,s/(p.length/4));
+  const tl=.299*target[0]+.587*target[1]+.114*target[2];
+  for(let i=0;i<p.length;i+=4){const L=(.299*p[i]+.587*p[i+1]+.114*p[i+2])/m;for(let k=0;k<3;k++){const v=target[k]*L*(1-sat)+p[i+k]*(tl/m)*sat;p[i+k]=v>255?255:v;}}
+  g.putImageData(d,0,0);return c;}
+async function realSwap(tex,id,sat,normalScale){
+  if(!tex||!tex.image)return;const [img,nor]=await Promise.all([loadImg(PHURL(id,'diff')),SET.gfx==='low'?null:loadImg(PHURL(id,'nor_gl'))]);if(!img)return;
+  const target=meanColor(tex.image);tex.image=detailCanvas(img,target,sat);tex.anisotropy=8;tex.needsUpdate=true;REAL.count++;
+  if(nor){const cache=new Map();scene.traverse(o=>{if(!o.isMesh)return;for(const m of (Array.isArray(o.material)?o.material:[o.material])){
+    if(!m||!m.map||m.map.source!==tex.source||m.normalMap||!('normalMap' in m))continue;const key=m.map.repeat.x+','+m.map.repeat.y;
+    let nt=cache.get(key);if(!nt){nt=new THREE.Texture(nor);nt.wrapS=nt.wrapT=THREE.RepeatWrapping;nt.repeat.copy(m.map.repeat);nt.anisotropy=8;nt.needsUpdate=true;cache.set(key,nt);}
+    m.normalMap=nt;m.normalScale.set(normalScale,normalScale);m.needsUpdate=true;}});}}
+async function realFacades(){
+  const ids={brick:'red_brick_03',concrete:'painted_concrete',glass:'concrete_tile_facade',teal:'concrete_tile_facade'};
+  const imgs=await Promise.all(Object.entries(ids).map(async([st,id])=>[st,await loadImg(PHURL(id,'diff'))]));
+  for(const [st,img] of imgs)if(img)REAL.fac[st]=detailCanvas(img,[214,214,214],.12);
+  if(!Object.keys(REAL.fac).length)return;
+  for(const f of FACADES){paintFacade(f.c,f.e,...f.args);f.F.map.needsUpdate=true;f.F.em.needsUpdate=true;}REAL.count+=FACADES.length;}
+async function loadRealSurfaces(){
+  if(REAL.started||SET.realTex===false)return;REAL.started=true;
+  try{await Promise.all([
+      realSwap(asphaltTex,'asphalt_02',.2,.8),realSwap(walkTex,'concrete_tiles',.2,.7),realSwap(snowTex,'snow_02',.1,.6),
+      realSwap(ITEX.wood,'oak_wood_planks',.45,.6),realSwap(ITEX.plaster,'painted_plaster_wall',.2,.5),realSwap(corrTex,'box_profile_metal_sheet',.2,.8),
+      realFacades()]);}
+  catch(e){console.warn('Matières photographiques indisponibles',e);}
+  REAL.done=true;}
+
 /* ---------------- 7. CONFORT DE JEU (v1.1) : options, chapitres, trophées, musique, indices, manette ---------------- */
-const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
+const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',realTex:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
 function saveSettings(){try{localStorage.setItem('oscar.settings',JSON.stringify(SET))}catch(e){}}
 const DIFF={decouverte:{det:.6,dmg:.6,txt:'Découverte : les gardes mettent plus de temps à te repérer et frappent moins fort.'},normal:{det:1,dmg:1,txt:'Normale : l’expérience prévue.'},expert:{det:1.35,dmg:1.3,txt:'Expert : les gardes te repèrent vite et frappent fort.'}};
 function DIFFK(){return DIFF[SET.diff]||DIFF.normal}
@@ -3927,7 +3973,7 @@ function padPoll(dt){const gps=navigator.getGamepads?[...navigator.getGamepads()
   else padMenu();
   PAD.prev=PAD.g.buttons.map((b,i)=>padDown(i));}
 /* --- menus: options, chapters, trophies, quit --- */
-const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oModel','oscarModel','select'],['oTips','tips','check'],['oFps','fps','check']];
+const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oModel','oscarModel','select'],['oReal','realTex','check'],['oTips','tips','check'],['oFps','fps','check']];
 function fillOptions(){for(const [id,k,t] of OPT){const el=$(id);if(t==='check')el.checked=!!SET[k];else el.value=SET[k];}$('oDiffTxt').textContent=DIFF[SET.diff].txt;}
 for(const [id,k,t] of OPT){const el=$(id);el.addEventListener(t==='range'?'input':'change',()=>{SET[k]=t==='check'?el.checked:t==='range'?+el.value:el.value;saveSettings();applySettings();fillOptions();});}
 let optFrom=null;
@@ -3964,13 +4010,13 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={real:()=>({count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
   resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones());drawMapBg();
   if(store.load())show('bContinue',true);
-  $('boot').remove();show('title',true);mode='title';loadOscarModel();
+  $('boot').remove();show('title',true);mode='title';loadOscarModel();setTimeout(loadRealSurfaces,300);
   requestAnimationFrame(t=>{last=t;frame(t);});
 })();
 }
