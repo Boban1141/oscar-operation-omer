@@ -167,6 +167,13 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [ ] Vrai Oscar (uniforme canadien, visage, barbe) via un compte Mixamo ; animations de combat capturées
 - [ ] Puis : Eva, Cédric, Omer, gardes
 
+## Bloc 15 — Personnages et lieux réels `[~]` (v1.3.0 → v1.4.1)
+- [x] Outil de réduction FBX ; 8 personnages Mixamo réduits ; 23 animations
+- [x] Oscar = soldat Mixamo avec animations capturées
+- [x] Matières photographiques (Poly Haven) sur façades, sols, murs, neige
+- [ ] TOUTES les personnes en humains réalistes (passants, assis, cyclistes, PNJ de l'histoire, ennemis, cinématiques) — attend ~10 personnages Mixamo de plus
+- [ ] Arbres, voitures, mobilier urbain en vrais modèles 3D ; ciels photographiés (HDRI)
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)

@@ -1,6 +1,11 @@
 # Architecture technique
 
-## État actuel (v1.2.0)
+## État actuel (v1.4.1)
+- Section 8 : Oscar = `assets/characters/candidat5_camouflage.fbx` (FBXLoader) + clips `OSCAR_CLIPS` ; `reorientClips()` adapte les clips d'un squelette tourné ; `inPlace()` bloque le déplacement des hanches ; superpositions `OM.over` (punch, kick, guard, aim, fire, reload, hit) ; `OM.gunAnchor` suit la main droite. Chemins essayés : `assets/...` (GitHub Pages) puis `../assets/...` (dépôt).
+- Section 9 : `loadRealSurfaces()` ; `realSwap(texture, idPolyHaven, saturation, relief)` remplace l'image d'une texture canvas existante par une photo ramenée à la même couleur moyenne (`detailCanvas`) et ajoute une carte de normales ; `FACADES` + `paintFacade()` repeignent les façades sur fond photo.
+- `tools/fbx_shrink.py` : réduction des textures intégrées des FBX Mixamo.
+
+## État v1.2.0
 - Section 8 (OSCAR EN 3D) : `loadOscarModel()` (import `three/addons/loaders/GLTFLoader.js`), `setupOscarModel()`, `updateOscarModel(dt)` appelé juste avant le rendu. `retarget(os, enfant, débutPrimitif, finPrimitif, poids)` aligne un os du modèle sur le segment correspondant de l'ancien squelette, sans hypothèse sur les axes du fichier. `OM.body` = maillages de l'ancien corps masqués ; armes et vêtements restent attachés à l'ancien squelette.
 
 ## État précédent (v1.1.0)

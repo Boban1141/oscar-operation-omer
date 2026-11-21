@@ -21,6 +21,13 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-21 — Claude — Personnages Mixamo réels et lieux photographiques (v1.3.0 → v1.4.1)
+- Personnages : Boban a téléchargé des personnages Mixamo très lourds (jusqu'à 142 Mo, textures 4096 px). Nouvel outil `tools/fbx_shrink.py` : réécrit le FBX binaire avec des textures réduites (1024 px JPEG), sans toucher au modèle ni au squelette (relecture vérifiée, fin de fichier conforme au chargeur three.js). 374 Mo → 18 Mo pour 5 personnages ; 3 civils ajoutés ensuite. Rangés dans `assets/characters/`, animations dans `assets/animations/`. Page `game/apercu_personnages.html` pour les voir en 3D.
+- Oscar = soldat en camouflage (candidat 5, choisi par Boban), animations capturées : repos/marche/course (Soldier.glb, réorientées : squelette source tourné de −90°), coup de poing, coup de pied, garde, visée, tir, rechargement, impact. Arme dans la vraie main droite. GitHub Pages publie aussi `assets/` (étape ajoutée au workflow).
+- Lieux : matières photographiées Poly Haven (CC0) chargées à l'exécution : asphalte, dalles de trottoir, neige, parquet, plâtre, tôle ; 60 façades repeintes sur fond de vraie brique/béton en gardant fenêtres et lumières de nuit. Option « Matières photographiques ».
+- Vérifié sur le vrai rendu (PC de Boban) : Oscar debout, marche, garde ; façades et trottoirs réels.
+- Décision de Boban : TOUTES les personnes du jeu doivent être des humains réalistes, sans exception (passants, assis, cyclistes, ennemis, acteurs des cinématiques). Reporté : il faut encore télécharger ~10 personnages (Eva, Omer, femmes, hommes âgés, costume, ouvrier, policier, manteau) + animations de vie courante.
+
 ## 2026-11-20 — Claude — Oscar en modèle 3D (v1.2.0)
 - Fait : Oscar affiché par un modèle squelettique animé (Soldier.glb des exemples three.js, rig Mixamo : Idle/Walk/Run) chargé depuis le CDN. L'ancien squelette tourne en coulisse ; ses poses (coups, blocage, visée, accroupi, chute, cinématiques) sont recopiées sur le modèle par alignement des os (`retarget`, section 8). Orientation, taille et côtés mesurés au chargement. Repli automatique sur l'Oscar classique ; option « Personnage d'Oscar » (nouveau / classique).
 - Vérifié sur le vrai rendu (PC de Boban) : repos, marche, accroupi, blocage, visée.
