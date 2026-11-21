@@ -94,6 +94,18 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
 #cine .bar{position:absolute;left:0;right:0;height:12vh;background:#000;display:flex;align-items:center;padding:0 4vw}
 #cine .top{top:0}#cine .bot{bottom:0;justify-content:center}
 #cineTitle{font:600 clamp(16px,2.2vw,24px) "Barlow Condensed";color:#e9e2d4;letter-spacing:.02em}
+#sms{position:fixed;right:18px;bottom:120px;width:min(340px,80vw);background:rgba(8,10,14,.94);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.5);transform:translateY(20px);opacity:0;transition:.35s;pointer-events:none;z-index:30}
+#sms.on{opacity:1;transform:none}#sms b{display:block;font:700 13px "Barlow Condensed";letter-spacing:.08em;color:var(--amber);text-transform:uppercase;margin-bottom:3px}
+#trophy{position:fixed;top:92px;left:50%;transform:translate(-50%,-10px);background:rgba(20,16,6,.94);border:1px solid #c9a227;border-radius:10px;padding:8px 18px;opacity:0;transition:.35s;pointer-events:none;text-align:center;z-index:30}
+#trophy.on{opacity:1;transform:translate(-50%,0)}#trophy b{color:#e8c547;font:700 14px "Barlow Condensed";letter-spacing:.08em;text-transform:uppercase}
+#saveTag{position:fixed;right:16px;bottom:14px;font:600 13px "Barlow Condensed";letter-spacing:.06em;color:var(--ink);opacity:0;transition:opacity .4s;pointer-events:none}
+#fpsTag{position:fixed;left:8px;bottom:8px;font:600 12px monospace;color:#9f9;pointer-events:none}
+.opt{display:grid;grid-template-columns:1fr minmax(150px,220px);gap:10px 18px;align-items:center;text-align:left;margin:14px 0}.opt select,.opt input[type=range]{width:100%}.opt input[type=checkbox]{width:22px;height:22px;justify-self:start}
+.opt select{font:500 15px Barlow;background:#111823;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px}
+.chap{display:grid;gap:8px;margin:12px 0;text-align:left}.chap button{display:flex;justify-content:space-between;gap:12px;text-align:left;font:500 16px Barlow}.chap button[disabled]{opacity:.4;cursor:default}
+.troph{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;text-align:left;margin:12px 0}.troph div{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.troph div.got{border-color:#c9a227}.troph div:not(.got){opacity:.55}
+.padfocus{outline:3px solid var(--amber)!important;outline-offset:2px}
+body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-size:clamp(18px,2vw,24px)}body.subsL #dText{font-size:21px}body.subsL #toast{font-size:18px}body.subsL .dChoices button{font-size:19px}
 #cineSub{margin:0;max-width:900px;text-align:center;font-size:clamp(16px,1.9vw,21px);line-height:1.4;color:#fff;text-shadow:0 2px 6px #000}
 #cineSub b{display:block;font:700 clamp(14px,1.5vw,17px) "Barlow Condensed";color:var(--amber)}
 #cineSkip{position:absolute;right:2vw;bottom:2vh;pointer-events:auto;font-size:15px;min-height:36px;padding:0 12px;background:rgba(255,255,255,.08)}
@@ -142,8 +154,8 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
     <h1>OSC<em>A</em>R</h1>
     <p class="sub">Eva et Cédric ont été enlevés. Sept provinces. Un seul homme. Le temps presse.</p>
     <p>Niveau 1 · Toronto, Ontario · début de l’automne · 72 heures de jeu pour trouver la première piste.</p>
-    <div class="btns"><button class="primary" id="bStart">Nouvelle partie</button><button id="bContinue" class="hidden">Continuer la partie</button><button id="bIntro">Revoir l’introduction</button></div>
-    <div class="keys">
+    <div class="btns"><button class="primary" id="bStart">Nouvelle partie</button><button id="bContinue" class="hidden">Continuer la partie</button><button id="bIntro">Revoir l’introduction</button><button id="bChapters">Chapitres</button><button id="bTrophies">Trophées</button><button id="bOptions">Options</button></div>
+    <div class="keys" id="titleKeys">
       <div><kbd>Z Q S D</kbd> ou <kbd>W A S D</kbd> se déplacer</div>
       <div><kbd>Maj</kbd> courir</div>
       <div><kbd>Espace</kbd> sauter</div>
@@ -159,22 +171,58 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
       <div><kbd>V</kbd> bloquer</div>
       <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> armes · <kbd>R</kbd> recharger</div>
       <div><kbd>H</kbd> boire du thermos</div>
+      <div><kbd>I</kbd> demander un indice</div>
+      <div><kbd>F1</kbd> aide et pause</div>
+      <div><kbd>Manette</kbd> reconnue (voir Options)</div>
       <div><kbd>T</kbd> accélérer le temps</div>
       <div><kbd>Échap</kbd> pause</div>
     </div>
-    <p class="small">Version 1.0 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
+    <p class="small">Version 1.1 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
   </div>
 </div>
+
+<div id="sms"><b>Numéro masqué</b><span id="smsText"></span></div>
+<div id="trophy"><b>Trophée débloqué</b><div id="trophyText"></div></div>
+<div id="saveTag">Sauvegardé</div>
+<div id="fpsTag" class="hidden"></div>
+<div id="options" class="screen hidden"><div class="card" style="max-height:92vh;overflow:auto">
+  <h1 style="font-size:56px">Options</h1>
+  <div class="opt">
+    <label for="oSens">Sensibilité de la souris et de la manette</label><input id="oSens" type="range" min="0.3" max="2.5" step="0.1">
+    <label for="oInv">Inverser l’axe vertical</label><input id="oInv" type="checkbox">
+    <label for="oVol">Volume général</label><input id="oVol" type="range" min="0" max="1" step="0.05">
+    <label for="oMus">Musique et ambiance (pluie, vent)</label><input id="oMus" type="range" min="0" max="1" step="0.05">
+    <label for="oDiff">Difficulté des combats</label><select id="oDiff"><option value="decouverte">Découverte</option><option value="normal">Normale</option><option value="expert">Expert</option></select>
+    <label for="oGfx">Qualité graphique</label><select id="oGfx"><option value="auto">Automatique (s’adapte à ton PC)</option><option value="high">Haute</option><option value="medium">Moyenne</option><option value="low">Basse (PC modeste)</option></select>
+    <label for="oSubs">Taille des sous-titres et dialogues</label><select id="oSubs"><option value="normal">Normale</option><option value="large">Grande</option></select>
+    <label for="oHints">Indices du numéro masqué</label><select id="oHints"><option value="auto">Automatiques (si tu bloques 5 min)</option><option value="ask">Sur demande seulement (touche I)</option><option value="off">Désactivés</option></select>
+    <label for="oTips">Astuces à l’écran</label><input id="oTips" type="checkbox">
+    <label for="oFps">Afficher les images par seconde</label><input id="oFps" type="checkbox">
+  </div>
+  <p class="small" id="oDiffTxt"></p><p class="small">Le chronomètre de chaque niveau ne change jamais, quelle que soit la difficulté.</p>
+  <div class="keys">
+    <div><kbd>Stick gauche</kbd> se déplacer</div><div><kbd>Stick droit</kbd> regarder</div><div><kbd>LB</kbd> courir</div><div><kbd>A</kbd> interagir / sauter</div>
+    <div><kbd>B</kbd> s’accroupir</div><div><kbd>X</kbd> coup de pied / recharger</div><div><kbd>Y</kbd> bloquer</div><div><kbd>RB</kbd> neutraliser / fouiller</div>
+    <div><kbd>RT</kbd> frapper / tirer</div><div><kbd>LT</kbd> viser</div><div><kbd>Croix ←→</kbd> changer d’arme</div><div><kbd>Croix ↑</kbd> thermos · <kbd>↓</kbd> indice</div>
+    <div><kbd>Back</kbd> carnet</div><div><kbd>Start</kbd> pause</div><div><kbd>A B X Y</kbd> réponses 1 à 4</div><div><kbd>R3</kbd> accélérer le temps</div>
+  </div>
+  <div class="btns"><button class="primary" id="bOptClose">Fermer</button></div>
+</div></div>
+<div id="chapters" class="screen hidden"><div class="card" style="max-height:92vh;overflow:auto">
+  <h1 style="font-size:56px">Chapitres</h1><p>Rejoue un niveau débloqué. Tes vies bonus et ton équipement te suivent.</p>
+  <div class="chap" id="chapList"></div><div class="btns"><button class="primary" id="bChapClose">Retour</button></div>
+</div></div>
+<div id="trophies" class="screen hidden"><div class="card" style="max-height:92vh;overflow:auto">
+  <h1 style="font-size:56px">Trophées</h1><p id="trophyCount"></p>
+  <div class="troph" id="trophyList"></div><div class="btns"><button class="primary" id="bTrophClose">Retour</button></div>
+</div></div>
 
 <div id="pause" class="screen hidden">
   <div class="card">
     <h1 style="font-size:72px">Pause</h1>
     <p id="pauseInfo"></p>
-    <div class="btns"><button class="primary" id="bResume">Reprendre</button><button id="bRestart">Recommencer le niveau</button><button id="bQuality">Qualité : haute</button></div>
-    <div class="keys">
-      <div><kbd>Z Q S D</kbd> se déplacer</div><div><kbd>Maj</kbd> courir</div><div><kbd>Espace</kbd> sauter</div>
-      <div><kbd>E</kbd> interagir</div><div><kbd>T</kbd> accélérer le temps</div><div><kbd>Molette</kbd> zoom</div>
-    </div>
+    <div class="btns"><button class="primary" id="bResume">Reprendre</button><button id="bRestart">Recommencer le niveau</button><button id="bPauseOpt">Options</button><button id="bQuitTitle">Quitter vers l’écran titre</button></div>
+    <div class="keys" id="pauseKeys"></div>
     <p class="small">Partie sauvegardée automatiquement dans ce navigateur.</p>
   </div>
 </div>
@@ -255,7 +303,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.0.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.1.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -452,7 +500,7 @@ function objectiveToronto(S){
   if(!S.flags.bossMet)return{stage:5,text:'Rejoins l’entrepôt 7 sans te faire repérer. Accroupis-toi (X), passe derrière les gardes (F pour les neutraliser). Un gilet de docker près du bureau de chantier t’aidera à passer inaperçu.',target:'warehouse'};
   if(!S.flags.bossDown)return{stage:6,text:'Affronte Tiago « Faca » Moreira, le lieutenant d’Omer, et ses gardes du corps.',target:'boss'};
   if(!S.clues.includes('manifest'))return{stage:7,text:'Interroge Tiago (touche E).',target:'boss'};
-  return{stage:8,text:'Niveau 1 terminé. La piste mène à Vancouver : niveau 2, Colombie-Britannique (en construction).',target:null};
+  return{stage:8,text:'Niveau 1 terminé. La piste mène à Vancouver : niveau 2, Colombie-Britannique.',target:null};
 }
 
 /* ---------------- 2. CORE ---------------- */
@@ -463,7 +511,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t)};
 const angLerp=(a,b,t)=>{let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*t};
 const bus={h:{},on(e,f){(this.h[e]??=[]).push(f)},emit(e,p){(this.h[e]||[]).forEach(f=>f(p))}};
-const store={load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));return s&&s.v===GAME_VERSION?s:null}catch(e){return null}},save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}},clear(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}};
+const store={load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));return s&&String(s.v).split('.')[0]===GAME_VERSION.split('.')[0]?s:null}catch(e){return null}},save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}},clear(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}};
 
 /* ---------------- City generation (pure data, deterministic) ---------------- */
 function sidePos(cx,cz,f,p,off){
@@ -611,7 +659,7 @@ function stepPlayer(dt){
   cmd.jump=false;
   p.vy-=15*dt;p.y+=p.vy*dt;if(p.y<=g){p.y=g;p.vy=0;}
   p.anim+=gs*dt*2.4;p.speed=gs;
-  if(icy&&running&&gs>4.2&&CB.lockT<=0&&Math.random()<dt*.4){CB.lockT=1.4;CB.fall=1.4;p.health=Math.max(1,p.health-6);sfx('down');if(!S.flags.slipToast||S.clock-S.flags.slipToast>60){S.flags.slipToast=S.clock;toast('Tu glisses sur le verglas et tu tombes ! Ne cours pas sur la glace.');}}if(gs>.5)stepFootprints(p);
+  if(icy&&running&&gs>4.2&&CB.lockT<=0&&Math.random()<dt*.4){CB.lockT=1.4;CB.fall=1.4;S.flags.fell=true;p.health=Math.max(1,p.health-6);sfx('down');if(!S.flags.slipToast||S.clock-S.flags.slipToast>60){S.flags.slipToast=S.clock;toast('Tu glisses sur le verglas et tu tombes ! Ne cours pas sur la glace.');}}if(gs>.5)stepFootprints(p);
   p.stamina=clamp(p.stamina+(running?-14:9)*dt,0,100);
   // Cold & rain: the climate is an opponent (stronger in later provinces).
   const W=S.weather;
@@ -633,7 +681,7 @@ function stepMission(){
 }
 bus.on('death',()=>{
   const p=S.player;if(S.status!=='playing')return;
-  p.lives--;
+  p.lives--;S.flags.died=true;
   if(p.lives<=0){
     if(p.bonusLives>0){p.bonusLives--;p.lives=1;toast('Vie bonus utilisée. Il ne t’en reste plus que '+p.bonusLives+'.');}
     else {bus.emit('fail','Oscar a perdu ses 3 vies.');return;}
@@ -1435,7 +1483,7 @@ function readNote(){
   showReading('Le mot d’Omer',CLUES.note.text,'Tes mains tremblent en le relisant.');
 }
 let lastStage=-1;
-function checkObjective(){const o=objective(S);if(o.stage!==lastStage){if(lastStage>=0&&o.stage>lastStage){toast('Nouvel objectif : '+o.text);store.save(S);}lastStage=o.stage;}}
+function checkObjective(){const o=objective(S);if(o.stage!==lastStage){S.stuckT=0;S.hintAuto=false;S.hintGiven=false;if(lastStage>=0&&o.stage>lastStage){toast('Nouvel objectif : '+o.text);store.save(S);}lastStage=o.stage;}}
 function objectiveTarget(o){
   if(!o.target)return null;
   if(S.level==='bc'){const bt=bcTarget(o);if(bt!==undefined)return bt;}
@@ -1653,12 +1701,12 @@ ARENAS.port.bossDeco=h=>{const ch=new THREE.Mesh(new THREE.TorusGeometry(.09,.01
 let actx=null,sirenOsc=null,sirenGain=null;
 function audioInit(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume();}catch(e){actx=null}}
 function sfx(kind,dist=0){if(!actx)return;try{const t=actx.currentTime,vol=clamp(1-dist/60,.05,1);
-  const g=actx.createGain();g.connect(actx.destination);
+  const g=actx.createGain();g.connect(AOUT());
   if(kind==='shot'||kind==='eshot'){const len=.25,buf=actx.createBuffer(1,actx.sampleRate*len,actx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
     const s=actx.createBufferSource();s.buffer=buf;const f=actx.createBiquadFilter();f.type='lowpass';f.frequency.value=kind==='shot'?2600:1400;s.connect(f);f.connect(g);g.gain.value=.5*vol;s.start(t);}
   else{const o=actx.createOscillator();o.type='sine';o.frequency.setValueAtTime(kind==='hit'?120:kind==='down'?80:220,t);o.frequency.exponentialRampToValueAtTime(40,t+.15);o.connect(g);g.gain.setValueAtTime(.4*vol,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.22);}
 }catch(e){}}
-function siren(on){if(!actx)return;try{if(on&&!sirenOsc){sirenOsc=actx.createOscillator();sirenGain=actx.createGain();sirenGain.gain.value=.035;const lfo=actx.createOscillator(),lg=actx.createGain();lfo.frequency.value=.7;lg.gain.value=180;lfo.connect(lg);lg.connect(sirenOsc.frequency);sirenOsc.frequency.value=620;sirenOsc.connect(sirenGain);sirenGain.connect(actx.destination);sirenOsc.start();lfo.start();}
+function siren(on){if(!actx)return;try{if(on&&!sirenOsc){sirenOsc=actx.createOscillator();sirenGain=actx.createGain();sirenGain.gain.value=.035;const lfo=actx.createOscillator(),lg=actx.createGain();lfo.frequency.value=.7;lg.gain.value=180;lfo.connect(lg);lg.connect(sirenOsc.frequency);sirenOsc.frequency.value=620;sirenOsc.connect(sirenGain);sirenGain.connect(AOUT());sirenOsc.start();lfo.start();}
   if(!on&&sirenOsc){sirenOsc.stop();sirenOsc=null;}}catch(e){}}
 /* --- line of sight & helpers --- */
 function losClear(ax,az,bx,bz){
@@ -1674,8 +1722,8 @@ function enemyCollide(e){const o={x:e.x,z:e.z};const I=AR().area;for(const c of 
 /* --- combat state on the player --- */
 const CB={fireCd:0,meleeCd:0,reloadT:0,lockT:0,flash:0,aim:false,block:false,crouch:false,firing:false,atk:null,tracers:[],shake:0};
 function playerWeapon(){return S.player.weapon||'fists'}
-function hurtPlayer(n,melee){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
-function alarm(reason){const P2=AS();if(P2.alarm)return;P2.alarm=true;for(const e of P2.enemies)if(!e.down){e.friendly=false;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}siren(true);toast('Alerte ! '+reason);}
+function hurtPlayer(n,melee){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;n*=DIFFK().dmg;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
+function alarm(reason){const P2=AS();if(P2.alarm)return;S.flags.hadAlarm=true;P2.alarm=true;for(const e of P2.enemies)if(!e.down){e.friendly=false;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}siren(true);toast('Alerte ! '+reason);}
 function damageEnemy(e,n,how){
   if(e.down)return;e.hp-=n;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;const m=enemyMeshes[S.location+':'+e.id];if(m)m.hit=.25;
   if(e.type!=='boss'&&e.hp<=0){e.down=true;sfx('down');}
@@ -1697,7 +1745,7 @@ function playerAttack(kind){
 }
 function tryFire(){
   const w=playerWeapon(),W=WEAPONS[w],A=S.player.ammo[w];if(CB.fireCd>0||CB.reloadT>0||CB.lockT>0)return;
-  if(A.mag<=0){if(A.res>0)reload();else toast('Plus de munitions.');CB.firing=false;return;}
+  if(A.mag<=0){if(A.res>0)reload();else toast('Plus de munitions.');CB.firing=false;return;}S.flags.shotFired=true;
   A.mag--;CB.fireCd=W.rate;CB.shake=.08;sfx('shot');oscarMesh.flash.intensity=6;
   // ray from the camera through the crosshair
   const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=W.spread+(S.player.speed>.5?W.move:0)+(CB.aim?0:.03)+(S.weather.windStr||0)*.025+(S.weather.temp<-10&&!S.flags.gloves?.035:0);
@@ -1719,7 +1767,7 @@ function takedownOrLoot(){
   // silent takedown from behind
   for(const e of AS().enemies){if(e.down||e.type==='boss'||e.friendly)continue;const dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz);if(d>1.7)continue;
     const behind=(dx*Math.sin(e.heading)+dz*Math.cos(e.heading))/d<-.35;
-    if(behind&&e.state!=='combat'){e.down=true;e.hp=0;CB.lockT=1.2;CB.atk={kind:'choke',t:0};sfx('down');p.heading=Math.atan2(-dx,-dz);toast('Garde neutralisé en silence.');
+    if(behind&&e.state!=='combat'){e.down=true;e.hp=0;CB.lockT=1.2;CB.atk={kind:'choke',t:0};sfx('down');p.heading=Math.atan2(-dx,-dz);toast('Garde neutralisé en silence.');S.takedowns=(S.takedowns||0)+1;if(S.takedowns>=5)unlock('ombre');
       const w=AS().enemies.some(o=>o!==e&&!o.down&&Math.hypot(o.x-e.x,o.z-e.z)<14&&losClear(o.x,o.z,e.x,e.z));if(w)alarm('Un garde t’a vu neutraliser son collègue.');return true;}}
   // loot bodies
   for(const e of AS().enemies){if(!e.down||e.looted||e.surrender)continue;if(Math.hypot(p.x-e.x,p.z-e.z)>1.8)continue;e.looted=true;
@@ -1749,7 +1797,7 @@ function stepCombat(dt){
     const sees=d<range&&ang<fov&&losClear(e.x,e.z,p.x,p.z);
     if(e.gate&&S.flags.gateOpen&&!P2.alarm){e.meter=0;}
     else if(sees&&e.state!=='combat'){let rate=(55*(1-d/range)+18)*(CB.crouch?.45:1)*(night?.7:1);if(disguised&&d>3.5)rate*=.22;if(d<2.5)rate*=3;if(inWarehouse(p.x,p.z)&&e.id[0]==='b')rate*=1.6;
-      e.meter=Math.min(100,e.meter+rate*dt);e.lx=p.x;e.lz=p.z;if(e.meter>=40&&e.state==='patrol')e.state='investigate';
+      e.meter=Math.min(100,e.meter+rate*dt*DIFFK().det);e.lx=p.x;e.lz=p.z;if(e.meter>=40&&e.state==='patrol')e.state='investigate';
       if(e.meter>=100){e.state='combat';if(e.type==='boss'||e.id[0]==='b'){if(!S.flags.bossMet)triggerBossScene(true);}else alarm('Un garde t’a repéré.');}}
     else if(!sees&&e.state!=='combat'){e.meter=Math.max(0,e.meter-12*dt);}
     if(e.state==='combat'&&sees){e.lx=p.x;e.lz=p.z;}
@@ -1861,7 +1909,7 @@ function levelComplete(){
   $('winStats').innerHTML=`<div><b>${Math.floor(used/60)} h ${String(Math.floor(used%60)).padStart(2,'0')}</b><span>temps utilisé sur ${L.timeLimitMin/60} h</span></div><div><b>${S.clues.length}</b><span>indices trouvés</span></div><div><b>${p.bonusLives}</b><span>vies bonus en réserve</span></div><div><b>${S.money} $</b><span>argent restant</span></div>`;
   const pr=loadProgress();const done=[...new Set([...(pr.levelsDone||[]),S.level])];const gear={...(pr.gear||{})};for(const g of ['parka','gloves','tuque','boots','crampons'])if(S.flags[g])gear[g]=true;
   try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:done,bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money,gear}))}catch(e){}
-  S.flags.levelDone=true;store.save(S);show('win',true);
+  trophiesOnWin();S.flags.levelDone=true;store.save(S);show('win',true);
 }
 
 /* --- 5e. NIVEAU 2 : COLOMBIE-BRITANNIQUE --- */
@@ -2071,7 +2119,7 @@ function objectiveBC(S){
   if(!S.flags.bossMet)return{stage:3,text:'Approche de la chapelle du camp. Le pont est gardé ; un tronc tombé permet de traverser la rivière plus à l’ouest.'+(S.tasks.josh==='active'?' Retrouve Josh (près des cabanes, à l’ouest) et convaincs-le de partir.':''),target:'chapel'};
   if(!S.flags.bossDown)return{stage:4,text:'Affronte le Pasteur et ses fidèles.',target:'boss'};
   if(!S.clues.includes('galante'))return{stage:5,text:'Interroge le Pasteur (touche E).',target:'boss'};
-  return{stage:6,text:'Niveau 2 terminé. La piste mène à St. John’s, Terre-Neuve (en construction).',target:null};
+  return{stage:6,text:'Niveau 2 terminé. La piste mène à St. John’s, Terre-Neuve.',target:null};
 }
 function bcTarget(o){
   const t=o.target;
@@ -2272,7 +2320,7 @@ function objectiveNL(S){
   if(!S.flags.bossMet)return{stage:2,text:'Rejoins la timonerie, à l’arrière du chalutier. Le pont tangue, le vent hurle : reste à couvert.',target:'wheel'};
   if(!S.flags.bossDown)return{stage:3,text:'Affronte le capitaine Roy.',target:'boss'};
   if(!S.clues.includes('logbook'))return{stage:4,text:'Interroge Roy (touche E).',target:'boss'};
-  return{stage:5,text:'Niveau 3 terminé. La piste mène à Calgary, en Alberta (en construction).',target:null};
+  return{stage:5,text:'Niveau 3 terminé. La piste mène à Calgary, en Alberta.',target:null};
 }
 function nlTarget(o){const t=o.target;
   if(t==='pub')return S.location==='harbour'?{x:HARB.ox-20,z:HARB.oz+41.5}:null;
@@ -2480,7 +2528,7 @@ function objectiveAB(S){
   if(!S.flags.bossMet)return{stage:3,text:'Infiltre le ranch de l’Éleveur. Attention : tes traces dans la neige peuvent te trahir, et la neige profonde ralentit (reste sur les chemins déneigés).',target:'lodge'};
   if(!S.flags.bossDown)return{stage:4,text:'Affronte l’Éleveur.',target:'boss'};
   if(!S.clues.includes('registre'))return{stage:5,text:'Interroge l’Éleveur (touche E).',target:'boss'};
-  return{stage:6,text:'Niveau 4 terminé. La piste mène à Halifax, en Nouvelle-Écosse (en construction).',target:null};
+  return{stage:6,text:'Niveau 4 terminé. La piste mène à Halifax, en Nouvelle-Écosse.',target:null};
 }
 function abTarget(o){const t=o.target;
   if(t==='railcar')return S.location==='yard'?{x:YARD.ox+30,z:YARD.oz-12}:null;
@@ -2653,7 +2701,7 @@ function objectiveNS(S){
   if(!S.flags.bossMet)return{stage:1,text:'Rejoins le bureau du Notaire (angle nord-est). Accroupis-toi derrière les cloisons basses ; évite les caméras ou coupe le courant au tableau de fusibles.',target:'notroom'};
   if(!S.flags.bossDown)return{stage:2,text:'Neutralise la sécurité et le Notaire avant qu’il ne déchiquette tout !',target:'boss'};
   if(!S.flags.notaryDone)return{stage:3,text:'Interroge le Notaire (touche E).',target:'boss'};
-  return{stage:4,text:'Niveau 5 terminé. La piste mène au « Bras droit » d’Omer, à Winnipeg, Manitoba (en construction).',target:null};
+  return{stage:4,text:'Niveau 5 terminé. La piste mène au « Bras droit » d’Omer, à Winnipeg, Manitoba.',target:null};
 }
 function nsTarget(o){const t=o.target;
   if(t==='mission')return S.location==='halifax'?{x:HFX.ox-30,z:HFX.oz+32}:null;
@@ -3118,7 +3166,7 @@ function mtlZones(){
   z({loc:'manoir',x:Mo.ox-10,z:Mo.oz-31.4,r:1.5,cond:()=>!S.flags.door_terrace,label:()=>'Forcer la porte-fenêtre de la terrasse (bruyant)',act:()=>{addMinutes(2);S.flags.door_terrace=true;sfx('down');const p=S.player;
     const near=S.arenas.manoir.enemies.some(e=>!e.down&&!e.friendly&&Math.hypot(e.x-p.x,e.z-p.z)<12);if(near)alarm('Le verre de la porte-fenêtre a éclaté.');else toast('Le verrou cède dans un craquement. Personne n’a entendu… pour l’instant.');}});
   z({loc:'manoir',x:Mo.ox,z:Mo.oz+1.4,r:1.5,cond:()=>!S.flags.door_front,label:()=>'Porte d’entrée (verrouillée)',act:()=>toast('Verrouillée. Le garde du portail a la confiance du patron, pas toi.')});
-  z({loc:'manoir',x:Mo.genPos.x,z:Mo.genPos.z,r:1.5,cond:()=>!S.flags.powerCut,label:()=>'Saboter la génératrice',act:()=>{S.flags.powerCut=true;addMinutes(2);sfx('down');toast('Tu arraches les câbles. Le moteur tousse et meurt : la maison d’Omer plonge dans le noir, comme le reste de la rue. Caméras aveugles.');}});
+  z({loc:'manoir',x:Mo.genPos.x,z:Mo.genPos.z,r:1.5,cond:()=>!S.flags.powerCut,label:()=>'Saboter la génératrice',act:()=>{S.flags.powerCut=true;unlock('courant');addMinutes(2);sfx('down');toast('Tu arraches les câbles. Le moteur tousse et meurt : la maison d’Omer plonge dans le noir, comme le reste de la rue. Caméras aveugles.');}});
   z({loc:'manoir',x:Mo.ox,z:Mo.oz+44.5,r:2,label:()=>'Ressortir dans la rue',act:()=>{exitTo('westmount',Wm.ox+40,Wm.oz+2);}});
   z({loc:'manoir',x:Mo.ox+20.4,z:Mo.oz-28.6,r:1.6,label:()=>S.flags.bossDown?'Porte du sous-sol':'Porte du sous-sol (Omer d’abord)',act:()=>{if(!S.flags.bossDown){toast('Omer et ses hommes sont encore debout.');return;}openDialogue('clavier');}});
   z({loc:'soussol',x:SOUSSOL.ox,z:SOUSSOL.oz+3.4,r:1.2,cond:()=>!S.flags.freed,label:()=>'Remonter au salon',act:()=>exitInterior()});
@@ -3294,10 +3342,10 @@ function buildCineSets(){
 }
 /* --- sound for cinematics --- */
 let rotorSrc=null;
-function csnd(kind){if(!actx)return;try{const t=actx.currentTime,g=actx.createGain();g.connect(actx.destination);
+function csnd(kind){if(!actx)return;try{const t=actx.currentTime,g=actx.createGain();g.connect(AOUT());
   if(kind==='boom'){const len=2.2,b=actx.createBuffer(1,actx.sampleRate*len,actx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
     const s=actx.createBufferSource();s.buffer=b;const f=actx.createBiquadFilter();f.type='lowpass';f.frequency.value=420;s.connect(f);f.connect(g);g.gain.value=1.1;s.start(t);}
-  if(kind==='ring'){for(let k=0;k<2;k++)for(const fq of [440,480]){const o=actx.createOscillator();o.frequency.value=fq;const gg=actx.createGain();gg.gain.value=0;gg.gain.setValueAtTime(.06,t+k*1.2);gg.gain.setValueAtTime(0,t+k*1.2+.8);o.connect(gg);gg.connect(actx.destination);o.start(t+k*1.2);o.stop(t+k*1.2+.85);}}
+  if(kind==='ring'){for(let k=0;k<2;k++)for(const fq of [440,480]){const o=actx.createOscillator();o.frequency.value=fq;const gg=actx.createGain();gg.gain.value=0;gg.gain.setValueAtTime(.06,t+k*1.2);gg.gain.setValueAtTime(0,t+k*1.2+.8);o.connect(gg);gg.connect(AOUT());o.start(t+k*1.2);o.stop(t+k*1.2+.85);}}
   if(kind==='bang'){sfx('down');sfx('hit');}
   if(kind==='thump'){const o=actx.createOscillator();o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(40,t+.25);o.connect(g);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.start(t);o.stop(t+.32);}
   if(kind==='rotorOn'&&!rotorSrc){const len=.12,b=actx.createBuffer(1,actx.sampleRate*len,actx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4);
@@ -3559,7 +3607,7 @@ addEventListener('blur',()=>keys.clear());
 function readInput(){
   cmd.f=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0);
   cmd.r=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
-  cmd.run=keys.has('ShiftLeft')||keys.has('ShiftRight');
+  cmd.run=keys.has('ShiftLeft')||keys.has('ShiftRight');padMove();
 }
 canvas.addEventListener('mousedown',e=>{if(mode!=='play')return;
   if(!pointerLocked&&e.button===0){dragLook=true;return;}
@@ -3568,7 +3616,7 @@ canvas.addEventListener('mousedown',e=>{if(mode!=='play')return;
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('click',()=>{if(mode==='play'&&!pointerLocked)lockPointer();});
 addEventListener('mouseup',e=>{dragLook=false;if(e.button===0)CB.firing=false;if(e.button===2)CB.aim=false;});
-addEventListener('mousemove',e=>{if(mode!=='play'||!(pointerLocked||dragLook))return;camYaw-=e.movementX*.0028;camPitch=clamp(camPitch+e.movementY*.0022,-.15,1.2);});
+addEventListener('mousemove',e=>{if(mode!=='play'||!(pointerLocked||dragLook))return;camYaw-=e.movementX*.0028*SET.sens;camPitch=clamp(camPitch+e.movementY*.0022*SET.sens*(SET.invertY?-1:1),-.15,1.2);});
 canvas.addEventListener('wheel',e=>{camDist=clamp(camDist+e.deltaY*.006,2.2,S&&INTERIORS[S.location]&&INTERIORS[S.location].indoor?4.5:16);e.preventDefault();},{passive:false});
 document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===canvas;if(!pointerLocked&&mode==='play')pause();});
 function lockPointer(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){} canvas.focus();}
@@ -3608,7 +3656,7 @@ $('bRetry').onclick=()=>{const l=S.level;store.clear();startLevel(null,l)};
 let readyLevel='toronto';
 function showReady(l){readyLevel=l;const R2=LEVELS[l].ready;$('readyKicker').textContent=R2.kicker;$('readyTitle').textContent=R2.title;$('readyText').textContent=R2.text;show('ready',true);mode='ready';}
 $('bNext').onclick=()=>{const nx=LEVELS[S.level].next;if(!nx)return;show('win',false);store.clear();S=null;show('hud',false);playCine(nx+'Intro',()=>showReady(nx));};
-$('bQuality').onclick=()=>{quality=quality==='high'?'low':'high';sun.castShadow=quality==='high';renderer.setPixelRatio(quality==='high'?Math.min(devicePixelRatio,1.5):.75);$('bQuality').textContent='Qualité : '+(quality==='high'?'haute':'basse');resize();};
+
 
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
@@ -3617,7 +3665,7 @@ addEventListener('resize',resize);
 let last=performance.now(),acc=0,saveT=0,viewClock=17*60;
 function frame(now){
   requestAnimationFrame(frame);
-  const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;
+  const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;stepComfort(dt,t);
   if(mode==='play'){
     readInput();acc+=dt;let n=0;
     while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto')stepAgents(STEP);stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);stepMission();acc-=STEP;n++;}
@@ -3658,8 +3706,152 @@ function syncTitle(dt,t){
   const prev=S;S=fake;syncView(dt,t);S=prev;oscarMesh.g.visible=false;
 }
 
+/* ---------------- 7. CONFORT DE JEU (v1.1) : options, chapitres, trophées, musique, indices, manette ---------------- */
+const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
+function saveSettings(){try{localStorage.setItem('oscar.settings',JSON.stringify(SET))}catch(e){}}
+const DIFF={decouverte:{det:.6,dmg:.6,txt:'Découverte : les gardes mettent plus de temps à te repérer et frappent moins fort.'},normal:{det:1,dmg:1,txt:'Normale : l’expérience prévue.'},expert:{det:1.35,dmg:1.3,txt:'Expert : les gardes te repèrent vite et frappent fort.'}};
+function DIFFK(){return DIFF[SET.diff]||DIFF.normal}
+const COMF={q:'high',fpsT:0,frames:0,low:0,smsT:0,trT:0,saveT:0,tipT:0,focus:-1};
+function applyGfx(q){COMF.q=q;try{renderer.setPixelRatio(q==='high'?Math.min(devicePixelRatio,1.5):q==='medium'?1:.75);sun.castShadow=q!=='low';resize();}catch(e){}}
+function applySettings(){document.body.classList.toggle('subsL',SET.subs==='large');show('fpsTag',!!SET.fps);applyGfx(SET.gfx==='auto'?COMF.q:SET.gfx);}
+/* --- audio: master bus, music that follows the action, rain and wind --- */
+const AUD={};
+function AOUT(){audioGraph();return AUD.sfx||actx.destination}
+const midi=n=>440*Math.pow(2,(n-69)/12);
+const PROG=[[57,60,64,69],[53,57,60,65],[48,55,60,64],[55,59,62,67]],ROOT={title:0,toronto:0,bc:-2,nl:-5,ab:-3,ns:-7,mb:-4,mtl:-1};
+function audioGraph(){if(!actx||AUD.master)return;const a=actx;
+  AUD.master=a.createGain();AUD.master.connect(a.destination);AUD.sfx=a.createGain();AUD.sfx.connect(AUD.master);AUD.mus=a.createGain();AUD.mus.connect(AUD.master);AUD.amb=a.createGain();AUD.amb.connect(AUD.master);
+  const len=2*a.sampleRate,b=a.createBuffer(1,len,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;AUD.noise=b;
+  const src=a.createBufferSource();src.buffer=b;src.loop=true;
+  const rf=a.createBiquadFilter();rf.type='bandpass';rf.frequency.value=2600;rf.Q.value=.6;AUD.rain=a.createGain();AUD.rain.gain.value=0;src.connect(rf);rf.connect(AUD.rain);AUD.rain.connect(AUD.amb);
+  const wf=a.createBiquadFilter();wf.type='lowpass';wf.frequency.value=380;AUD.wf=wf;AUD.wind=a.createGain();AUD.wind.gain.value=0;src.connect(wf);wf.connect(AUD.wind);AUD.wind.connect(AUD.amb);src.start();
+  const pf=a.createBiquadFilter();pf.type='lowpass';pf.frequency.value=900;AUD.pad=a.createGain();AUD.pad.gain.value=0;pf.connect(AUD.pad);AUD.pad.connect(AUD.mus);
+  AUD.voices=[0,1,2,3].map(i=>{const o=a.createOscillator();o.type=i===0?'sine':'triangle';o.detune.value=(i-1.5)*4;const g=a.createGain();g.gain.value=i===0?.16:.06;o.connect(g);g.connect(pf);o.start();return o;});
+  const to=a.createOscillator();to.type='sine';to.frequency.value=55;const tg=a.createGain();tg.gain.value=.5;const lfo=a.createOscillator();lfo.frequency.value=1.7;const lg=a.createGain();lg.gain.value=.5;lfo.connect(lg);lg.connect(tg.gain);
+  AUD.ten=a.createGain();AUD.ten.gain.value=0;to.connect(tg);tg.connect(AUD.ten);AUD.ten.connect(AUD.mus);to.start();lfo.start();AUD.tenOsc=to;
+  AUD.ct=0;AUD.ci=0;AUD.beat=0;AUD.bi=0;}
+function drum(kind){const a=actx,t=a.currentTime,g=a.createGain();g.connect(AUD.mus);
+  if(kind==='kick'){const o=a.createOscillator();o.frequency.setValueAtTime(95,t);o.frequency.exponentialRampToValueAtTime(42,t+.22);o.connect(g);g.gain.setValueAtTime(.32,t);g.gain.exponentialRampToValueAtTime(.001,t+.28);o.start(t);o.stop(t+.3);}
+  else{const s=a.createBufferSource();s.buffer=AUD.noise;const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=kind==='hat'?7000:1800;s.connect(f);f.connect(g);g.gain.setValueAtTime(kind==='hat'?.05:.12,t);g.gain.exponentialRampToValueAtTime(.001,t+(kind==='hat'?.05:.16));s.start(t,Math.random());s.stop(t+.2);}}
+function beep(){if(!actx)return;try{const a=actx,t=a.currentTime;for(const k of [0,.16]){const o=a.createOscillator(),g=a.createGain();o.frequency.value=1320;o.connect(g);g.connect(AOUT());g.gain.setValueAtTime(.08,t+k);g.gain.exponentialRampToValueAtTime(.001,t+k+.1);o.start(t+k);o.stop(t+k+.12);}}catch(e){}}
+function stepAudio(dt,T){if(!actx)return;audioGraph();const now=actx.currentTime,set=(g,v,k=.6)=>g.gain.setTargetAtTime(v,now,k);
+  set(AUD.master,SET.vol,.1);set(AUD.mus,SET.music,.1);set(AUD.amb,Math.min(1,SET.music*1.4),.1);
+  let pad=0,ten=0,cmb=0,rain=0,wind=0,mood='title';
+  if(mode==='title'||(!S&&mode==='ready')){pad=.85;}
+  else if(mode==='cine'){pad=.35;mood=S?S.level:'toronto';}
+  else if(S){mood=S.level;pad=mode==='pause'?.4:.65;const st=AR()&&AS();
+    if(st&&S.status==='playing'){let mm=0,cb=false;for(const e of st.enemies){if(e.down||e.friendly)continue;mm=Math.max(mm,e.meter);if(e.state==='combat')cb=true;}ten=clamp((mm-15)/50,0,1);cmb=(st.alarm||cb)&&!S.flags.levelDone?1:0;}
+    const inI=INTERIORS[S.location],indoor=inI&&inI.indoor;rain=(S.weather.rain||0)*(indoor?.1:.45);wind=(S.weather.windStr||0)*(indoor?.06:.5);if(cmb)pad*=.45;if(mode==='win')pad=.8,ten=0,cmb=0;}
+  set(AUD.pad,pad*.9,1.2);set(AUD.ten,ten*.35*(1-cmb),.4);set(AUD.rain,rain*.5,.8);set(AUD.wind,wind*.6,.8);AUD.wf.frequency.setTargetAtTime(260+Math.sin(T*.7)*140*(1+wind),now,.5);
+  AUD.ct-=dt;if(AUD.ct<=0){AUD.ct=9;AUD.ci=(AUD.ci+1)%4;const ch=PROG[AUD.ci],r=ROOT[mood]||0;AUD.voices.forEach((o,i)=>o.frequency.setTargetAtTime(midi(ch[i]+r-12*(i===0?1:0)),now,1.4));AUD.tenOsc.frequency.setTargetAtTime(midi(ch[0]+r-24),now,.5);}
+  if(cmb&&mode==='play'){AUD.beat-=dt;if(AUD.beat<=0){AUD.beat=.42;AUD.bi++;drum('kick');if(AUD.bi%2)drum('hat');if(AUD.bi%4===2)drum('snare');}}}
+addEventListener('pointerdown',()=>{audioInit();audioGraph();});
+/* --- hints from the mysterious caller --- */
+const HINTS={
+  toronto:['Fouille la cuisine et le perron : le mot d’Omer, et ce qu’ils ont laissé tomber dehors. Approche-toi des objets et appuie sur E.','Ton voisin Henderson a tout vu depuis sa fenêtre. Il habite juste à l’est. Sois patient avec lui.','Le Lina’s Diner. Lina sait qui étaient ces trois hommes ; les habitués aussi, si tu les écoutes.','Le port, au bord du lac, au pied de la tour CN. L’entrepôt 7.','Le garde de l’entrée aime l’argent. Sinon, longe la clôture vers l’ouest : elle est percée.','Accroupis-toi (X) et passe derrière eux ; F pour les endormir. Le gilet orange près du bureau de chantier te fera passer pour un docker.','Bloque (V) quand Tiago frappe avec son couteau, puis contre-attaque. Ses gardes d’abord, si tu peux.','Il est à terre. Va lui parler (E).'],
+  bc:['Le conteneur est dans les allées du terminal. Reste dans l’ombre des piles : les gardes surveillent les grandes allées.','Le Rusty Anchor, en face du terminal. Les dockers parlent quand on les écoute. Et achète un imperméable : la pluie te glace.','Earl t’emmène si tu l’aides ; le taxi coûte 120 $ ; le stop prend du temps, et le temps te manque.','Le pont est gardé. Plus à l’ouest, un tronc tombé traverse la rivière.','Le Pasteur prêche, mais ses fidèles tirent. Mets-toi à couvert.','Va lui parler (E).'],
+  nl:['Water Street. Au Ship’s Lantern, les pêcheurs savent où chaque bateau s’amarre.','Quai 18. Le mot de passe des marins, un billet, tes poings… ou une doris par la mer.','La timonerie est à l’arrière. Le pont tangue : avance d’abri en abri.','Roy est vieux mais solide. Garde tes distances quand la houle te déséquilibre.','Va lui parler (E).'],
+  ab:['La gare de triage d’Alyth : le wagon CP 4471. Et trouve vite de quoi te couvrir : parka, mitaines, tuque, bottes.','Le relais routier, sur la route 1. Les camionneurs vont partout.','Dale a un camion. Une motoneige va plus vite. À pied, la route 1 est longue et froide.','Reste sur les chemins déneigés : tes traces dans la neige fraîche alertent les gardes.','L’Éleveur se bat comme un taureau. Esquive, puis frappe.','Va lui parler (E).'],
+  ns:['La porte de service s’ouvre à la relève de 23 h, ou avec la carte de Chloé. L’escalier de secours est glissant.','Le tableau de fusibles coupe le courant : caméras aveugles. Les cloisons basses te cachent si tu es accroupi.','Vite : il déchiquette les preuves. Va droit sur lui.','Va lui parler (E).'],
+  mb:['Le Café de la Cathédrale, juste devant. Nadia a peur : une promesse vaut mieux qu’une menace. L’abribus est chauffé.','Louis connaît la prairie. Avec lui, une heure en motoneige ; à pied, cinq heures de glace.','Dans les voiles blancs, les gardes ne te voient pas venir. Le bureau de Viktor est près de la voie ferrée. Bois ton thermos (H).','Viktor protège sa mallette. Ne le laisse pas reculer vers l’avion.','Va lui parler (E).'],
+  mtl:['La salle paroissiale, de l’autre côté de la rue. Écoute la cuisinière : elle connaît cette maison.','Trois portes : le portail avec le bon mot de passe, la cuisine à minuit, ou le mur du jardin. Et ne marche pas sur le fil tombé.','Le grand salon est dans l’aile est. La génératrice est devant le garage : coupe-la, et ses caméras deviennent aveugles.','Omer n’est pas seul. Les gardes du salon d’abord, puis lui.','Il est à terre. Va lui parler (E).','Au fond du salon. Tu connais le code. Sans courant, il te faut sa clé.','Ils sont là, Oscar. Va les chercher.'],
+};
+function showSms(text){$('smsText').textContent=text;$('sms').classList.add('on');COMF.smsT=11;beep();}
+function requestHint(manual){if(!S||S.status!=='playing')return false;
+  if(SET.hints==='off'){if(manual)toast('Les indices sont désactivés (Options).');return false;}
+  const h=(HINTS[S.level]||[])[objective(S).stage];if(!h){if(manual)toast('Le numéro masqué ne répond pas.');return false;}
+  if(manual&&(S.stuckT||0)<90&&!S.hintGiven){toast('Le numéro masqué ne répond pas… pas encore. Cherche encore un peu.');return false;}
+  S.hintGiven=true;showSms(h);return true;}
+/* --- trophies --- */
+const TROPHIES=[
+  ['premier','Première piste','Terminer le niveau de Toronto.'],['fantome','Fantôme','Terminer un niveau sans jamais déclencher d’alerte.'],['mainspropres','Mains propres','Terminer un niveau sans tirer une seule balle.'],
+  ['chrono','Contre la montre','Terminer un niveau en moins de la moitié du temps.'],['invaincu','Invaincu','Terminer un niveau sans perdre une vie.'],['ombre','L’ombre','Neutraliser 5 gardes par derrière dans le même niveau.'],
+  ['rab','Deux vies de rab','Gagner les deux vies bonus du jeu.'],['sangfroid','Sang-froid','Terminer le Manitoba sans que ta chaleur descende sous 25.'],['patineur','Pied sûr','Terminer la Nouvelle-Écosse sans tomber sur le verglas.'],
+  ['courant','Courant coupé','Saboter la génératrice d’Omer.'],['famille','À la maison','Libérer Eva et Cédric : terminer le jeu.'],['minuit','Avant 1 h du matin','Libérer Eva et Cédric en moins de 2 h 30 de jeu.']];
+function getTrophies(){try{return JSON.parse(localStorage.getItem('oscar.trophies'))||{}}catch(e){return{}}}
+function unlock(id){const T=getTrophies();if(T[id])return false;T[id]=Date.now();try{localStorage.setItem('oscar.trophies',JSON.stringify(T))}catch(e){}
+  const tr=TROPHIES.find(x=>x[0]===id);$('trophyText').textContent=tr[1]+' — '+tr[2];$('trophy').classList.add('on');COMF.trT=5;beep();return true;}
+function getRecords(){try{return JSON.parse(localStorage.getItem('oscar.records'))||{}}catch(e){return{}}}
+function trophiesOnWin(){const L=LEVELS[S.level],used=S.clock-S.startClock,got=[];const u=id=>{if(unlock(id))got.push(TROPHIES.find(x=>x[0]===id)[1]);};
+  if(S.level==='toronto')u('premier');if(!S.flags.hadAlarm)u('fantome');if(!S.flags.shotFired)u('mainspropres');if(used<L.timeLimitMin/2)u('chrono');if(!S.flags.died)u('invaincu');
+  if(S.level==='mb'&&(S.minHeat??100)>=25)u('sangfroid');if(S.level==='ns'&&!S.flags.fell)u('patineur');if(S.level==='mtl'){u('famille');if(used<=150)u('minuit');}
+  const R=getRecords(),best=R[S.level];const rec=!best||used<best.t;if(rec){R[S.level]={t:used,d:Date.now()};try{localStorage.setItem('oscar.records',JSON.stringify(R))}catch(e){}}
+  $('winStats').innerHTML+=`<div><b>${rec?'Record !':fmtDur(best.t)}</b><span>${rec?'meilleur temps sur ce niveau':'ton meilleur temps'}</span></div>`+(got.length?`<div><b>${got.length}</b><span>trophée${got.length>1?'s':''} : ${got.join(', ')}</span></div>`:'');}
+const fmtDur=m=>Math.floor(m/60)+' h '+String(Math.floor(m%60)).padStart(2,'0');
+/* --- tips (shown once each) --- */
+const TIPS={suspicion:'Astuce : un garde te soupçonne, sa jauge monte. Accroupis-toi (X) et sors de son champ de vision.',cold:'Astuce : ta chaleur corporelle baisse. Entre dans un bâtiment, approche-toi d’un feu ou couvre-toi.',
+  ice:'Astuce : sol verglacé. Marche sans courir (sans Maj) pour ne pas tomber.',clue:'Astuce : la touche C ouvre ton carnet d’indices.',hint:'Astuce : bloqué ? La touche I demande un indice au numéro masqué.',health:'Astuce : santé basse. Mets-toi à l’abri et évite les coups.',
+  pad:'Manette détectée : A interagir ou sauter, B s’accroupir, gâchette droite frapper ou tirer, Start pause. Le détail est dans les Options.'};
+function tip(id){if(!SET.tips||SET.seen[id])return;SET.seen[id]=1;saveSettings();toast(TIPS[id]);}
+function checkTips(){const p=S.player,st=AR()&&AS();
+  if(st&&st.enemies.some(e=>!e.down&&!e.friendly&&e.meter>20&&e.state!=='combat'))tip('suspicion');
+  if(p.heat<55)tip('cold');if(p.health<45)tip('health');if(S.clues.length)tip('clue');
+  const I=INTERIORS[S.location];if(I&&I.ice&&!I.indoor&&!S.flags.crampons)tip('ice');if((S.stuckT||0)>150&&SET.hints!=='off')tip('hint');
+  const L=LEVELS[S.level],rem=L.timeLimitMin-(S.clock-S.startClock);if(rem<L.timeLimitMin*.2&&!S.flags.timeWarn){S.flags.timeWarn=true;toast('Attention : il te reste moins d’un cinquième du temps.');}}
+/* --- gamepad --- */
+const PAD={g:null,prev:[]};
+addEventListener('gamepadconnected',()=>{toast('Manette connectée.');setTimeout(()=>tip('pad'),5500);});
+const padDown=i=>{const b=PAD.g&&PAD.g.buttons[i];return !!b&&(b.pressed||b.value>.45)};
+const padHit=i=>padDown(i)&&!PAD.prev[i];
+function padMove(){if(!PAD.g)return;const ax=i=>{const v=PAD.g.axes[i]||0;return Math.abs(v)<.2?0:v;};const lx=ax(0),ly=ax(1);if(lx||ly){cmd.r=clamp(cmd.r+lx,-1,1);cmd.f=clamp(cmd.f-ly,-1,1);}if(padDown(4))cmd.run=true;}
+const SCREENS=['options','chapters','trophies','pause','win','fail','ready','title'];
+function topScreen(){return SCREENS.find(id=>!$(id).classList.contains('hidden'))}
+function padMenu(){const id=topScreen();if(!id)return;const bs=[...$(id).querySelectorAll('button,select,input')].filter(b=>!b.classList.contains('hidden')&&b.offsetParent!==null);if(!bs.length)return;
+  const mv=padHit(13)?1:padHit(12)?-1:0;if(mv){COMF.focus=(COMF.focus+mv+bs.length)%bs.length;bs.forEach(b=>b.classList.remove('padfocus'));bs[COMF.focus].classList.add('padfocus');bs[COMF.focus].scrollIntoView({block:'nearest'});}
+  const f=bs[COMF.focus];if(f&&(padHit(14)||padHit(15))){const d=padHit(15)?1:-1;if(f.tagName==='SELECT'){f.selectedIndex=clamp(f.selectedIndex+d,0,f.options.length-1);f.dispatchEvent(new Event('change'));}else if(f.type==='range'){f.value=+f.value+d*f.step*2;f.dispatchEvent(new Event('input'));}}
+  if(padHit(0)){const b=f||bs.find(x=>x.classList.contains('primary'))||bs[0];if(b.type==='checkbox'){b.checked=!b.checked;b.dispatchEvent(new Event('change'));}else if(b.tagName==='BUTTON')b.click();}
+  if(padHit(1)){const back={options:'bOptClose',chapters:'bChapClose',trophies:'bTrophClose',pause:'bResume'}[id];if(back)$(back).click();}
+  if(padHit(9)&&id==='pause')resume();}
+function padPoll(dt){const gps=navigator.getGamepads?[...navigator.getGamepads()]:[];PAD.g=gps.find(x=>x&&x.connected)||null;if(!PAD.g){PAD.prev=[];return;}
+  if(mode==='play'){const ax=i=>{const v=PAD.g.axes[i]||0;return Math.abs(v)<.15?0:v;};camYaw-=ax(2)*2.6*dt*SET.sens;camPitch=clamp(camPitch+ax(3)*1.7*dt*SET.sens*(SET.invertY?-1:1),-.15,1.2);
+    if(padHit(0)){if(activeZone)interact();else cmd.jump=true;}if(padHit(1))CB.crouch=!CB.crouch;if(padHit(2)){if(playerWeapon()==='fists')playerAttack('secondary');else reload();}
+    if(padHit(3))CB.block=true;else if(!padDown(3)&&PAD.prev[3])CB.block=false;if(padHit(5)){if(!takedownOrLoot()&&activeZone)interact();}
+    if(padHit(6))CB.aim=true;else if(!padDown(6)&&PAD.prev[6])CB.aim=false;if(padHit(7))playerAttack('primary');else if(!padDown(7)&&PAD.prev[7])CB.firing=false;
+    if(padHit(8))openNotebook();if(padHit(9)){pause();COMF.focus=-1;}if(padHit(11))timeScale=timeScale===1?20:1;if(padHit(12))drinkThermos();if(padHit(13))requestHint(true);
+    if(padHit(14)||padHit(15)){const own=['fists',...S.player.weapons.filter(w=>w!=='fists')],i=own.indexOf(playerWeapon());equip(own[(i+(padHit(15)?1:own.length-1))%own.length]);}}
+  else if(mode==='ui'){for(const i of [0,1,2,3])if(padHit(i)){if(dlgState&&dlgState.reading)closeUI();else choose(i);break;}if(padHit(8)||padHit(9))closeUI();}
+  else if(mode==='cine'){if(padHit(0)||padHit(9))endCine();}
+  else padMenu();
+  PAD.prev=PAD.g.buttons.map((b,i)=>padDown(i));}
+/* --- menus: options, chapters, trophies, quit --- */
+const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oTips','tips','check'],['oFps','fps','check']];
+function fillOptions(){for(const [id,k,t] of OPT){const el=$(id);if(t==='check')el.checked=!!SET[k];else el.value=SET[k];}$('oDiffTxt').textContent=DIFF[SET.diff].txt;}
+for(const [id,k,t] of OPT){const el=$(id);el.addEventListener(t==='range'?'input':'change',()=>{SET[k]=t==='check'?el.checked:t==='range'?+el.value:el.value;saveSettings();applySettings();fillOptions();});}
+let optFrom=null;
+function openMenu(id,from){optFrom=from;show(from,false);if(id==='options')fillOptions();if(id==='chapters')fillChapters();if(id==='trophies')fillTrophies();show(id,true);COMF.focus=-1;}
+function closeMenu(id){show(id,false);show(optFrom||'title',true);COMF.focus=-1;}
+function fillChapters(){const pr=loadProgress(),done=pr.levelsDone||[],R=getRecords();const Ls=Object.values(LEVELS).sort((a,b)=>a.index-b.index);
+  $('chapList').innerHTML=Ls.map(L=>{const prev=Ls.find(x=>x.index===L.index-1);const open=L.index===1||done.includes(L.id)||(prev&&done.includes(prev.id));
+    return `<button data-l="${L.id}" ${open?'':'disabled'}><span><b>${L.index}. ${L.name}</b> · ${L.region} · ${L.season}</span><span>${open?(R[L.id]?'record '+fmtDur(R[L.id].t):done.includes(L.id)?'terminé':'débloqué'):'verrouillé'}</span></button>`;}).join('');
+  $('chapList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>startChapter(b.dataset.l));}
+function startChapter(id){show('chapters',false);show('title',false);store.clear();audioInit();if(id==='toronto')playCine('intro',()=>{houseAfter();showReady('toronto');});else playCine(id+'Intro',()=>showReady(id));}
+function fillTrophies(){const T=getTrophies(),n=TROPHIES.filter(x=>T[x[0]]).length;$('trophyCount').textContent=n+' sur '+TROPHIES.length+' trophées débloqués.';
+  $('trophyList').innerHTML=TROPHIES.map(x=>`<div class="${T[x[0]]?'got':''}"><b>${T[x[0]]?'★ ':'☆ '}${x[1]}</b><br><span class="small">${x[2]}</span></div>`).join('');}
+function quitToTitle(){if(S){store.save(S);}siren(false);show('pause',false);show('hud',false);show('dialog',false);show('notebook',false);S=null;hideAll();world.visible=true;show('bContinue',!!store.load());show('title',true);mode='title';}
+$('bOptions').onclick=()=>openMenu('options','title');$('bChapters').onclick=()=>openMenu('chapters','title');$('bTrophies').onclick=()=>openMenu('trophies','title');
+$('bPauseOpt').onclick=()=>openMenu('options','pause');$('bQuitTitle').onclick=quitToTitle;
+$('bOptClose').onclick=()=>closeMenu('options');$('bChapClose').onclick=()=>closeMenu('chapters');$('bTrophClose').onclick=()=>closeMenu('trophies');
+addEventListener('keydown',e=>{if(e.code==='Escape'){for(const id of ['options','chapters','trophies'])if(!$(id).classList.contains('hidden')){closeMenu(id);e.stopImmediatePropagation();return;}}
+  if(mode!=='play')return;if(e.code==='KeyI'){requestHint(true);}if(e.code==='F1'){e.preventDefault();pause();}},true);
+{const st=store.save;store.save=s=>{st(s);if(mode==='play'){COMF.saveT=1.4;$('saveTag').style.opacity=1;}};}
+$('pauseKeys').innerHTML=$('titleKeys').innerHTML;
+/* --- per-frame --- */
+function stepComfort(dt,T){
+  padPoll(dt);stepAudio(dt,T);
+  if(COMF.smsT>0){COMF.smsT-=dt;if(COMF.smsT<=0)$('sms').classList.remove('on');}
+  if(COMF.trT>0){COMF.trT-=dt;if(COMF.trT<=0)$('trophy').classList.remove('on');}
+  if(COMF.saveT>0){COMF.saveT-=dt;if(COMF.saveT<=0)$('saveTag').style.opacity=0;}
+  COMF.frames++;COMF.fpsT+=dt;if(COMF.fpsT>=2){const fps=COMF.frames/COMF.fpsT;COMF.frames=0;COMF.fpsT=0;if(SET.fps)$('fpsTag').textContent=Math.round(fps)+' IPS · '+({high:'haute',medium:'moyenne',low:'basse'})[COMF.q];
+    if(SET.gfx==='auto'&&mode==='play'){if(fps<26){COMF.low++;if(COMF.low>=2&&COMF.q!=='low'){COMF.low=0;applyGfx(COMF.q==='high'?'medium':'low');toast('Qualité graphique réduite automatiquement pour que le jeu reste fluide (Options).');}}else COMF.low=0;}}
+  if(mode==='play'&&S&&S.status==='playing'){S.stuckT=(S.stuckT||0)+dt;S.minHeat=Math.min(S.minHeat??100,S.player.heat);
+    if(S.level==='mtl'&&S.flags.powerCut)unlock('courant');if(S.player.bonusEarned>=2)unlock('rab');
+    if(SET.hints==='auto'&&S.stuckT>300&&!S.hintAuto){S.hintAuto=true;requestHint(false);}
+    COMF.tipT-=dt;if(COMF.tipT<=0){COMF.tipT=1;checkTips();}}
+}
+applySettings();
+
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

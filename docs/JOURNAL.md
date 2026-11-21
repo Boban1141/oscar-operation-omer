@@ -21,6 +21,10 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-20 — Claude — Confort de jeu (v1.1.0)
+- Fait : options, chapitres, trophées et records, musique adaptative et ambiances, indices du numéro masqué (I), manette, astuces, quitter vers le titre, F1, indicateur de sauvegarde, qualité graphique automatique.
+- Tests : 123/123 ; essai réel (menus, manette simulée, indices, quitter/continuer) sans erreur.
+
 ## 2026-11-20 — Claude — Niveau 7 : Montréal, le final (v1.0.0)
 - Fait : tempête de verglas (branches, fil tombé), panne générale, refuge, trois entrées dans la maison d'Omer, génératrice, boss Omer, sous-sol, cinématique de fin et écran de fin du jeu.
 - Corrigé : les gardes au corps à corps ne blessaient Oscar qu'au port de Toronto ; `startBossFight` ne réveillait pas les gardes de la pièce ; `syncCameras` généralisé.

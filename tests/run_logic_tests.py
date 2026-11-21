@@ -135,7 +135,18 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             o.openDialogue('omerI');o.choose(1);o.choose(0);ok(o.S.clues.includes('omer')&&o.S.flags.omerKey,'Omer menotté, clé du sous-sol');
             o.S.player.x=7000+20.4;o.S.player.z=400-28.6;zone('sous-sol').act();ok(o.mode==='ui','porte du sous-sol');o.choose(0);ok(o.S.location==='soussol','sous-sol ouvert (serrure de secours)');
             zone('Libérer').act();ok(o.mode==='cine'&&o.cine.name==='finale','cinématique de fin');o.endCine();
-            return winOk().then(w7=>{ok(w7,'écran de fin du jeu');ok(document.getElementById('bNext').classList.contains('hidden'),'pas de niveau suivant');return r;});});});});});});});
+            return winOk().then(w7=>{ok(w7,'écran de fin du jeu');ok(document.getElementById('bNext').classList.contains('hidden'),'pas de niveau suivant');
+            const C=o.comfort,T=C.getTrophies();ok(T.famille&&T.premier&&T.courant,'trophées : première piste, courant coupé, fin du jeu');
+            ok(document.getElementById('winStats').textContent.includes('Record'),'record de temps affiché');
+            o.startLevel(null,'mtl');window.__oscarGod=false;C.SET.diff='decouverte';o.S.player.health=100;C.hurt(50);ok(Math.round(o.S.player.health)===70,'difficulté Découverte : coups réduits');
+            C.SET.diff='expert';o.S.player.health=100;C.hurt(10);ok(Math.round(o.S.player.health)===87,'difficulté Expert : coups renforcés');C.SET.diff='normal';window.__oscarGod=true;o.S.player.health=100;
+            o.S.stuckT=10;ok(!C.requestHint(true),'indice refusé si on vient de commencer');o.S.stuckT=120;ok(C.requestHint(true)&&document.getElementById('smsText').textContent.includes('salle paroissiale'),'indice du numéro masqué');
+            C.openMenu('chapters','pause');const cb=document.querySelectorAll('#chapList button');ok(cb.length===7&&[...cb].every(b=>!b.disabled),'chapitres : 7 niveaux débloqués');C.closeMenu('chapters');
+            C.openMenu('trophies','pause');ok(document.querySelectorAll('#trophyList .got').length>=3,'écran des trophées');C.closeMenu('trophies');
+            C.openMenu('options','pause');const el=document.getElementById('oSens');el.value=1.7;el.dispatchEvent(new Event('input'));ok(JSON.parse(localStorage.getItem('oscar.settings')).sens===1.7,'options sauvegardées');C.closeMenu('options');
+            C.applyGfx('low');ok(C.q==='low','qualité graphique basse');C.applyGfx('high');
+            C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');
+            return r;});});});});});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

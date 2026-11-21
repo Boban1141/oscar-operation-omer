@@ -3,7 +3,7 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v1.0.0) — le jeu solo est complet, du Brésil à Montréal
+## État au 2026-11-20 (v1.1.0) — le jeu solo est complet, du Brésil à Montréal
 - **Niveaux 1 à 5 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse) : blocs 1 à 4 et 6 à 9 terminés.
 - **Prochaine étape proposée** : bloc 10 (niveau 6, Manitoba : blizzard à −40 °C, le Bras droit d'Omer).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
@@ -146,7 +146,19 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Tests : 112 vérifications (niveaux 1 à 7) ; passage réel 6 → 7 et cinématique de fin sans erreur
 - [ ] Test visuel et réglage par un humain
 
-## Après la v1.0 `[ ]`
+## Bloc 12 — Confort de jeu `[x]` (v1.1.0)
+- [x] **Options** (sauvegardées) : sensibilité souris/manette, inverser l'axe vertical, volume général, musique et ambiance, **difficulté des combats** (Découverte / Normale / Expert : repérage et dégâts ; le chronomètre ne change jamais), **qualité graphique automatique** (baisse seule si le jeu rame), taille des sous-titres, indices, astuces, compteur d'images
+- [x] **Chapitres** : rejouer tout niveau débloqué depuis l'écran titre, avec le meilleur temps
+- [x] **Trophées** (12) et **records de temps** par niveau
+- [x] **Musique qui suit l'action** (calme, tension quand un garde te soupçonne, percussions en combat) et **ambiance** pluie/vent, étouffée à l'intérieur
+- [x] **Indices du numéro masqué** : SMS automatique après 5 min bloqué sur une étape, ou touche **I** (après 1 min 30)
+- [x] **Manette** (Xbox/PlayStation standard) : jeu, dialogues, cinématiques et menus
+- [x] **Astuces** contextuelles (une seule fois chacune), alerte de temps (moins d'un cinquième restant)
+- [x] Pause : Options, **Quitter vers l'écran titre** (partie sauvegardée) ; **F1** aide ; indicateur « Sauvegardé »
+- [x] Les sauvegardes restent valides d'une version 1.x à l'autre ; textes « en construction » retirés
+- [x] Tests : 123 vérifications ; essai réel menus + manette simulée sans erreur
+
+## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)
 - [ ] Multijoueur (base prévue au §11 du plan)
