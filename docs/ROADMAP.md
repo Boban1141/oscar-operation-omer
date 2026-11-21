@@ -172,7 +172,8 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Oscar = soldat Mixamo avec animations capturées
 - [x] Matières photographiques (Poly Haven) sur façades, sols, murs, neige
 - [ ] TOUTES les personnes en humains réalistes (passants, assis, cyclistes, PNJ de l'histoire, ennemis, cinématiques) — attend ~10 personnages Mixamo de plus
-- [ ] Arbres, voitures, mobilier urbain en vrais modèles 3D ; ciels photographiés (HDRI)
+- [x] Feuillage réaliste (feuilles/aiguilles), écorce photographiée, vrais bancs 3D (v1.5.0)
+- [ ] Lampadaires et bornes-fontaines réels près d'Oscar ; voitures ; ciels photographiés (HDRI)
 
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres

@@ -177,7 +177,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
       <div><kbd>T</kbd> accélérer le temps</div>
       <div><kbd>Échap</kbd> pause</div>
     </div>
-    <p class="small">Version 1.4 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
+    <p class="small">Version 1.5 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
   </div>
 </div>
 
@@ -305,7 +305,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.4.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.5.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -800,7 +800,7 @@ const STYLES={
   concrete:{wall:'#b6aea1',glass:['#242a32','#2d353f'],mx:.2,my:.22,lit:.4,rough:.88,metal:0,uw:3.4,uh:3.4},
 };
 const LIGHTS=['#ffd38a','#ffe7b5','#fff3d8','#d2e5ff','#ffc275'];
-const FACADES=[];
+const FACADES=[],TREES=[],BENCHES=[];
 function facade(style,seed,wall,cols=8,rows=8,litOverride){
   const S2=512,c=document.createElement('canvas');c.width=c.height=S2;const e=document.createElement('canvas');e.width=e.height=S2;
   const st=paintFacade(c,e,style,seed,wall,cols,rows,litOverride);
@@ -970,14 +970,14 @@ function buildWorld(){
   const tr=mulberry32(7);
   CITY.trees.forEach((t,i)=>{o.position.set(t.x,.17,t.z);o.rotation.set(0,tr()*6,0);o.scale.setScalar(t.s);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);
     o.position.y=.17+(2.6+1.2)*t.s;o.scale.set(t.s*(1+tr()*.25),t.s*(.9+tr()*.3),t.s*(1+tr()*.25));o.updateMatrix();crown.setMatrixAt(i,o.matrix);crown.setColorAt(i,pick(tr,tc));});
-  trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;world.add(trunk,crown);
+  trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;world.add(trunk,crown);TREES.push({crown,trunkMat:trunk.material,kind:'broad',bark:[2,1.5]});
   // park
   if(CITY.park){const {cx,cz}=CITY.park;addBox(53,.03,3.4,M.path,cx,.19,cz,world,false);addBox(3.4,.03,53,M.path,cx,.19,cz,world,false);
     const f=new THREE.Mesh(new THREE.CylinderGeometry(5,5.4,.7,32),M.concrete);f.position.set(cx,.5,cz);f.castShadow=true;world.add(f);
     const w=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,.1,32),M.water);w.position.set(cx,.82,cz);world.add(w);
     const jet=new THREE.Mesh(new THREE.CylinderGeometry(.08,.3,2.4,8),new THREE.MeshStandardMaterial({color:'#bfe3ff',transparent:true,opacity:.6}));jet.position.set(cx,2,cz);world.add(jet);
     CITY.colliders.push({x0:cx-5.4,x1:cx+5.4,z0:cz-5.4,z1:cz+5.4});}
-  for(const b of CITY.benches){const g=new THREE.Group();g.position.set(b.x,.17,b.z);g.rotation.y=b.a;world.add(g);
+  for(const b of CITY.benches){const g=new THREE.Group();g.position.set(b.x,.17,b.z);g.rotation.y=b.a;world.add(g);BENCHES.push(g);
     addBox(1.8,.08,.5,M.wood,0,.48,0,g);addBox(1.8,.45,.07,M.wood,0,.8,-.24,g);for(const dx of [-.75,.75])addBox(.07,.48,.45,M.pole,dx,.24,0,g);}
   // CN Tower (scaled)
   if(CITY.cn){const {x,z}=CITY.cn,g=new THREE.Group();g.position.set(x,.17,z);world.add(g);
@@ -2041,7 +2041,7 @@ function buildForest(){
   T.forEach((t,i)=>{const h=34*t[2];o.position.set(t[0],0,t[1]);o.rotation.set(0,r()*6,0);o.scale.set(t[2],h,t[2]);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);
     for(let k=0;k<2;k++){o.position.set(t[0],h*(.55+k*.25),t[1]);o.scale.set(t[2]*(1.4-k*.4),h*(.45-k*.15),t[2]*(1.4-k*.4));o.updateMatrix();crown.setMatrixAt(i*2+k,o.matrix);crown.setColorAt(i*2+k,pick(r,gc));}
     I.cols.push({x0:I.ox+t[0]-.8*t[2],x1:I.ox+t[0]+.8*t[2],z0:I.oz+t[1]-.8*t[2],z1:I.oz+t[1]+.8*t[2]});});
-  trunk.castShadow=crown.castShadow=true;trunk.receiveShadow=true;I.group.add(trunk,crown);
+  trunk.castShadow=crown.castShadow=true;trunk.receiveShadow=true;I.group.add(trunk,crown);TREES.push({crown,trunkMat:trunk.material,kind:'conifer',bark:[2,10]});
   const ferns=new THREE.InstancedMesh(new THREE.ConeGeometry(.7,.9,6),mat('#3f6a35',{flatShading:true,roughness:1}),500);
   for(let i=0;i<500;i++){o.position.set((r()-.5)*190,.35,(r()-.5)*200);o.rotation.set(Math.PI,r()*6,0);o.scale.setScalar(.6+r()*.9);o.updateMatrix();ferns.setMatrixAt(i,o.matrix);}I.group.add(ferns);
   for(let i=0;i<30;i++){const x=(r()-.5)*180,z=(r()-.5)*190;if(Math.abs(z-20)<6||Math.abs(x)<6)continue;const b=new THREE.Mesh(new THREE.DodecahedronGeometry(1+r()*1.8),mat('#5f625c',{roughness:1,flatShading:true}));b.position.set(x,.4,z);b.castShadow=true;I.group.add(b);}
@@ -2395,7 +2395,7 @@ function snowPines(I,n,seed,avoid){const r=mulberry32(seed),T=[];for(let i=0;i<n
   T.forEach((t,i)=>{const h=12*t[2];o.position.set(t[0],0,t[1]);o.rotation.set(0,0,0);o.scale.set(t[2],h*.3,t[2]);o.updateMatrix();tr.setMatrixAt(i,o.matrix);
     for(let k=0;k<2;k++){o.position.set(t[0],h*(.25+k*.32),t[1]);o.scale.set(t[2]*(1.3-k*.4),h*.45,t[2]*(1.3-k*.4));o.updateMatrix();c1.setMatrixAt(i*2+k,o.matrix);}
     o.position.set(t[0],h*.78,t[1]);o.scale.set(t[2]*.6,h*.25,t[2]*.6);o.updateMatrix();c2.setMatrixAt(i,o.matrix);I.cols.push({x0:I.ox+t[0]-.5,x1:I.ox+t[0]+.5,z0:I.oz+t[1]-.5,z1:I.oz+t[1]+.5});});
-  tr.castShadow=c1.castShadow=true;I.group.add(tr,c1,c2);}
+  tr.castShadow=c1.castShadow=true;I.group.add(tr,c1,c2);TREES.push({crown:c1,trunkMat:tr.material,kind:'conifer',bark:[2,2]},{crown:c2,kind:'snow'});}
 function buildYard(){
   const I=YARD;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
   snowGround(I,170,110);pathStrips(I,ARENAS.yard.paths,4);
@@ -3873,9 +3873,53 @@ async function loadRealSurfaces(){
   try{await Promise.all([
       realSwap(asphaltTex,'asphalt_02',.2,.8),realSwap(walkTex,'concrete_tiles',.2,.7),realSwap(snowTex,'snow_02',.1,.6),
       realSwap(ITEX.wood,'oak_wood_planks',.45,.6),realSwap(ITEX.plaster,'painted_plaster_wall',.2,.5),realSwap(corrTex,'box_profile_metal_sheet',.2,.8),
-      realFacades()]);}
+      realFacades(),realTrees(),realBenches()]);}
   catch(e){console.warn('Matières photographiques indisponibles',e);}
   REAL.done=true;}
+
+/* ---------------- 10. ARBRES ET MOBILIER RÉALISTES ----------------
+   Feuillage : chaque couronne (boule ou cône) est remplacée par des grappes de feuilles ou d'aiguilles avec transparence
+   (cartes croisées, comme dans les jeux modernes), teintées par la couleur d'origine de chaque arbre. Fonctionne hors ligne.
+   Écorce : photo Poly Haven sur les troncs. Bancs : vrai modèle 3D Poly Haven (bois peint, 1 000 polygones). */
+function leafTex(kind){const S=256,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d'),r=mulberry32(kind==='broad'?11:kind==='snow'?13:12);
+  if(kind==='broad'){g.strokeStyle='rgba(70,50,35,.9)';g.lineWidth=2;for(let i=0;i<7;i++){g.beginPath();g.moveTo(S/2,S/2);g.lineTo(S/2+(r()-.5)*S*.8,S/2+(r()-.5)*S*.8);g.stroke();}
+    for(let i=0;i<95;i++){const a=r()*Math.PI*2,d=Math.pow(r(),.6)*S*.42,x=S/2+Math.cos(a)*d,y=S/2+Math.sin(a)*d,l=12+r()*14,w=l*(.45+r()*.2),rot=r()*Math.PI*2,v=150+r()*105|0;
+      g.save();g.translate(x,y);g.rotate(rot);g.fillStyle=`rgb(${v},${v},${v})`;g.beginPath();g.moveTo(-l/2,0);g.quadraticCurveTo(0,-w,l/2,0);g.quadraticCurveTo(0,w,-l/2,0);g.fill();
+      g.strokeStyle=`rgba(0,0,0,${.18+r()*.15})`;g.lineWidth=1;g.beginPath();g.moveTo(-l/2,0);g.lineTo(l/2,0);g.stroke();g.restore();}}
+  else{for(let b=0;b<9;b++){const x0=S*(.15+r()*.7),y0=S*(.15+r()*.7),a=r()*Math.PI*2,L=60+r()*70,dx=Math.cos(a),dy=Math.sin(a);
+      g.strokeStyle='rgba(60,45,30,.95)';g.lineWidth=2.5;g.beginPath();g.moveTo(x0,y0);g.lineTo(x0+dx*L,y0+dy*L);g.stroke();
+      for(let k=0;k<L;k+=2.2){const px=x0+dx*k,py=y0+dy*k,len=9+r()*7,v=kind==='snow'?225+r()*30|0:150+r()*100|0;g.strokeStyle=`rgb(${v},${v},${v})`;g.lineWidth=1.4;
+        for(const s of [-1,1]){const na=a+s*(.9+r()*.4);g.beginPath();g.moveTo(px,py);g.lineTo(px+Math.cos(na)*len,py+Math.sin(na)*len);g.stroke();}}}}
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
+function buildFoliage(){
+  const T={broad:leafTex('broad'),conifer:leafTex('conifer'),snow:leafTex('snow')},m4=new THREE.Matrix4(),o=new THREE.Object3D(),p=new THREE.Vector3(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),col=new THREE.Color();
+  for(const tr of TREES){const cr=tr.crown;if(!cr||!cr.isInstancedMesh)continue;const n=cr.count,per=tr.kind==='broad'?26:18,cone=tr.kind!=='broad';
+    const mat_=new THREE.MeshStandardMaterial({map:T[tr.kind],alphaTest:.5,side:THREE.DoubleSide,roughness:.85});
+    const cards=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),mat_,n*per),r=mulberry32(n*7+per);
+    const base=cr.material.color?cr.material.color.clone():new THREE.Color('#ffffff');
+    for(let i=0;i<n;i++){cr.getMatrixAt(i,m4);m4.decompose(p,q,sc);if(cr.instanceColor)cr.getColorAt(i,col);else col.copy(base);
+      const rad=cone?(tr.kind==='snow'?2.2:cr.geometry.parameters.radius||2.6):(cr.geometry.parameters.radius||1.9);
+      for(let k=0;k<per;k++){let lx,ly,lz;
+        if(cone){ly=r()-.5;const rr=rad*(.5-ly)*Math.sqrt(r()),a=r()*Math.PI*2;lx=Math.cos(a)*rr;lz=Math.sin(a)*rr;}
+        else{const a=r()*Math.PI*2,u=r()*2-1,d=rad*Math.cbrt(r())*.85;lx=Math.cos(a)*Math.sqrt(1-u*u)*d;ly=u*d*.9;lz=Math.sin(a)*Math.sqrt(1-u*u)*d;}
+        o.position.set(lx*sc.x,ly*sc.y,lz*sc.z).applyQuaternion(q).add(p);
+        const size=(cone?rad*1.25*(sc.x+sc.z)/2:rad*1.05*(sc.x+sc.y+sc.z)/3)*(.75+r()*.5);
+        o.rotation.set((r()-.5)*1.2,r()*Math.PI*2,(r()-.5)*.8);o.scale.set(size,size,size);o.updateMatrix();cards.setMatrixAt(i*per+k,o.matrix);
+        const v=.82+r()*.3;cards.setColorAt(i*per+k,col.clone().multiplyScalar(v));}}
+    cards.castShadow=true;cards.receiveShadow=true;(cr.parent||scene).add(cards);cr.visible=false;tr.cards=cards;}
+}
+async function realTrees(){
+  const [img,nor]=await Promise.all([loadImg(PHURL('bark_brown_02','diff')),SET.gfx==='low'?null:loadImg(PHURL('bark_brown_02','nor_gl'))]);if(!img)return;
+  for(const tr of TREES){const m=tr.trunkMat;if(!m)continue;const t=new THREE.Texture(img);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...(tr.bark||[2,2]));t.colorSpace=THREE.SRGBColorSpace;t.needsUpdate=true;
+    m.map=t;m.color.lerp(new THREE.Color('#ffffff'),.6);if(nor){const n=new THREE.Texture(nor);n.wrapS=n.wrapT=THREE.RepeatWrapping;n.repeat.copy(t.repeat);n.needsUpdate=true;m.normalMap=n;}m.needsUpdate=true;REAL.count++;}}
+async function phModel(id){
+  const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const f=await (await fetch('https://api.polyhaven.com/files/'+id)).json();const g=f.gltf&&f.gltf['1k']&&f.gltf['1k'].gltf;if(!g)return null;
+  const inc=g.include||{},mgr=new THREE.LoadingManager();mgr.setURLModifier(u=>{for(const k in inc)if(u.endsWith(k)||u.endsWith(encodeURI(k)))return inc[k].url;return u;});
+  const gl=await new GLTFLoader(mgr).loadAsync(g.url);gl.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});return gl.scene;}
+async function realBenches(){
+  if(!BENCHES.length)return;const model=await phModel('painted_wooden_bench').catch(()=>null);if(!model)return;
+  const bb=new THREE.Box3().setFromObject(model),sz=bb.getSize(new THREE.Vector3()),long=Math.max(sz.x,sz.z),s=1.8/long,alongZ=sz.z>sz.x;
+  for(const g of BENCHES){for(const c of g.children)c.visible=false;const b=model.clone();b.scale.setScalar(s);if(alongZ)b.rotation.y=Math.PI/2;b.position.y=-bb.min.y*s;g.add(b);}REAL.count+=BENCHES.length;}
 
 /* ---------------- 7. CONFORT DE JEU (v1.1) : options, chapitres, trophées, musique, indices, manette ---------------- */
 const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',realTex:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
@@ -4022,11 +4066,11 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={real:()=>({count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';loadOscarModel();setTimeout(loadRealSurfaces,300);
   requestAnimationFrame(t=>{last=t;frame(t);});

@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-21 — Claude — Arbres, écorce et bancs réalistes (v1.5.0)
+- Les arbres 3D de Poly Haven sont des numérisations de cinéma (66 Mo à 958 Mo, 1,6 à 17 millions de triangles) : inutilisables dans un navigateur. À la place : feuillage en grappes de feuilles/aiguilles avec transparence (cartes instanciées, teintées par arbre), fonctionne hors ligne ; écorce photographiée (bark_brown_02) sur les troncs.
+- Bancs des parcs de Toronto : vrai modèle Poly Haven `painted_wooden_bench` (1 000 triangles).
+- Mesures des modèles Poly Haven (PC de Boban) : baril 3k tri, banc 1k, voiture bâchée 13k, poubelle 14k, lampadaires 20–31k, borne-fontaine 86k → lampadaires et bornes seulement près d'Oscar (à faire).
+- Consigne de Boban : regrouper le travail pour réduire le nombre de petits envois.
+
 ## 2026-11-21 — Claude — Personnages Mixamo réels et lieux photographiques (v1.3.0 → v1.4.1)
 - Personnages : Boban a téléchargé des personnages Mixamo très lourds (jusqu'à 142 Mo, textures 4096 px). Nouvel outil `tools/fbx_shrink.py` : réécrit le FBX binaire avec des textures réduites (1024 px JPEG), sans toucher au modèle ni au squelette (relecture vérifiée, fin de fichier conforme au chargeur three.js). 374 Mo → 18 Mo pour 5 personnages ; 3 civils ajoutés ensuite. Rangés dans `assets/characters/`, animations dans `assets/animations/`. Page `game/apercu_personnages.html` pour les voir en 3D.
 - Oscar = soldat en camouflage (candidat 5, choisi par Boban), animations capturées : repos/marche/course (Soldier.glb, réorientées : squelette source tourné de −90°), coup de poing, coup de pied, garde, visée, tir, rechargement, impact. Arme dans la vraie main droite. GitHub Pages publie aussi `assets/` (étape ajoutée au workflow).
