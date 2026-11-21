@@ -3,6 +3,7 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À valider** : tout le niveau 6 (Mireille, Nadia, Louis, Viktor, le code 1967, la tempête de verglas) — `docs/PLAN.md` §10i.
 - **À valider** : tout le niveau 5 (Gisèle, Chloé, Sam, Bernie, le Notaire, le Bras droit à Winnipeg) — `docs/PLAN.md` §10h.
 - **À valider** : tout le niveau 4 (Priya, Dale, l'Éleveur, le Notaire, Westmount) — `docs/PLAN.md` §10g.
 - **À valider** : tout le niveau 3 (Bridget, Wilf, Liam, la doris, le capitaine Roy, « l'Éleveur ») — `docs/PLAN.md` §10f.
@@ -17,6 +18,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Niveau 6 : Manitoba (v0.10.0)
+- Fait : blizzard −40 °C, voiles blancs (vue réduite pour Oscar et les gardes), thermos (H), abris chauffés, Saint-Boniface, café, silos de Saint-Norbert, boss Viktor, mallette ; enchaînement Nouvelle-Écosse → Manitoba.
+- Tests : 91/91 ; passage réel niveau 5 → 6 sans erreur console.
+- Suite : bloc 11, Montréal (final).
 
 ## 2026-11-20 — Claude — Niveau 5 : Nouvelle-Écosse (v0.9.0)
 - Fait : verglas (glissade, chutes, crampons), équipement conservé entre niveaux, caméras + coupure de courant, cloisons basses, ouverture de la porte à la relève de 23 h, déchiqueteuse à retardement ; front de mer d'Halifax, Mission des marins, cabinet du Notaire ; cinématique ; piste de Winnipeg.

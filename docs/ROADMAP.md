@@ -3,7 +3,7 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.9.0)
+## État au 2026-11-20 (v0.10.0)
 - **Niveaux 1 à 5 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse) : blocs 1 à 4 et 6 à 9 terminés.
 - **Prochaine étape proposée** : bloc 10 (niveau 6, Manitoba : blizzard à −40 °C, le Bras droit d'Omer).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
@@ -121,8 +121,21 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Cinématique d'arrivée ; tests : 79 vérifications (niveaux 1 à 5)
 - [ ] Test visuel et réglage par un humain
 
-## Blocs 10 et 11 — Provinces `[ ]`
-- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [x] 9 Nouvelle-Écosse (v0.9.0) · [ ] 10 Manitoba · [ ] 11 Montréal (final)
+## Bloc 10 — Niveau 6 : Manitoba `[x]` (v0.10.0)
+- [x] **Blizzard à −40 °C** : froid très rapide, même bien équipé ; journées courtes (nuit dès 16 h 30)
+- [x] **Poudrerie (voiles blancs)** : brouillard à 4–46 m quand neige et vent forts ; la vue des gardes est réduite de moitié
+- [x] **Thermos** (touche **H**, 3 gorgées, +40 de chaleur) offert par Louis ; ligne dans le HUD
+- [x] **Abris chauffés** : abribus à lampe chauffante, Café de la Cathédrale, moteurs tièdes des camions aux silos
+- [x] Saint-Boniface : ruines de la cathédrale, Esplanade Riel, rivière Rouge gelée, dôme doré du Palais législatif
+- [x] Café de la Cathédrale : Mireille (soupe aux pois, tourtière), Nadia (ex-comptable, promesse ou menace → alerte), Louis (guide métis, motoneige)
+- [x] Deux trajets : motoneige (1 h) ou marche sur la rivière gelée (5 h, gros coup de froid)
+- [x] Silos de Saint-Norbert : silos en béton, élévateur à grain, voie ferrée, hangar, avion, piste balisée ; bureau de Viktor
+- [x] Boss **Viktor, le Bras droit** ; indice final : la mallette (adresse à Westmount, code du sous-sol 1967, relève à minuit, tempête de verglas vendredi)
+- [x] Cinématique d'arrivée ; tests : 91 vérifications (niveaux 1 à 6)
+- [ ] Test visuel et réglage par un humain
+
+## Bloc 11 — Niveau 7 : Montréal (final) `[ ]`
+- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [x] 9 Nouvelle-Écosse (v0.9.0) · [x] 10 Manitoba (v0.10.0) · [ ] 11 Montréal (final)
 - Systèmes d'hiver : neige, verglas, blizzard, équipement d'hiver
 
 ## Bloc 12 — Multijoueur `[ ]`

@@ -103,7 +103,20 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
           o.tick2(55);ok(o.S.flags.shredded,'alerte trop longue : dossiers déchiquetés');
           const nb=o.S.arenas.office.enemies.find(e=>e.id==='boss');o.damage(nb,400);ok(o.S.flags.bossDown,'Notaire neutralisé');
           o.openDialogue('notaireI');o.choose(0);o.choose(0);ok(o.S.clues.includes('acte2'),'dossiers partiels : piste de Winnipeg');
-          return winOk().then(w5=>{ok(w5,'écran de fin de niveau 5');return r;});});});});});
+          return winOk().then(w5=>{ok(w5,'écran de fin de niveau 5');
+            o.startLevel(null,'mb');ok(o.S.level==='mb'&&o.S.location==='winnipeg','niveau 6 : Saint-Boniface, Winnipeg');
+            o.weather(.1);o.S.weather.snow=1;o.S.weather.windStr=.95;ok(o.whiteout()>.8,'poudrerie : voile blanc ('+o.whiteout().toFixed(2)+')');
+            o.S.player.x=6000-10;o.S.player.z=12;o.S.player.heat=30;zone('abribus').act();ok(o.S.player.heat>=89,'abribus chauffé');
+            o.S.player.x=6000+10;o.S.player.z=13.6;zone('Café').act();ok(o.S.location==='cafe','Café de la Cathédrale');
+            o.openDialogue('nadia');o.choose(0);o.choose(0);ok(o.S.clues.includes('nadia')&&o.S.flags.nadiaSafe,'Nadia : la piste des silos (promesse)');
+            o.openDialogue('louis');o.choose(0);o.choose(0);ok(o.S.flags.snowmobile&&o.S.thermos===3,'Louis : motoneige et thermos');
+            o.S.player.heat=40;o.drink();ok(o.S.player.heat===80&&o.S.thermos===2,'boire du thermos (+40)');
+            zone('Sortir').act();o.S.player.x=6000-2;o.S.player.z=10;zone('motoneige').act();ok(o.S.location==='silos','arrivée aux silos de Saint-Norbert');
+            o.S.arenas.silos.alarm=false;for(const e of o.S.arenas.silos.enemies){if(!e.down){e.state='patrol';e.meter=0;}}
+            o.S.player.x=6000+28;o.S.player.z=400-24;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','Viktor : négociation');o.choose(0);o.choose(0);
+            const vk=o.S.arenas.silos.enemies.find(e=>e.id==='boss');o.damage(vk,400);ok(o.S.flags.bossDown,'Viktor vaincu');
+            o.openDialogue('viktorI');o.choose(0);o.choose(0);ok(o.S.clues.includes('mallette'),'mallette : adresse et code du sous-sol');
+            return winOk().then(w6=>{ok(w6,'écran de fin de niveau 6');return r;});});});});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

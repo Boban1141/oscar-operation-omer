@@ -124,6 +124,7 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
     <div class="row" style="margin-top:4px"><span>Vies bonus en réserve</span><span id="hBonus">0 · gagnées 0/2</span></div>
     <div class="row" style="margin-top:4px"><span>Argent</span><span id="hMoney">240 $</span></div>
     <div class="row" style="margin-top:4px"><span>Lieu</span><span id="hLoc">Dehors</span></div>
+    <div class="row hidden" style="margin-top:4px" id="hThermosRow"><span>Thermos (touche H)</span><span id="hThermos">0</span></div>
     <div class="bar"><label><span>Santé</span><span id="tHealth">100</span></label><i><b id="bHealth" style="background:var(--green)"></b></i></div>
     <div class="bar"><label><span>Chaleur corporelle</span><span id="tHeat">100</span></label><i><b id="bHeat" style="background:var(--cold)"></b></i></div>
     <div class="bar"><label><span>Endurance</span><span id="tStam">100</span></label><i><b id="bStam" style="background:var(--amber)"></b></i></div>
@@ -157,10 +158,11 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
       <div><kbd>F</kbd> neutraliser par derrière / fouiller</div>
       <div><kbd>V</kbd> bloquer</div>
       <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> armes · <kbd>R</kbd> recharger</div>
+      <div><kbd>H</kbd> boire du thermos</div>
       <div><kbd>T</kbd> accélérer le temps</div>
       <div><kbd>Échap</kbd> pause</div>
     </div>
-    <p class="small">Version 0.5 · niveau 1 complet avec ses cinématiques : Brésil, enlèvement, repaire d’Omer, enquête à Toronto, port, infiltration et combat. Les autres provinces arrivent dans les blocs suivants.</p>
+    <p class="small">Version 0.10 · six provinces jouables : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba. Le final à Montréal arrive dans le prochain bloc.</p>
   </div>
 </div>
 
@@ -253,7 +255,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.9.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '0.10.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -313,10 +315,23 @@ const LEVELS = {
     wind:{base:.3, gust:.45, dir:-1.8},
     density:{peds:0, cars:0, taxis:0, bikes:0},
     start:{loc:'halifax',x:0,z:-4},
-    next:null,
+    next:'mb',
     ready:{kicker:'Halifax · jour 1 · 21 h · pluie verglaçante',title:'Le sol est une patinoire.',text:'Sur le verglas, tu glisses et tu peux tomber si tu cours : avance doucement, ou trouve des crampons. Le Notaire d’Omer travaille tard. Ses dossiers mènent à Omer.'},
-    win:{kicker:'Halifax, Nouvelle-Écosse',title:'Niveau 5 terminé',text:'Les dossiers du Notaire : une maison de Westmount payée comptant, avec un sous-sol aménagé, et des virements au « Bras droit » d’Omer, à Winnipeg. C’est lui qui garde les codes de la maison.',next:'Niveau 6 · Manitoba · plein hiver, blizzard à −40 °C : en construction.'},
+    win:{kicker:'Halifax, Nouvelle-Écosse',title:'Niveau 5 terminé',text:'Les dossiers du Notaire : une maison de Westmount payée comptant, avec un sous-sol aménagé, et des virements au « Bras droit » d’Omer, à Winnipeg. C’est lui qui garde les codes de la maison.',next:'Niveau 6 · Manitoba · plein hiver, blizzard à −40 °C, journées très courtes.'},
     startToast:'Halifax, 21 h. Pluie verglaçante sur le front de mer. Le cabinet Doucet & Associés est éclairé au deuxième étage.'
+  },
+  mb: {
+    id:'mb', index:6, name:'Manitoba', region:'Winnipeg', season:'Plein hiver', seed:1870,
+    startMinute: 16*60+15, timeLimitMin: 36*60,
+    temp:{min:-42, max:-33}, coldFactor:0.3,
+    weather:{clear:.15, cloudy:.25, snow:.6},
+    wind:{base:.5, gust:.45, dir:1.4},
+    density:{peds:0, cars:0, taxis:0, bikes:0},
+    start:{loc:'winnipeg',x:4,z:8},
+    next:null,
+    ready:{kicker:'Winnipeg · jour 1 · 16 h 15 · −38 °C',title:'La poudrerie efface tout.',text:'À −40 °C, même bien équipé, le froid te tue en quelques minutes : passe d’un abri à l’autre. Dans les voiles blancs, personne ne voit à dix mètres, ni toi ni les gardes. Viktor s’envole dans 36 heures.'},
+    win:{kicker:'Silos de Saint-Norbert, Manitoba',title:'Niveau 6 terminé',text:'La mallette de Viktor : l’adresse de la maison d’Omer à Westmount, le code du sous-sol, l’heure de la relève. Et un mot d’Omer : « Vendredi, tempête de verglas sur Montréal. Personne ne viendra. »',next:'Niveau 7 · Montréal · cœur de l’hiver, tempête de verglas : l’assaut final (en construction).'},
+    startToast:'Winnipeg, 16 h 15, −38 °C. Le soleil se couche. Le Café de la Cathédrale est juste devant ; l’abribus est chauffé.'
   }
 };
 const ROADS=[-150,-75,0,75,150], CENTERS=[-112.5,-37.5,37.5,112.5], LOT=26.5, BOUND=163;
@@ -414,7 +429,7 @@ const DIALOGUES={
 };
 const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
-function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):S.level==='ns'?objectiveNS(S):objectiveToronto(S);}
+function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):S.level==='ns'?objectiveNS(S):S.level==='mb'?objectiveMB(S):objectiveToronto(S);}
 function objectiveToronto(S){
   if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
@@ -1135,7 +1150,7 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   rain.material.opacity=rainAmt*.55;rain.visible=rainAmt>.02;
   if(rain.visible){const a=rainGeo.attributes.position.array,wx=WIND.x*WIND.str,wz=WIND.z*WIND.str;for(let i=0;i<RAIN_N;i++){const k=i*6;a[k+1]-=dt*26;a[k]+=wx*dt*22;a[k+2]+=wz*dt*22;if(a[k]>45)a[k]-=90;if(a[k]<-45)a[k]+=90;if(a[k+2]>45)a[k+2]-=90;if(a[k+2]<-45)a[k+2]+=90;if(a[k+1]<0)a[k+1]+=45;a[k+3]=a[k]-wx*.8;a[k+4]=a[k+1]-.6;a[k+5]=a[k+2]-wz*.8;}
     rainGeo.attributes.position.needsUpdate=true;rain.position.set(center.x,0,center.z);}
-  if(SNOWAMT>0){scene.fog.near=lerp(scene.fog.near,30,SNOWAMT*.6);scene.fog.far=lerp(scene.fog.far,200,SNOWAMT*.7);}
+  if(SNOWAMT>0){scene.fog.near=lerp(scene.fog.near,30,SNOWAMT*.6);scene.fog.far=lerp(scene.fog.far,200,SNOWAMT*.7);const wo=SNOWAMT*clamp((WIND.str-.45)*2.2,0,1);scene.fog.near=lerp(scene.fog.near,4,wo);scene.fog.far=lerp(scene.fog.far,46,wo);}
   updateInteriorLights(day*(1-cloud*.5),smooth(.25,.75,nightF));
   if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=.18+.22*day;hemi.color.set('#f3e6d2');
     rain.visible=false;stars.material.opacity=0;sunDisc.material.opacity=0;moon.material.opacity=0;}
@@ -1414,6 +1429,7 @@ function objectiveTarget(o){
   if(S.level==='nl'){const nt=nlTarget(o);if(nt!==undefined)return nt;}
   if(S.level==='ab'){const at=abTarget(o);if(at!==undefined)return at;}
   if(S.level==='ns'){const nt2=nsTarget(o);if(nt2!==undefined)return nt2;}
+  if(S.level==='mb'){const mt=mbTarget(o);if(mt!==undefined)return mt;}
   if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
@@ -1714,7 +1730,7 @@ function stepCombat(dt){
     const T=ETYPE[e.type];if(e.down)continue;if(e.friendly){continue;}
     const dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz);
     // perception
-    const fov=e.state==='combat'?Math.PI*1.6:Math.PI*.42,range=(e.state==='combat'?40:night?12:17)*(1-W.rain*.25)*(1-(W.windStr||0)*.25)*(S.location==='office'&&S.flags.powerCut?.65:1);
+    const fov=e.state==='combat'?Math.PI*1.6:Math.PI*.42,range=(e.state==='combat'?40:night?12:17)*(1-W.rain*.25)*(1-(W.windStr||0)*.25)*(S.location==='office'&&S.flags.powerCut?.65:1)*(1-.5*whiteout());
     const ang=Math.acos(clamp((dx*Math.sin(e.heading)+dz*Math.cos(e.heading))/Math.max(d,.001),-1,1));
     const sees=d<range&&ang<fov&&losClear(e.x,e.z,p.x,p.z);
     if(e.gate&&S.flags.gateOpen&&!P2.alarm){e.meter=0;}
@@ -2662,6 +2678,171 @@ function CINES_nsIntro(){const H=HFX;return[
     sub:[[.5,'Oscar','Doucet & Associés. Le Notaire d’Omer.'],[4,'Oscar','Le sol est une patinoire… Doucement.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(H.ox,0,H.oz-4);oc.g.rotation.set(0,.6,0);animRig(oc,dt,T,0,'walk',.4,true);animWaves(H,T,.6);}}];}
 
+/* --- 5i. NIVEAU 6 : MANITOBA (blizzard −40 °C, voiles blancs, thermos) --- */
+const WPG={ox:6000,oz:0,hw:60,hd:45,indoor:false,label:'Saint-Boniface, Winnipeg',cols:[],group:null,lights:[],snow:true};
+const CAFE={ox:6000,oz:200,hw:7,hd:5.5,indoor:true,label:'Café de la Cathédrale',spawn:{x:0,z:4.3},exitLoc:'winnipeg',exitOut:()=>({x:WPG.ox+10,z:WPG.oz+12.6}),cols:[],group:null,lights:[]};
+const SILOS={ox:6000,oz:400,hw:90,hd:70,indoor:false,label:'Silos de Saint-Norbert',cols:[],group:null,lights:[],snow:true};
+INTERIORS.winnipeg=WPG;INTERIORS.cafe=CAFE;INTERIORS.silos=SILOS;
+const VOFFICE={x0:18,x1:38,z0:-32,z1:-18};
+ARENAS.winnipeg={area:WPG,lvl:'mb',ground:'#dfe7ee',paths:[[[-55,8],[55,8]],[[10,8],[10,12]]],
+  defs:[{id:'w1',type:'pistol',post:[24,4.5,-Math.PI/2]},{id:'w2',type:'melee',route:[[16,2],[40,2]]}],
+  elook:{melee:{jacket:'#1b1b1f',pants:'#1b1b1f'},pistol:{jacket:'#22262e',pants:'#1b1b1f'}}};
+ARENAS.silos={area:SILOS,lvl:'mb',room:VOFFICE,roomLabel:'Bureau',ground:'#e6edf2',paths:[[[0,66],[0,0],[28,-14]],[[0,0],[60,0],[66,30]],[[-50,-40],[60,-40]]],
+  defs:[{id:'s1',type:'rifle',post:[0,40,0]},{id:'s2',type:'pistol',route:[[-48,-25],[-12,-25],[-12,6],[-48,6]]},{id:'s3',type:'melee',route:[[-6,20],[20,20],[20,-6],[-6,-6]]},
+    {id:'s4',type:'rifle',route:[[56,40],[56,-10]]},{id:'s5',type:'pistol',post:[28,-15,0]},{id:'s6',type:'pistol',route:[[-40,-36],[40,-36]]},
+    {id:'b1',type:'rifle',post:[22,-22,0]},{id:'b2',type:'pistol',post:[34,-28,-Math.PI/2]},{id:'boss',type:'boss',post:[30,-29,0]}],
+  elook:{melee:{jacket:'#3a2a1e',pants:'#1b1b1f'},pistol:{jacket:'#2b2f36',pants:'#22223b'},rifle:{jacket:'#e6ebee',pants:'#9aa3ab'}},
+  bossLook:{skin:'#e0ac69',hair:'#1a1a1a',bald:false,beard:true,height:1.02,build:1.08,jacket:'#111111',pants:'#1b1b1f',slouch:.03},
+  bossDeco(h){const coat=new THREE.Mesh(new THREE.CylinderGeometry(.27,.38,.8,14,1,true),new THREE.MeshStandardMaterial({color:'#0d0d0f',roughness:.5,side:THREE.DoubleSide}));coat.position.y=-.3;h.hips.add(coat);
+    const fur=new THREE.Mesh(new THREE.TorusGeometry(.12,.045,8,16),mat('#2a2a2a',{roughness:1}));fur.rotation.x=Math.PI/2;fur.position.y=.55;h.spine.add(fur);
+    const case_=new THREE.Mesh(new THREE.BoxGeometry(.4,.3,.1),mat('#5a5a5e',{metalness:.8,roughness:.25}));case_.position.set(0,-.2,0);h.armL.wr.add(case_);},
+  boss:{dlg:'viktor',spot:'viktorSpot',interro:'viktorI',clue:'mallette',name:'Viktor',cp:[10,-8],down:'Viktor glisse contre le mur, la mallette serrée contre lui. Interroge-le (touche E).'}};
+function buildWinnipeg(){
+  const I=WPG;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  snowGround(I,130,100);pathStrips(I,ARENAS.winnipeg.paths,6);
+  // frozen Red River and the Esplanade Riel footbridge
+  const ice=new THREE.Mesh(new THREE.PlaneGeometry(40,200),new THREE.MeshStandardMaterial({color:'#c9dbe6',roughness:.15,metalness:.15}));ice.rotation.x=-Math.PI/2;ice.position.set(-80,.01,0);I.group.add(ice);
+  const white=mat('#f2f2f2',{roughness:.4});gb(I.group,40,.5,4,white,-80,6,-25,0,false);const py=new THREE.Mesh(new THREE.CylinderGeometry(.6,1.2,40,8),white);py.position.set(-80,20,-25);py.rotation.z=.25;I.group.add(py);
+  for(let i=0;i<8;i++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,20,4),mat('#ddd'));c.position.set(-86+i*1.6,14,-25);c.rotation.z=.45-i*.04;I.group.add(c);}
+  // the ruined façade of Saint-Boniface Cathedral
+  const stone=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#bfb6a4',roughness:.95});const cat=new THREE.Group();cat.position.set(-20,0,-30);I.group.add(cat);
+  gb(cat,26,16,2,stone,0,8,0);const rose=new THREE.Mesh(new THREE.TorusGeometry(3.4,.6,8,24),stone);rose.position.set(0,10,1.1);cat.add(rose);
+  gb(cat,6,10,.4,mat('#1a2230'),0,5,1.05,0,false);for(const x of [-10,10])gb(cat,4,22,3,stone,x,11,0);gb(cat,26.4,.5,2.4,SNOWM,0,16.3,0,0,false);
+  I.cols.push({x0:I.ox-33,x1:I.ox-7,z0:I.oz-32,z1:I.oz-28});
+  // Provencher street: café, shops, heated bus shelter, parked car of Viktor's men
+  const cols=['#7a3a2a','#5a4a3a','#3a4a5a','#6a5a3a'];for(let i=0;i<5;i++){const x=-4+i*12,h=8+(i%2)*3;const F=facadeMat('brick',900+i,cols[i%4],8,8,.5);const o=new THREE.Mesh(facadeBox(11,h,10,F.tw,F.th),F.m);o.position.set(x,h/2,20);o.castShadow=o.receiveShadow=true;I.group.add(o);collidableMeshes.push(o);
+    I.cols.push({x0:I.ox+x-5.5,x1:I.ox+x+5.5,z0:I.oz+15,z1:I.oz+25});ibox(I,11.4,.4,10.4,SNOWM,x,h+.2,20);}
+  const cs=new THREE.Mesh(new THREE.PlaneGeometry(6,1),regNight(new THREE.MeshStandardMaterial({map:signTex('CAFÉ DE LA CATHÉDRALE','#5a1a14','#ffe2b0'),emissive:'#ffffff',emissiveIntensity:.3}),.3,1));cs.material.emissiveMap=cs.material.map;cs.position.set(8,5,14.95);cs.rotation.y=Math.PI;I.group.add(cs);cs.rotation.y=0;
+  ibox(I,1.2,2.2,.1,mat('#2a1a12'),10,1.1,14.98,0,false,false);ibox(I,4,1.4,.06,new THREE.MeshStandardMaterial({color:'#1b2330',emissive:'#ffb86a',emissiveIntensity:.9}),5,2,14.97,0,false,false);
+  const sh=new THREE.Group();sh.position.set(-10,0,12.5);I.group.add(sh);gb(sh,4,.1,1.6,mat('#555'),0,2.6,0);gb(sh,4,2.4,.05,new THREE.MeshStandardMaterial({color:'#bfe3ff',transparent:true,opacity:.35}),0,1.3,.8,0,false);
+  const hl=new THREE.PointLight('#ff9a5a',8,6,2);hl.position.set(0,2.3,0);sh.add(hl);gb(sh,1.2,.15,.3,new THREE.MeshStandardMaterial({color:'#ff5a1a',emissive:'#ff5a1a',emissiveIntensity:2}),0,2.5,0,0,false);
+  const car=createCar('car','#0b0b0c');car.position.set(28,0,4.5);car.rotation.y=Math.PI/2;I.group.add(car);I.cols.push({x0:I.ox+25.8,x1:I.ox+30.2,z0:I.oz+3.5,z1:I.oz+5.5});
+  const sno=new THREE.Group();sno.position.set(-2,0,10);I.group.add(sno);gb(sno,1,.6,2.6,mat('#c4302a'),0,.5,0);gb(sno,.8,.5,1,mat('#222'),0,.9,-.4);WPG.snowmobile=sno;
+  // golden dome of the Legislative building across the river
+  const leg=new THREE.Group();leg.position.set(-150,0,60);I.group.add(leg);gb(leg,50,18,30,mat('#cfc6b4'),0,9,0);gc(leg,8,9,10,mat('#cfc6b4'),0,23,0,20);const dome=new THREE.Mesh(new THREE.SphereGeometry(8,20,12,0,Math.PI*2,0,Math.PI/2),mat('#bfb39c'));dome.position.y=28;leg.add(dome);
+  const gold=new THREE.Mesh(new THREE.ConeGeometry(.8,4,8),mat('#e8b923',{metalness:.9,roughness:.25,emissive:'#7a5a10',emissiveIntensity:.4}));gold.position.y=38;leg.add(gold);
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#ffd59a',emissiveIntensity:0}),0,3.5);
+  for(let x=-50;x<=50;x+=16){icyl(I,.08,.12,5,M.pole,x,2.5,13,8);ibox(I,.4,.2,.6,headM,x,5.1,13);const pl=new THREE.Mesh(new THREE.PlaneGeometry(10,10),M.pools);pl.rotation.x=-Math.PI/2;pl.position.set(x,.03,13);I.group.add(pl);}
+  for(const [a,b,c,d] of [[-61,-60,-46,46],[60,61,-46,46],[-61,61,-46,-45],[-61,61,45,46]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  I.group.visible=false;
+}
+function buildCafe(){
+  const I=CAFE;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  shell(I,new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#7a5235',roughness:.55}),new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#e9d9b9',roughness:.9}),3,0,[{x:-4,w:2.6,y0:1,y1:2.3},{x:4,w:2.6,y0:1,y1:2.3}]);
+  ibox(I,4,1.05,.75,mat('#5a3a22',{roughness:.5}),-3,.52,-3.4,0,true);I.cols.push({x0:I.ox-5,x1:I.ox-1,z0:I.oz-3.8,z1:I.oz-3});
+  ibox(I,.6,.4,.4,mat('#9aa1a6',{metalness:.7}),-4,1.25,-3.4);const pie=new THREE.Mesh(new THREE.CylinderGeometry(.18,.16,.06,16),mat('#b5651d'));pie.position.set(-2,1.1,-3.4);I.group.add(pie);
+  for(const [x,z] of [[2.5,-2.6],[4.8,0],[1.8,1.6],[-3.5,1.4]]){icyl(I,.5,.5,.05,mat('#3a2418'),x,.76,z,16);icyl(I,.06,.2,.74,M.pole,x,.37,z,8);I.cols.push({x0:I.ox+x-.55,x1:I.ox+x+.55,z0:I.oz+z-.55,z1:I.oz+z+.55});}
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1),new THREE.MeshStandardMaterial({map:texCanvas(91,150,100,(g)=>{g.fillStyle='#2a7a3a';g.fillRect(0,0,75,100);g.fillStyle='#f4f1e8';g.fillRect(75,0,75,100);g.fillStyle='#e8b923';g.beginPath();g.arc(75,50,18,0,7);g.fill();}),side:THREE.DoubleSide}));
+  fl.position.set(6.88,2.1,-1);fl.rotation.y=-Math.PI/2;I.group.add(fl);
+  lamp(I,-2,2.2,-1,7,'#ffcf8a');lamp(I,3,2.2,0,7,'#ffcf8a');
+  I.group.visible=false;
+}
+function buildSilos(){
+  const I=SILOS;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  snowGround(I,190,150);pathStrips(I,ARENAS.silos.paths,5);
+  const conc=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#c9c4bb',roughness:.95});
+  for(const [x,z] of [[-40,-16],[-31,-16],[-22,-16],[-40,-7],[-31,-7],[-22,-7]]){gc(I.group,4.4,4.4,28,conc,x,14,z,20);gc(I.group,4.5,4.5,.4,SNOWM,x,28.2,z,20);I.cols.push({x0:I.ox+x-4.4,x1:I.ox+x+4.4,z0:I.oz+z-4.4,z1:I.oz+z+4.4});}
+  const wood=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#8a3a2a',roughness:.9});gb(I.group,10,32,10,wood,-8,16,-14);const pk=new THREE.Mesh(new THREE.ConeGeometry(7.5,7,4),wood);pk.position.set(-8,35.5,-14);pk.rotation.y=Math.PI/4;I.group.add(pk);
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(9,1.6),new THREE.MeshStandardMaterial({map:signTex('SAINT-NORBERT GRAIN','#8a3a2a','#f2f2f2')}));sign.position.set(-8,26,-8.95);I.group.add(sign);I.cols.push({x0:I.ox-13,x1:I.ox-3,z0:I.oz-19,z1:I.oz-9});
+  // office (room) with the door on the south side
+  const wm=mat('#d9d4c4');const W=VOFFICE,H=4;const wall=(x0,z0,x1,z1)=>{const m=ibox(I,Math.max(.3,x1-x0),H,Math.max(.3,z1-z0),wm,(x0+x1)/2,H/2,(z0+z1)/2,0,true);collidableMeshes.push(m);};
+  wall(W.x0,W.z1-.15,26.5,W.z1+.15);wall(29.5,W.z1-.15,W.x1,W.z1+.15);ibox(I,3,H-2.3,.3,wm,28,2.3+(H-2.3)/2,W.z1);wall(W.x0,W.z0-.15,W.x1,W.z0+.15);wall(W.x0-.15,W.z0,W.x0+.15,W.z1);wall(W.x1-.15,W.z0,W.x1+.15,W.z1);
+  const rf=ibox(I,21,.3,15,mat('#3a3a3a'),28,H+.15,-25);collidableMeshes.push(rf);ibox(I,21.2,.3,15.2,SNOWM,28,H+.45,-25);
+  ibox(I,2.4,.08,1.2,mat('#4a3a2a'),30,.8,-25,0,true);I.cols.push({x0:I.ox+28.8,x1:I.ox+31.2,z0:I.oz-25.6,z1:I.oz-24.4});
+  const ol=new THREE.PointLight('#ffe2b0',14,16,2);ol.position.set(28,3.6,-25);I.group.add(ol);I.lights.push({l:ol,kind:'lamp',base:14});
+  const stove=new THREE.Mesh(new THREE.BoxGeometry(.8,1,.8),new THREE.MeshStandardMaterial({color:'#222',emissive:'#ff5a1a',emissiveIntensity:.6}));stove.position.set(20,.5,-30.5);I.group.add(stove);
+  // rail spur & hopper cars, trucks with warm engines, hangar & plane, sheds
+  for(const o of [-.72,.72])ibox(I,150,.08,.1,M.rail,0,.05,-44+o,0,false,false);
+  for(let i=0;i<5;i++){const g=new THREE.Group();g.position.set(-45+i*18,0,-44);I.group.add(g);gb(g,14,3.6,3,mat('#6a5a4a'),0,2.4,0);gb(g,14.2,.15,3.1,SNOWM,0,4.3,0,0,false);I.cols.push({x0:I.ox-45+i*18-7.2,x1:I.ox-45+i*18+7.2,z0:I.oz-45.6,z1:I.oz-42.4});}
+  SILOS.trucks=[];for(const [x,z] of [[10,12],[42,4]]){const t=createCar('car','#2c5d8a');t.scale.set(1.3,1.6,1.6);t.position.set(x,0,z);t.rotation.y=.3;I.group.add(t);I.cols.push({x0:I.ox+x-2,x1:I.ox+x+2,z0:I.oz+z-3.6,z1:I.oz+z+3.6});SILOS.trucks.push({x:I.ox+x,z:I.oz+z});}
+  const hg=new THREE.MeshStandardMaterial({map:corrTex,color:'#7d8287',roughness:.7});ibox(I,20,9,16,hg,70,4.5,-12,0,true);ibox(I,20.4,.3,16.4,SNOWM,70,9.15,-12);I.cols.push({x0:I.ox+60,x1:I.ox+80,z0:I.oz-20,z1:I.oz-4});
+  const pl=new THREE.Group();pl.position.set(68,0,24);I.group.add(pl);const fus=new THREE.Mesh(new THREE.CapsuleGeometry(1,7,6,12),mat('#f2f2f2',{roughness:.3}));fus.rotation.x=Math.PI/2;fus.position.y=1.6;pl.add(fus);
+  gb(pl,14,.2,2,mat('#f2f2f2'),0,2.2,0);gb(pl,.2,2.4,1.4,mat('#c4302a'),0,3,-4.2);gb(pl,5,.15,1,mat('#f2f2f2'),0,2.4,-4.2);I.cols.push({x0:I.ox+61,x1:I.ox+75,z0:I.oz+19,z1:I.oz+29});
+  const strip=new THREE.Mesh(new THREE.PlaneGeometry(10,90),PLOW);strip.rotation.x=-Math.PI/2;strip.position.set(68,.02,10);I.group.add(strip);
+  for(let z=-30;z<=55;z+=8)for(const x of [62.5,73.5]){const b=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6),new THREE.MeshBasicMaterial({color:'#4aa3ff'}));b.position.set(x,.15,z);I.group.add(b);}
+  for(const [x,z] of [[-40,30],[40,45]]){ibox(I,8,4,6,wood,x,2,z,0,true);ibox(I,8.4,.3,6.4,SNOWM,x,4.2,z);I.cols.push({x0:I.ox+x-4,x1:I.ox+x+4,z0:I.oz+z-3,z1:I.oz+z+3});}
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#fff4d8',emissiveIntensity:0}),0,4);
+  for(const [x,z] of [[0,30],[-20,0],[20,-6],[50,10],[0,-36]]){icyl(I,.12,.16,10,M.pole,x,5,z,8);ibox(I,.8,.3,.5,headM,x,10.1,z);}
+  for(const [x,z] of [[-20,0],[20,-6]]){const l=new THREE.PointLight('#fff1d8',55,30,2);l.position.set(x,9.5,z);I.group.add(l);I.lights.push({l,kind:'lamp',base:55,night:true});}
+  const r=mulberry32(17);for(let i=0;i<40;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(2+r()*3,10,6,0,Math.PI*2,0,Math.PI/2),SNOWM);d.scale.set(1.6,.35,1);d.position.set((r()-.5)*170,0,(r()-.5)*130);I.group.add(d);}
+  for(const [a,b,c,d] of [[-91,-90,-71,71],[90,91,-71,71],[-91,91,-71,-70],[-91,91,70,71]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  I.group.visible=false;
+}
+function buildMBActors(){
+  buildWinnipeg();buildCafe();buildSilos();
+  const add=(id,look,lx,lz,a,md,loc,I)=>{const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+    interiorNPCs.push({id,dlg:id,h,x:I.ox+lx,z:I.oz+lz,a,mode:md,loc,lvl:'mb'});if(md!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h};
+  const base={prop:'none',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.5,shAsym:0,browAsym:.1,headTilt:0,bald:false,long:false,beard:false,height:1,build:1,slouch:.08};
+  add('mireille',{...base,skin:'#f1c27d',jacket:'#2a7a3a',pants:'#3d405b',hair:'#6f4e37',long:true,height:.96,build:1.05,browAsym:.2},-3,-4.3,0,'talk','cafe',CAFE);
+  add('nadia',{...base,skin:'#e0ac69',jacket:'#5c4d7d',pants:'#22223b',hair:'#1a1a1a',long:true,height:.98,build:.9,slouch:.2,browAsym:.35,breath:2.2,prop:'cup'},4.8,-.85,Math.PI,'sit','cafe',CAFE);
+  add('louis',{...base,skin:'#c68642',jacket:'#7a2e1e',pants:'#2b2d42',hair:'#2b1d14',long:true,beard:false,height:1.03,build:1.12,slouch:.06,prop:'cup'},1.8,.75,Math.PI,'sit','cafe',CAFE);
+}
+Object.assign(CLUES,{
+  nadia:{title:'Nadia, ancienne comptable de Viktor',text:'Viktor, le « Bras droit » d’Omer, s’envole pour Montréal depuis la piste des silos de Saint-Norbert, au sud de la ville. Il garde les codes de la maison d’Omer dans une mallette en métal.'},
+  mallette:{title:'La mallette de Viktor',text:'L’adresse complète de la maison d’Omer à Westmount. Le code de la porte du sous-sol : 1967. Les gardes changent à minuit. Et une note d’Omer : « Vendredi, tempête de verglas sur Montréal. Personne ne viendra. »'},
+});
+Object.assign(DIALOGUES,{
+  mireille:{who:'Mireille, propriétaire du café',start:()=>'m0',nodes:{
+    m0:{text:'Bienvenue à Saint-Boniface ! Moins quarante dehors, mon homme, assis-toi. Une soupe aux pois ? Une pointe de tourtière ?',choices:[{t:'Une soupe aux pois, avec plaisir.',end:true,money:6,min:15,fx:{call:'warm'}},{t:'Je cherche quelqu’un qui connaît les silos de Saint-Norbert.',next:'m1',min:5},{t:'Merci, juste me réchauffer.',end:true,min:10,fx:{call:'warm'}}]},
+    m1:{text:'Les silos ? Louis, là-bas, connaît toute la prairie. Et la femme au fond, Nadia… elle attend quelqu’un depuis deux heures. Elle a peur, ça se voit.',choices:[{t:'Merci, Mireille.',end:true}]}}},
+  nadia:{who:'Nadia',start:S=>S.clues.includes('nadia')?'n9':'n0',nodes:{
+    n0:{text:'(Elle sursaute et serre sa tasse.) C’est Viktor qui vous envoie ?',choices:[{t:'Non. Je cherche Omer. Viktor travaille pour lui. Ma femme et mon fils sont ses otages.',next:'n1',min:10},{t:'Tu connais Viktor ?',next:'n2',min:5},{t:'Parle, ou je préviens Viktor que tu bavardes.',next:'n3'}]},
+    n1:{text:'Viktor… le « Bras droit ». J’ai tenu ses comptes pendant trois ans. Il part pour Montréal à l’aube, en avion privé, depuis la piste des silos de Saint-Norbert. Les codes de la maison d’Omer sont dans sa mallette. Promettez-moi qu’il ne saura jamais que c’est moi.',choices:[{t:'Je te le promets. Personne ne saura.',end:true,fx:{clue:'nadia',flag:'nadiaSafe'}},{t:'Je ne promets rien.',next:'n4'}]},
+    n2:{text:'(Elle regarde la vitrine.) Ses hommes sont dehors, dans la voiture noire. Je ne peux pas parler ici… sauf si vous me dites qui vous êtes vraiment.',choices:[{t:'Je m’appelle Oscar. Omer a enlevé ma femme et mon fils.',next:'n1',min:5},{t:'Laisse tomber.',end:true}]},
+    n3:{text:'(Elle se lève brusquement.) Au secours ! Il me menace !',choices:[{t:'(Partir vite)',end:true,fx:{call:'nadiaScream'}}]},
+    n4:{text:'… Alors je vous donne juste ça : les silos de Saint-Norbert, au sud. Le reste, débrouillez-vous.',choices:[{t:'Merci.',end:true,fx:{clue:'nadia'}}]},
+    n9:{text:'Partez. Les hommes de Viktor regardent la porte.',choices:[{t:'D’accord.',end:true}]}}},
+  louis:{who:'Louis, guide métis',start:S=>S.flags.snowmobile?'l9':'l0',nodes:{
+    l0:{text:'Tu veux traverser la prairie par cette poudrerie ? Pas de repères, le vent efface tout. Ça pardonne pas, la prairie.',choices:[{t:'Il le faut. Ma famille en dépend.',next:'l1',min:10},{t:'Je te paie 100 $ pour m’y conduire.',next:'l2',money:100},{t:'J’irai à pied.',end:true}]},
+    l1:{text:'(Il pose sa tasse.) Ma grand-mère disait : on laisse jamais quelqu’un seul dans la poudrerie. Je t’emmène en motoneige. Tiens, prends mon thermos de thé chaud. Bois avant d’avoir froid, pas après.',choices:[{t:'Merci, Louis.',end:true,fx:{flag:'snowmobile',call:'thermos'}}]},
+    l2:{text:'(Il compte les billets.) Bon. La motoneige est devant. Prends aussi mon thermos, t’en auras besoin là-bas.',choices:[{t:'Merci.',end:true,fx:{flag:'snowmobile',call:'thermos'}}]},
+    l9:{text:'La motoneige est devant le café. On part quand tu veux.',choices:[{t:'J’arrive.',end:true}]}}},
+  viktor:{who:'Viktor, le Bras droit d’Omer',start:()=>'v0',nodes:{
+    v0:{text:'(Il pose la main sur une mallette en métal.) Le soldat. Omer m’avait prévenu. Tu sais ce qu’il y a là-dedans ? Ta famille. L’adresse, les codes, tout. Viens la prendre.',choices:[{t:'Où est ma famille ?',next:'v1',min:1},{t:'Donne-moi la mallette, et tu prends ton avion. Seul.',next:'v2',min:1},{t:'(Attaquer)',end:true,fx:{call:'bossFight'}}]},
+    v1:{text:'À Westmount. Sous ses pieds. Il dort juste au-dessus d’eux… il aime ça.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]},
+    v2:{text:'Omer me retrouverait en une heure. Non, soldat. Pas ce soir.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  viktorSpot:{who:'Viktor',start:()=>'s0',nodes:{s0:{text:'Il est ici ! Personne ne touche à cette mallette !',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  viktorI:{who:'Viktor, à terre',start:()=>'i0',nodes:{
+    i0:{text:'(Il grimace, la mallette contre lui.) Prends-la… Mais tu entreras jamais. La maison est une forteresse, et Omer t’attend.',choices:[{t:'Le code.',next:'i1',min:3},{t:'C’est ce qu’ils disent tous.',next:'i1',min:2}]},
+    i1:{text:'1967. La porte du sous-sol. Les gardes changent à minuit. Et vendredi… la tempête de verglas. Il a dit que personne viendrait.',choices:[{t:'(Ouvrir la mallette)',end:true,fx:{clue:'mallette',flag:'mallette',call:'levelComplete'}}]}}},
+});
+Object.assign(CALLS,{
+  thermos:()=>{S.thermos=(S.thermos||0)+3;toast('Thermos de thé chaud : 3 gorgées. Touche H pour boire (+40 de chaleur).');},
+  nadiaScream:()=>{S.location='winnipeg';const p=S.player;p.x=CAFE.exitOut().x;p.z=CAFE.exitOut().z;applyLocation();const st=S.arenas.winnipeg;for(const e of st.enemies){e.state='combat';e.lx=p.x;e.lz=p.z;}st.alarm=true;toast('Les hommes de Viktor sortent de la voiture !');},
+});
+function whiteout(){const I=INTERIORS[S.location];if(!I||!I.snow)return 0;return (S.weather.snow||0)*clamp(((S.weather.windStr||0)-.45)*2.2,0,1);}
+function drinkThermos(){if(!S||!(S.thermos>0)){toast('Pas de thermos.');return;}S.thermos--;S.player.heat=Math.min(100,S.player.heat+40);addMinutes(1);toast('Une gorgée de thé brûlant. Il reste '+S.thermos+' gorgée'+(S.thermos>1?'s':'')+'.');}
+function objectiveMB(S){
+  if(!S.clues.includes('nadia'))return{stage:0,text:'Retrouve la piste du « Bras droit » d’Omer. Réfugie-toi au Café de la Cathédrale : à −40 °C, chaque minute dehors compte (l’abribus est chauffé).',target:'cafe'};
+  if(S.location!=='silos')return{stage:1,text:'Rejoins les silos de Saint-Norbert avant que l’avion de Viktor ne décolle : avec Louis en motoneige, ou à pied sur la rivière Rouge gelée.',target:S.flags.snowmobile?'sled':null};
+  if(!S.flags.bossMet)return{stage:2,text:'Infiltre le dépôt des silos. La poudrerie réduit la vue de tout le monde : profites-en. Le bureau de Viktor est près de la voie ferrée.'+(S.thermos?' Thermos : touche H.':''),target:'voffice'};
+  if(!S.flags.bossDown)return{stage:3,text:'Affronte Viktor, le Bras droit d’Omer.',target:'boss'};
+  if(!S.clues.includes('mallette'))return{stage:4,text:'Interroge Viktor (touche E).',target:'boss'};
+  return{stage:5,text:'Niveau 6 terminé. Cap sur Montréal : la maison d’Omer, la tempête de verglas, le sous-sol.',target:null};
+}
+function mbTarget(o){const t=o.target;
+  if(t==='cafe')return S.location==='winnipeg'?{x:WPG.ox+10,z:WPG.oz+13.6}:null;
+  if(t==='sled')return S.location==='winnipeg'?{x:WPG.ox-2,z:WPG.oz+10}:null;
+  if(t==='voffice')return S.location==='silos'?{x:SILOS.ox+28,z:SILOS.oz-16}:null;
+  return undefined;}
+function mbZones(){
+  const Wp=WPG,Z=[];const z=o=>{Z.push({lvl:'mb',...o});};
+  z({loc:'winnipeg',x:Wp.ox+10,z:Wp.oz+13.6,r:1.8,label:()=>'Entrer au Café de la Cathédrale',act:()=>enterInterior('cafe')});
+  z({loc:'cafe',x:CAFE.ox,z:CAFE.oz+CAFE.hd-.7,r:1.2,label:()=>'Sortir dans le froid',act:()=>exitInterior()});
+  z({loc:'winnipeg',x:Wp.ox-10,z:Wp.oz+12,r:2,label:()=>'S’abriter dans l’abribus chauffé (10 min)',act:()=>{addMinutes(10);S.player.heat=Math.min(100,S.player.heat+60);toast('La lampe chauffante te brûle presque le visage. Ça fait du bien.');}});
+  z({loc:'winnipeg',x:Wp.ox-2,z:Wp.oz+10,r:2.4,cond:()=>S.flags.snowmobile,label:()=>'Partir en motoneige avec Louis vers les silos (1 h)',act:()=>travelTo('silos',60,0,64,'Louis coupe le moteur au bord de la prairie. « Je t’attends ici jusqu’à l’aube. Pas une minute de plus. » Les silos se dressent dans la poudrerie.')});
+  z({loc:'winnipeg',x:Wp.ox-58,z:Wp.oz,r:4,cond:()=>S.clues.includes('nadia')&&!S.flags.snowmobile,label:()=>'Marcher vers le sud sur la rivière Rouge gelée (5 h, −40 °C)',act:()=>{travelTo('silos',300,0,64,'Cinq heures de glace et de vent. Tu ne sens plus tes pieds.');S.player.heat=Math.max(2,S.player.heat-90*gearFactor()-10);S.player.stamina=15;}});
+  for(const t of SILOS.trucks||[])z({loc:'silos',x:t.x+2.6,z:t.z,r:1.8,label:()=>'Se réchauffer contre le moteur d’un camion (10 min)',act:()=>{addMinutes(10);S.player.heat=Math.min(100,S.player.heat+45);toast('Le capot est encore tiède.');}});
+  for(const n of interiorNPCs)if(n.lvl==='mb'){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.x,z:n.z+(n.id==='mireille'?1.3:.95),r:1.6,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
+  return Z;
+}
+function CINES_mbIntro(){const Wp=WPG;return[
+  {set:'winnipeg',d:7,clock:16*60+10,rain:0,cloud:.9,snow:1,wind:.8,center:{x:Wp.ox,z:Wp.oz},title:'Winnipeg, Manitoba — fin décembre, 16 h 10. −38 °C. Le soleil se couche déjà.',
+    cam:[[Wp.ox+30,10,Wp.oz+40],[Wp.ox+12,6,Wp.oz+30],[Wp.ox-20,10,Wp.oz-30],[Wp.ox-20,9,Wp.oz-30]]},
+  {set:'winnipeg',d:8,clock:16*60+12,rain:0,cloud:.9,snow:1,wind:.8,center:{x:Wp.ox,z:Wp.oz},cam:[[Wp.ox+2.6,1.7,Wp.oz+11.5],[Wp.ox+2,1.7,Wp.oz+10.6],[Wp.ox,1.6,Wp.oz+8],[Wp.ox-20,5,Wp.oz-25]],
+    sub:[[.5,'Oscar','Le Bras droit. Celui qui a les codes de la maison.'],[4.2,'Oscar','Eva, Cédric… Plus qu’une ville. Plus qu’une.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(Wp.ox,0,Wp.oz+8);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.7,true);}}];}
+
 /* --- 5d. CINÉMATIQUES (bloc 4) ---
    Moteur de plans : décor, acteurs, caméra (mouvement + caméra à l'épaule), sous-titres, titres, bandes noires.
    Mise en scène fidèle au plan du jeu (docs/PLAN.md §4) et aux directives de réalisme. */
@@ -2945,7 +3126,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
-  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
+  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='mbIntro'?CINES_mbIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
@@ -2987,7 +3168,7 @@ function updateHUD(){
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
   const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
   $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
-  $('hMoney').textContent=S.money+' $';$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
+  $('hMoney').textContent=S.money+' $';show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
   $('hLvlK').textContent='Niveau '+L.index+' · '+L.region+' · '+L.season;$('hLvlN').textContent=L.name;
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
@@ -3041,6 +3222,7 @@ addEventListener('keydown',e=>{
     return;}
   if(mode!=='play')return;
   if(e.code==='KeyC'){openNotebook();return;}
+  if(e.code==='KeyH'){drinkThermos();return;}
   if(e.code==='KeyF'){if(!takedownOrLoot()&&activeZone)interact();}
   if(e.code==='KeyV')CB.block=true;
   if(e.code==='KeyX'||e.code==='ControlLeft'){CB.crouch=!CB.crouch;e.preventDefault();}
@@ -3159,11 +3341,11 @@ function syncTitle(dt,t){
 }
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});

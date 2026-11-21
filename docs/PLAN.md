@@ -183,6 +183,12 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - **Cabinet Doucet & Associés** : caméras, tableau de fusibles, cloisons basses, gardes. **Le Notaire** : il négocie, appelle la sécurité et court vers la **déchiqueteuse**. Si l'alerte dure plus d'environ 50 s, l'adresse de Montréal est détruite.
 - **Piste du niveau 6** : le **« Bras droit »** d'Omer, à **Winnipeg**, payé chaque mois, garde les codes de la maison de **Westmount** (sous-sol aménagé).
 
+## 10i. Niveau 6 — Manitoba (bloc 10)
+- Winnipeg, fin décembre, 16 h 15, −38 °C, blizzard. Chronomètre : 36 h de jeu.
+- Café de la Cathédrale (Saint-Boniface) : **Mireille** la propriétaire ; **Nadia**, ancienne comptable de Viktor, terrifiée (la promettre à l'abri → piste ; la menacer → elle crie, les hommes de Viktor attaquent) ; **Louis**, guide métis, motoneige et thermos (gratuit si Oscar dit la vérité, 100 $ sinon).
+- Silos de Saint-Norbert : dépôt gardé (8 gardes), avion privé prêt à décoller. Boss **Viktor, le Bras droit** (manteau noir à col de fourrure, mallette en métal).
+- Indice : la mallette — maison d'Omer à Westmount, code du sous-sol **1967**, relève à minuit, « Vendredi, tempête de verglas sur Montréal ».
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 
