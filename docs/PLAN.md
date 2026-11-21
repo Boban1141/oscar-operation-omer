@@ -167,6 +167,14 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - **Monter à bord** : mot de passe, 100 $ à la sentinelle, combat, ou par la mer avec la doris de Wilf (si on l'aide à l'amarrer dans la tempête).
 - **Le capitaine Roy**, au service d'Omer : négociation, combat sur le pont, interrogatoire. **Piste du niveau 4** : la cargaison part en train vers **Calgary**, chez **« l'Éleveur »**, un ranch au pied des Rocheuses. Roy confirme le **métro** qu'on entend derrière Omer.
 
+## 10g. Niveau 4 — Alberta (bloc 8)
+> **Décision du propriétaire** : l'équipement d'hiver se **trouve** (il ne s'achète pas). Le reste est **proposé par Claude**, à valider.
+- **Calgary, début décembre, 6 h 45, −22 °C.** Oscar descend d'un train de marchandises en blouson. Chronomètre : 66 h.
+- Équipement à trouver : **parka** (atelier d'entretien de la gare), **mitaines** (cabine d'une locomotive), **tuque et bottes** (boîte des objets perdus du relais, avec l'accord de Priya).
+- **Relais routier de la route 1** : Priya (caissière), **Dale** (camionneur : poser ses chaînes dans le froid → il emmène Oscar). Sinon motoneige (90 $) ou à pied (6 h, très dangereux).
+- **Ranch Bow Valley** au pied des Rocheuses. **L'Éleveur** (chapeau, manteau en peau de mouton) : négociation, combat, interrogatoire. **Piste du niveau 5** : « **le Notaire** », un cabinet du port d'**Halifax** qui blanchit l'argent d'Omer. **Indice final** : une facture d'électricité pour une maison de **Westmount** (Montréal).
+- Neige : traces de pas suivies par les gardes ; neige profonde hors des chemins déneigés.
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 

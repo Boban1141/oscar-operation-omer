@@ -3,9 +3,9 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.7.0)
-- **Niveaux 1 (Toronto), 2 (Colombie-Britannique) et 3 (Terre-Neuve) jouables**, enchaînés : blocs 1 à 4, 6 et 7 terminés.
-- **Prochaine étape proposée** : bloc 8 (niveau 4, Alberta, début de l'hiver).
+## État au 2026-11-20 (v0.8.0)
+- **Niveaux 1 à 4 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta) : blocs 1 à 4 et 6 à 8 terminés.
+- **Prochaine étape proposée** : bloc 9 (niveau 5, Nouvelle-Écosse : tempête côtière et verglas).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
 - **Dépôt GitHub** (`Boban1141/DUXIA`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
 
@@ -99,8 +99,18 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Cinématique d'arrivée ; tests : 50 vérifications (niveaux 1 à 3)
 - [ ] Test visuel et réglage par un humain
 
-## Blocs 8 à 11 — Provinces `[ ]`
-- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [ ] 8 Alberta · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
+## Bloc 8 — Niveau 4 : Alberta `[x]` (v0.8.0)
+- [x] **Neige** (tous niveaux) : chute de neige, sol enneigé, neige profonde qui ralentit hors des chemins déneigés, **traces de pas** que les gardes remarquent et suivent, **buée** de la respiration, brouillard de neige
+- [x] **Froid extrême** (−17 à −26 °C) : givre sur l'écran quand Oscar a froid ; mains engourdies sans mitaines (visée instable)
+- [x] **Équipement d'hiver à trouver** (pas à acheter, décision du propriétaire) : parka (atelier), mitaines (locomotive), tuque et bottes (objets perdus du relais) ; chacun réduit le froid ou la lenteur dans la neige ; visible sur Oscar
+- [x] Gare de triage d'Alyth à Calgary (wagons, locomotive, feux de barils, tour de Calgary), relais routier de la route 1 (Priya, Dale), trajet au choix (camion de Dale après avoir posé ses chaînes, motoneige 90 $, à pied 6 h)
+- [x] Ranch Bow Valley dans les Rocheuses : lodge, grange, dortoir, ruisseau gelé, forêt de pins enneigés ; l'Éleveur (négociation, combat, interrogatoire)
+- [x] Piste du niveau 5 : « le Notaire » à Halifax ; indice final : une maison à Westmount (Montréal)
+- [x] Cinématique d'arrivée ; tests : 63 vérifications (niveaux 1 à 4)
+- [ ] Test visuel et réglage par un humain
+
+## Blocs 9 à 11 — Provinces `[ ]`
+- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
 - Systèmes d'hiver : neige, verglas, blizzard, équipement d'hiver
 
 ## Bloc 12 — Multijoueur `[ ]`

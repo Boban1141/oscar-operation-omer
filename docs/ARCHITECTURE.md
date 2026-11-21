@@ -1,6 +1,6 @@
 # Architecture technique
 
-## État actuel (v0.7.0)
+## État actuel (v0.8.0)
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.
 - Lancer en local : servir le dossier `game/` (`python3 -m http.server -d game 8000`) puis ouvrir `http://localhost:8000`.
@@ -43,6 +43,10 @@
 
 ## Vent (bloc 7)
 - `LEVELS[id].wind = {base, gust, dir}` → `S.weather.windStr` (0 à 1) et `windDir`, calculés dans `stepWeather`. Effets : `stepPlayer` (vitesse face au vent, poussée, froid), `stepCombat` (portée de vue), `tryFire` (dispersion), pluie oblique (`WIND`), vagues (`animWaves`), HUD.
+
+## Neige et froid (bloc 8)
+- Météo `snow` (si `LEVELS[id].weather.snow`), `S.weather.snow`. Lieux `INTERIORS[id].snow` : neige profonde hors `ARENAS[id].paths`, traces (`stepFootprints`, `FOOT`), détection des traces dans `stepCombat`, buée (`stepBreath`), flocons (`updateSnow`).
+- Équipement : drapeaux `parka`, `gloves`, `tuque`, `boots` ; `gearFactor()` réduit l'exposition au froid ; `applyGear()` les affiche sur Oscar.
 
 ## Principes à respecter
 1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.

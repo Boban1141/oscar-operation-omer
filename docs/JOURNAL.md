@@ -3,6 +3,7 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À valider** : tout le niveau 4 (Priya, Dale, l'Éleveur, le Notaire, Westmount) — `docs/PLAN.md` §10g.
 - **À valider** : tout le niveau 3 (Bridget, Wilf, Liam, la doris, le capitaine Roy, « l'Éleveur ») — `docs/PLAN.md` §10f.
 - **À valider** : tout le niveau 2 (Earl, Josh, Maggie, le Pasteur, l'Église de la Dernière Lumière, le « Marie-Galante », le dessin de Cédric) — `docs/PLAN.md` §10e.
 - **À valider** : Tiago « Faca » Moreira, le port, « le Pasteur » et la piste de Vancouver (`docs/PLAN.md` §10c).
@@ -15,6 +16,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Niveau 4 : Alberta (v0.8.0)
+- Fait : neige (chute, sol, neige profonde, traces suivies par les gardes, buée, brouillard), froid extrême avec givre à l'écran et mains engourdies ; équipement d'hiver **à trouver** (décision du propriétaire) ; gare de triage d'Alyth, relais routier, ranch Bow Valley, l'Éleveur ; cinématique ; piste d'Halifax + indice de Westmount.
+- Fichiers : `game/index.html` (0.8.0), `docs/*`, `tests/run_logic_tests.py`.
+- Testé : 63/63 vérifications automatiques (niveaux 1 à 4), passage réel niveau 3 → 4, marche dans la neige sans erreur. **Rendu visuel non vu par un humain.**
+- Reste à faire : niveau 5 (Nouvelle-Écosse).
 
 ## 2026-11-20 — Claude — Niveau 3 : Terre-Neuve (v0.7.0)
 - Fait : système de vent (déplacement, rafales, froid éolien, visée, repérage, pluie oblique, affichage), vagues animées, roulis à bord ; port de St. John's, pub, tâche de la doris, quatre façons d'aborder le Marie-Galante, combat sur le pont en tempête, capitaine Roy ; cinématique d'arrivée ; piste vers l'Alberta.

@@ -71,7 +71,22 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
       o.S.player.x=3000+20;o.S.player.z=420;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','capitaine Roy : négociation');o.choose(0);o.choose(0);
       const roy=o.S.arenas.trawler.enemies.find(e=>e.id==='boss');o.damage(roy,400);ok(o.S.flags.bossDown,'Roy vaincu');
       o.openDialogue('royI');o.choose(0);o.choose(0);o.choose(0);ok(o.S.clues.includes('logbook'),'carnet de bord : piste de l’Alberta');
-      return winOk().then(w3=>{ok(w3,'écran de fin de niveau 3');return r;});});});
+      return winOk().then(w3=>{ok(w3,'écran de fin de niveau 3');
+        o.startLevel(null,'ab');ok(o.S.level==='ab'&&o.S.location==='yard','niveau 4 : gare de triage de Calgary');
+        o.weather(.1);const h0=o.S.player.heat;for(let i=0;i<300;i++)o.player(1/60);ok(o.S.player.heat<h0,'le froid fait baisser la chaleur corporelle ('+Math.round(h0)+' -> '+Math.round(o.S.player.heat)+')');
+        o.S.player.x=4000-20;o.S.player.z=10;const xs=o.S.player.x;o.S.camYaw=Math.PI/2;for(let i=0;i<60;i++){o.player(1/60);}
+        o.S.player.x=4000-52;o.S.player.z=24;zone('parka').act();ok(o.S.flags.parka,'parka trouvée');
+        o.S.player.x=4000+.5;o.S.player.z=5;zone('locomotive').act();ok(o.S.flags.gloves,'mitaines trouvées');
+        o.S.player.x=4000+30;o.S.player.z=-12.2;zone('CP 4471').act();o.closeUI();ok(o.S.clues.includes('railcar'),'wagon CP 4471');
+        o.S.player.x=4000+70;o.S.player.z=42;zone('relais').act();ok(o.S.location==='stop','relais routier');
+        o.openDialogue('priya');o.choose(0);o.choose(0);zone('objets perdus').act();ok(o.S.flags.boots&&o.S.flags.tuque,'bottes et tuque trouvées');
+        o.openDialogue('dale');o.choose(0);o.choose(0);zone('chaînes').act();o.openDialogue('dale');o.choose(0);ok(o.S.flags.rideReady,'chaînes posées : Dale nous emmène');
+        zone('Partir avec Dale').act();ok(o.S.location==='ranch','arrivée au ranch Bow Valley');
+        o.S.arenas.ranch.alarm=false;for(const e of o.S.arenas.ranch.enemies){if(!e.down){e.state='patrol';e.meter=0;}}
+        o.S.player.x=4000;o.S.player.z=420-50;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','l’Éleveur : négociation');o.choose(0);o.choose(0);
+        const el=o.S.arenas.ranch.enemies.find(e=>e.id==='boss');o.damage(el,400);ok(o.S.flags.bossDown,'Éleveur vaincu');
+        o.openDialogue('eleveurI');o.choose(0);o.choose(0);ok(o.S.clues.includes('registre'),'registre : piste d’Halifax et de Westmount');
+        return winOk().then(w4=>{ok(w4,'écran de fin de niveau 4');return r;});});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

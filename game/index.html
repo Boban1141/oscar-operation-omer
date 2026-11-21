@@ -85,6 +85,7 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
 .weapon{right:16px;bottom:16px;min-width:200px;text-align:right}.weapon b{display:block;font:700 22px "Barlow Condensed"}.weapon span{font:600 15px "Barlow Condensed";color:var(--dim);font-variant-numeric:tabular-nums}
 #hStealth{position:absolute;top:80px;left:50%;transform:translateX(-50%);font:700 15px "Barlow Condensed";padding:2px 12px;border-radius:6px;display:none}
 #hStealth.on{display:block;background:rgba(10,16,26,.75);color:var(--green)}#hStealth.sus{color:var(--amber)}#hStealth.alert{color:#fff;background:#b5121b}
+#frost{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(190,225,255,.55) 85%,rgba(235,248,255,.85) 100%);mix-blend-mode:screen}
 #vignette{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(180,0,0,.75) 100%)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:16px 0}.stats div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .stats b{display:block;font:800 30px "Barlow Condensed"}.stats span{font-size:13px;color:var(--dim)}
@@ -201,6 +202,7 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
   </div>
 </div>
 <div id="vignette"></div>
+<div id="frost"></div>
 <div id="cine" class="hidden">
   <div class="bar top"><span id="cineTitle"></span></div>
   <div class="rec">● REC · numéro masqué</div>
@@ -251,7 +253,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.7.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '0.8.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -285,10 +287,23 @@ const LEVELS = {
     wind:{base:.45, gust:.5, dir:-2.4},
     density:{peds:0, cars:0, taxis:0, bikes:0},
     start:{loc:'harbour',x:0,z:34},
-    next:null,
+    next:'ab',
     ready:{kicker:'St. John’s · jour 1 · 18 h 45',title:'Le vent hurle sur le port.',text:'Les rafales te ralentissent, te poussent et te glacent ; elles gênent aussi la visée et l’ouïe des gardes. Le Marie-Galante appareille à l’aube : trouve-le et monte à bord.'},
-    win:{kicker:'Au large de St. John’s',title:'Niveau 3 terminé',text:'Le carnet de bord du capitaine Roy : la cargaison part par train vers Calgary, chez « l’Éleveur ». Et Roy l’a confirmé : chaque fois qu’Omer appelle, un métro passe derrière.',next:'Niveau 4 · Alberta · début de l’hiver, froid sec à −25 °C, Rocheuses : en construction.'},
+    win:{kicker:'Au large de St. John’s',title:'Niveau 3 terminé',text:'Le carnet de bord du capitaine Roy : la cargaison part par train vers Calgary, chez « l’Éleveur ». Et Roy l’a confirmé : chaque fois qu’Omer appelle, un métro passe derrière.',next:'Niveau 4 · Alberta · début de l’hiver, froid sec à −25 °C, neige des Rocheuses.'},
     startToast:'St. John’s, 18 h 45. Avis de tempête. Le pub The Ship’s Lantern est sur Water Street, au pied des maisons colorées.'
+  },
+  ab: {
+    id:'ab', index:4, name:'Alberta', region:'Calgary', season:'Début de l’hiver', seed:1905,
+    startMinute: 6*60+45, timeLimitMin: 66*60,
+    temp:{min:-26, max:-17}, coldFactor:0.32,
+    weather:{clear:.45, cloudy:.25, snow:.3},
+    wind:{base:.12, gust:.3, dir:2.2},
+    density:{peds:0, cars:0, taxis:0, bikes:0},
+    start:{loc:'yard',x:0,z:39},
+    next:null,
+    ready:{kicker:'Calgary · jour 1 · 6 h 45 · −22 °C',title:'Le froid est l’ennemi n°1.',text:'Sans équipement, ton corps se refroidit en quelques minutes. Trouve parka, mitaines, tuque et bottes ; réchauffe-toi près des feux. Dans la neige, tes traces de pas peuvent te trahir.'},
+    win:{kicker:'Ranch Bow Valley, Rocheuses',title:'Niveau 4 terminé',text:'Le registre de l’Éleveur : l’argent d’Omer passe par « le Notaire », à Halifax. Et une facture d’électricité déchirée : une maison à Westmount, à Montréal.',next:'Niveau 5 · Nouvelle-Écosse · hiver, tempête côtière et verglas : en construction.'},
+    startToast:'Calgary, 6 h 45, −22 °C. Tu descends d’un wagon de marchandises, en blouson. Trouve vite de quoi te couvrir.'
   }
 };
 const ROADS=[-150,-75,0,75,150], CENTERS=[-112.5,-37.5,37.5,112.5], LOT=26.5, BOUND=163;
@@ -386,7 +401,7 @@ const DIALOGUES={
 };
 const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
-function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):objectiveToronto(S);}
+function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):objectiveToronto(S);}
 function objectiveToronto(S){
   if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
@@ -524,11 +539,11 @@ function stepWeather(dt){
   const L=LEVELS[S.level], W=S.weather, period=Math.floor(S.clock/180);
   if(period!==W.period){
     W.period=period;const rr=mulberry32(L.seed*31+period*7919)();
-    W.kind=rr<L.weather.clear?'clear':rr<L.weather.clear+L.weather.cloudy?'cloudy':'rain';
-    W.target={rain:W.kind==='rain'?1:0,cloud:W.kind==='clear'?.1:W.kind==='cloudy'?.65:.9};
+    W.kind=rr<L.weather.clear?'clear':rr<L.weather.clear+L.weather.cloudy?'cloudy':(L.weather.snow?'snow':'rain');
+    W.target={rain:W.kind==='rain'?1:0,snow:W.kind==='snow'?1:0,cloud:W.kind==='clear'?.1:W.kind==='cloudy'?.65:.9};
   }
   const k=1-Math.exp(-dt*.25*Math.max(1,timeScale/4));
-  W.rain=lerp(W.rain,W.target.rain,k);W.cloud=lerp(W.cloud,W.target.cloud,k);
+  W.rain=lerp(W.rain,W.target.rain,k);W.cloud=lerp(W.cloud,W.target.cloud,k);W.snow=lerp(W.snow||0,W.target.snow||0,k);
   const h=dayInfo(S.clock).hour;
   W.temp=lerp(L.temp.min,L.temp.max,.5+.5*Math.sin((h/24-.375)*Math.PI*2))-W.rain*2;
   if(L.wind){const g=L.wind;W.windStr=clamp(g.base+g.gust*Math.max(0,Math.sin(S.clock*.11)*Math.sin(S.clock*.37+1))+W.rain*.15,0,1);W.windDir=g.dir+Math.sin(S.clock*.013)*.6;}else{W.windStr=0;W.windDir=0;}
@@ -543,7 +558,7 @@ function stepPlayer(dt){
   const sp=(ml>0&&CB.lockT<=0)?(running?6.6:CB.crouch?1.7:3.2)*(CB.aim?.6:1)*(CB.block?.5:1):0;
   const k=1-Math.exp(-dt*10);
   const indoorNow=INTERIORS[S.location]&&INTERIORS[S.location].indoor,ws=indoorNow?0:(S.weather.windStr||0),wdx=Math.sin(S.weather.windDir||0),wdz=Math.cos(S.weather.windDir||0);
-  const against=ml>0?Math.max(0,-(mx*wdx+mz*wdz)):0;const spW=sp*(1-.45*ws*against);
+  const against=ml>0?Math.max(0,-(mx*wdx+mz*wdz)):0;const deep=INTERIORS[S.location]&&INTERIORS[S.location].snow&&!onPlowed(p.x,p.z)?(S.flags.boots?.85:.62):1;const spW=sp*(1-.45*ws*against)*deep;
   p.vx=lerp(p.vx,mx*spW,k);p.vz=lerp(p.vz,mz*spW,k);p.x+=wdx*ws*ws*.6*dt;p.z+=wdz*ws*ws*.6*dt;
   p.x+=p.vx*dt;p.z+=p.vz*dt;collide(p,.42);
   const gs=Math.hypot(p.vx,p.vz);
@@ -553,11 +568,11 @@ function stepPlayer(dt){
   if(cmd.jump&&p.y<=g+.01&&!CB.crouch){p.vy=5.2;}
   cmd.jump=false;
   p.vy-=15*dt;p.y+=p.vy*dt;if(p.y<=g){p.y=g;p.vy=0;}
-  p.anim+=gs*dt*2.4;p.speed=gs;
+  p.anim+=gs*dt*2.4;p.speed=gs;if(gs>.5)stepFootprints(p);
   p.stamina=clamp(p.stamina+(running?-14:9)*dt,0,100);
   // Cold & rain: the climate is an opponent (stronger in later provinces).
   const W=S.weather;
-  const exposure=INTERIORS[S.location]&&INTERIORS[S.location].indoor?0:W.rain*(S.flags.raincoat?.3:1)+Math.max(0,(10-W.temp))/10;
+  const exposure=INTERIORS[S.location]&&INTERIORS[S.location].indoor?0:W.rain*(S.flags.raincoat?.3:1)+(Math.max(0,(10-W.temp))/10+(W.snow||0)*.3)*gearFactor();
   const warmth=running?.5:0;
   const windChill=(INTERIORS[S.location]&&INTERIORS[S.location].indoor)?0:(S.weather.windStr||0)*.7;
   if(exposure+windChill-warmth>.15)p.heat-=(exposure+windChill-warmth)*.35*L.coldFactor*dt*Math.max(1,timeScale/4);
@@ -1078,7 +1093,7 @@ rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPos,3));
 const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:'#a9bccf',transparent:true,opacity:0}));rain.frustumCulled=false;scene.add(rain);
 
 const C_DAY=new THREE.Color('#8ec3ef'),C_DUSK=new THREE.Color('#e9895a'),C_NIGHT=new THREE.Color('#0a1226'),C_GREY=new THREE.Color('#7f8b97'),C_GREYN=new THREE.Color('#151a22'),tmpC=new THREE.Color(),tmpC2=new THREE.Color();
-let nightF=0;const WIND={x:0,z:0,str:0};
+let nightF=0;const WIND={x:0,z:0,str:0};let SNOWAMT=0;
 function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   const m=((clock%1440)+1440)%1440,el=Math.sin((m/1440-.25)*Math.PI*2),az=(m/1440)*Math.PI*2;
   const day=smooth(-.12,.22,el);nightF=1-day;
@@ -1105,6 +1120,7 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   rain.material.opacity=rainAmt*.55;rain.visible=rainAmt>.02;
   if(rain.visible){const a=rainGeo.attributes.position.array,wx=WIND.x*WIND.str,wz=WIND.z*WIND.str;for(let i=0;i<RAIN_N;i++){const k=i*6;a[k+1]-=dt*26;a[k]+=wx*dt*22;a[k+2]+=wz*dt*22;if(a[k]>45)a[k]-=90;if(a[k]<-45)a[k]+=90;if(a[k+2]>45)a[k+2]-=90;if(a[k+2]<-45)a[k+2]+=90;if(a[k+1]<0)a[k+1]+=45;a[k+3]=a[k]-wx*.8;a[k+4]=a[k+1]-.6;a[k+5]=a[k+2]-wz*.8;}
     rainGeo.attributes.position.needsUpdate=true;rain.position.set(center.x,0,center.z);}
+  if(SNOWAMT>0){scene.fog.near=lerp(scene.fog.near,30,SNOWAMT*.6);scene.fog.far=lerp(scene.fog.far,200,SNOWAMT*.7);}
   updateInteriorLights(day*(1-cloud*.5),smooth(.25,.75,nightF));
   if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=.18+.22*day;hemi.color.set('#f3e6d2');
     rain.visible=false;stars.material.opacity=0;sunDisc.material.opacity=0;moon.material.opacity=0;}
@@ -1381,6 +1397,7 @@ function objectiveTarget(o){
   if(!o.target)return null;
   if(S.level==='bc'){const bt=bcTarget(o);if(bt!==undefined)return bt;}
   if(S.level==='nl'){const nt=nlTarget(o);if(nt!==undefined)return nt;}
+  if(S.level==='ab'){const at=abTarget(o);if(at!==undefined)return at;}
   if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
@@ -1405,7 +1422,7 @@ function applyLocation(){
   STORY_PROPS.cigar.visible=loc==='outside'&&!S.clues.includes('cigar');
   if(INTERIORS.house.note)INTERIORS.house.note.visible=!S.clues.includes('note');
   STORY_PROPS.bag.visible=loc==='outside'&&S.tasks.tip==='active';
-  if(PORTA.vestMesh)PORTA.vestMesh.visible=!S.flags.disguise;if(oscarMesh&&oscarMesh.vest)oscarMesh.vest.visible=!!S.flags.disguise;applyGate();siren(!!AR()&&AS().alarm&&!S.flags.bossDown);if(oscarMesh&&oscarMesh.rain)oscarMesh.rain.visible=!!S.flags.raincoat;
+  if(PORTA.vestMesh)PORTA.vestMesh.visible=!S.flags.disguise;if(oscarMesh&&oscarMesh.vest)oscarMesh.vest.visible=!!S.flags.disguise;applyGate();siren(!!AR()&&AS().alarm&&!S.flags.bossDown);if(oscarMesh&&oscarMesh.rain)oscarMesh.rain.visible=!!S.flags.raincoat;applyGear();resetFootprints();
 }
 function updateInteriorLights(day,night){
   for(const d of dayMats){if(d.opacity)d.m.opacity=d.base+d.k*day;else d.m.emissiveIntensity=d.base+d.k*day;}
@@ -1636,7 +1653,7 @@ function tryFire(){
   if(A.mag<=0){if(A.res>0)reload();else toast('Plus de munitions.');CB.firing=false;return;}
   A.mag--;CB.fireCd=W.rate;CB.shake=.08;sfx('shot');oscarMesh.flash.intensity=6;
   // ray from the camera through the crosshair
-  const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=W.spread+(S.player.speed>.5?W.move:0)+(CB.aim?0:.03)+(S.weather.windStr||0)*.025;
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=W.spread+(S.player.speed>.5?W.move:0)+(CB.aim?0:.03)+(S.weather.windStr||0)*.025+(S.weather.temp<-10&&!S.flags.gloves?.035:0);
   dir.x+=(Math.random()-.5)*sp*2;dir.y+=(Math.random()-.5)*sp*2;dir.z+=(Math.random()-.5)*sp*2;dir.normalize();
   const o=camera.position.clone();ray.set(o,dir);ray.far=120;const wh=ray.intersectObjects(collidableMeshes,false)[0];let tmax=wh?wh.distance:120;
   let hitE=null,hy=0;
@@ -1689,6 +1706,8 @@ function stepCombat(dt){
       if(e.meter>=100){e.state='combat';if(e.type==='boss'||e.id[0]==='b'){if(!S.flags.bossMet)triggerBossScene(true);}else alarm('Un garde t’a repéré.');}}
     else if(!sees&&e.state!=='combat'){e.meter=Math.max(0,e.meter-12*dt);}
     if(e.state==='combat'&&sees){e.lx=p.x;e.lz=p.z;}
+    if(AA.snow&&e.state==='patrol'&&FOOT.i>0){for(let q=1;q<=24&&q<=FOOT.i;q++){const fp=FOOT.list[(FOOT.i-q)%FP_N];if(!fp||S.clock-fp.t>40)break;
+      if(Math.hypot(fp.x-e.x,fp.z-e.z)<6&&losClear(e.x,e.z,fp.x,fp.z)){const nw=FOOT.list[(FOOT.i-1)%FP_N];e.state='investigate';e.lx=nw.x;e.lz=nw.z;e.meter=Math.max(e.meter,30);if(!e.toldFp){e.toldFp=1;toast('Un garde a remarqué tes traces dans la neige…');}break;}}}
     // discover bodies
     if(e.state!=='combat')for(const o of P2.enemies){if(!o.down||o.bodySeen||o===e)continue;const bd=Math.hypot(o.x-e.x,o.z-e.z);if(bd<14&&losClear(e.x,e.z,o.x,o.z)){o.bodySeen=true;e.state='investigate';e.lx=o.x;e.lz=o.z;e.bodyAlarm=3;}}
     if(e.bodyAlarm){const bd=Math.hypot(e.lx-e.x,e.lz-e.z);if(bd<2.5){e.bodyAlarm-=dt;if(e.bodyAlarm<=0){e.bodyAlarm=0;alarm('Un garde a trouvé un corps.');}}}
@@ -2230,6 +2249,219 @@ function CINES_nlIntro(){const H=HARB;return[
     sub:[[.5,'Oscar','Le Marie-Galante appareille à l’aube. Je dois être à bord avant.'],[4.4,'Oscar','Encore un pas, Cédric. Encore un.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(H.ox,0,H.oz+34);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.5,true);animWaves(H,T,.9);}}];}
 
+/* --- 5g. NIVEAU 4 : ALBERTA (neige, froid extrême, équipement à trouver) --- */
+const YARD={ox:4000,oz:0,hw:80,hd:50,indoor:false,label:'Gare de triage d’Alyth',cols:[],group:null,lights:[],snow:true};
+const STOP={ox:4000,oz:200,hw:7.5,hd:5.5,indoor:true,label:'Relais routier de la route 1',spawn:{x:0,z:4.3},exitLoc:'yard',exitOut:()=>({x:YARD.ox+70,z:YARD.oz+42}),cols:[],group:null,lights:[]};
+const RANCH={ox:4000,oz:420,hw:85,hd:75,indoor:false,label:'Ranch Bow Valley',cols:[],group:null,lights:[],snow:true};
+INTERIORS.yard=YARD;INTERIORS.stop=STOP;INTERIORS.ranch=RANCH;
+const LODGE={x0:-11,x1:11,z0:-62,z1:-46};
+const snowTex=texCanvas(81,256,256,(g,r)=>{g.fillStyle='#f4f7fa';g.fillRect(0,0,256,256);for(let i=0;i<6000;i++){const v=215+r()*40|0;g.fillStyle=`rgba(${v},${v+5},${v+12},.5)`;g.fillRect(r()*256,r()*256,1+r()*2,1+r()*2);}
+  for(let i=0;i<30;i++){g.fillStyle=`rgba(180,195,215,${.05+r()*.08})`;g.beginPath();g.ellipse(r()*256,r()*256,10+r()*40,4+r()*14,r()*3,0,7);g.fill();}});
+const SNOWM=new THREE.MeshStandardMaterial({map:snowTex,color:'#ffffff',roughness:.85});
+const PLOW=new THREE.MeshStandardMaterial({color:'#8a8f96',roughness:.6});
+ARENAS.yard={area:YARD,lvl:'ab',ground:'#d9e2ea',paths:[[[-75,40],[75,40]],[[0,40],[0,-40]],[[-75,-30],[75,-30]]],
+  defs:[{id:'y1',type:'rifle',route:[[-60,-20],[-10,-20],[-10,-5],[-60,-5]]},{id:'y2',type:'pistol',route:[[10,-22],[60,-22],[60,10],[10,10]]},
+    {id:'y3',type:'melee',post:[-44,26,Math.PI/2]},{id:'y4',type:'pistol',post:[30,-12.5,-Math.PI/2]},{id:'y5',type:'pistol',route:[[-40,32],[40,32]]}],
+  elook:{melee:{jacket:'#2a2f36',pants:'#1b1b1f'},pistol:{jacket:'#3a3f36',pants:'#22223b'},rifle:{jacket:'#4a4036',pants:'#2a2b25'}}};
+ARENAS.ranch={area:RANCH,lvl:'ab',room:LODGE,roomLabel:'Lodge',ground:'#dfe7ee',paths:[[[0,70],[0,30],[0,-44]],[[0,0],[-40,-10],[-55,-30]],[[0,-10],[38,-20]]],
+  defs:[{id:'r1',type:'rifle',post:[0,28,0]},{id:'r2',type:'pistol',route:[[-30,-5],[30,-5],[30,-35],[-30,-35]]},{id:'r3',type:'melee',route:[[-55,-20],[-40,-40],[-20,-30]]},
+    {id:'r4',type:'rifle',route:[[20,-30],[50,-30],[50,-10],[20,-10]]},{id:'r5',type:'pistol',post:[0,-40,0]},{id:'r6',type:'melee',route:[[-20,10],[20,10]]},
+    {id:'b1',type:'rifle',post:[-6,-50,0]},{id:'b2',type:'pistol',post:[7,-55,-Math.PI/2]},{id:'boss',type:'boss',post:[0,-58.5,0]}],
+  elook:{melee:{jacket:'#5a3a22',pants:'#2b2d42'},pistol:{jacket:'#3a2a1e',pants:'#2b2b25'},rifle:{jacket:'#4a4a3a',pants:'#22221e'}},
+  bossLook:{skin:'#e8b9a4',hair:'#8a8a8a',beard:true,bald:false,height:1.06,build:1.25,jacket:'#8a6a4a',pants:'#2b2d42',slouch:.04},
+  bossDeco(h){const hat=new THREE.Group();h.head.add(hat);hat.position.y=.1;const brim=new THREE.Mesh(new THREE.CylinderGeometry(.24,.24,.02,20),mat('#4a3426'));const top=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.15,14),mat('#4a3426'));top.position.y=.08;hat.add(brim,top);
+    const coat=new THREE.Mesh(new THREE.CylinderGeometry(.3,.42,.8,14,1,true),new THREE.MeshStandardMaterial({color:'#8a6a4a',roughness:.9,side:THREE.DoubleSide}));coat.position.y=-.32;h.hips.add(coat);
+    const fur=new THREE.Mesh(new THREE.TorusGeometry(.13,.05,8,16),mat('#efe6d6',{roughness:1}));fur.rotation.x=Math.PI/2;fur.position.y=.55;h.spine.add(fur);},
+  boss:{dlg:'eleveur',spot:'eleveurSpot',interro:'eleveurI',clue:'registre',name:'l’Éleveur',cp:[0,-38],down:'L’Éleveur tombe à genoux dans la sciure. « Ça va, ça va… » Interroge-le (touche E).'}};
+/* --- builders --- */
+function snowGround(I,w,d,cz=0){const m=SNOWM.clone();m.map=snowTex.clone();m.map.needsUpdate=true;m.map.repeat.set(w/14,d/14);iplane(I,w,d,m,0,0,cz);}
+function pathStrips(I,paths,wd=5){for(const path of paths)for(let k=1;k<path.length;k++){const a=path[k-1],b=path[k],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);const o=iplane(I,wd,L,PLOW,(a[0]+b[0])/2,.015,(a[1]+b[1])/2);o.rotation.set(-Math.PI/2,0,-Math.atan2(dx,dz));}}
+function snowPines(I,n,seed,avoid){const r=mulberry32(seed),T=[];for(let i=0;i<n*3&&T.length<n;i++){const x=(r()-.5)*I.hw*2,z=(r()-.5)*I.hd*2;if(avoid(x,z))continue;T.push([x,z,.7+r()*.9]);}
+  const tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(.25,.4,1,7).translate(0,.5,0),mat('#3d2a1e'),T.length),c1=new THREE.InstancedMesh(new THREE.ConeGeometry(2.6,1,8),mat('#24452a',{flatShading:true}),T.length*2),c2=new THREE.InstancedMesh(new THREE.ConeGeometry(2.2,1,8),mat('#f2f5f8',{flatShading:true}),T.length),o=new THREE.Object3D();
+  T.forEach((t,i)=>{const h=12*t[2];o.position.set(t[0],0,t[1]);o.rotation.set(0,0,0);o.scale.set(t[2],h*.3,t[2]);o.updateMatrix();tr.setMatrixAt(i,o.matrix);
+    for(let k=0;k<2;k++){o.position.set(t[0],h*(.25+k*.32),t[1]);o.scale.set(t[2]*(1.3-k*.4),h*.45,t[2]*(1.3-k*.4));o.updateMatrix();c1.setMatrixAt(i*2+k,o.matrix);}
+    o.position.set(t[0],h*.78,t[1]);o.scale.set(t[2]*.6,h*.25,t[2]*.6);o.updateMatrix();c2.setMatrixAt(i,o.matrix);I.cols.push({x0:I.ox+t[0]-.5,x1:I.ox+t[0]+.5,z0:I.oz+t[1]-.5,z1:I.oz+t[1]+.5});});
+  tr.castShadow=c1.castShadow=true;I.group.add(tr,c1,c2);}
+function buildYard(){
+  const I=YARD;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  snowGround(I,170,110);pathStrips(I,ARENAS.yard.paths,4);
+  for(const z of [-40,-18,-14,-1,3,18,22]){for(const o of [-.72,.72])ibox(I,160,.08,.1,M.rail,0,.05,z+o,0,false,false);}
+  const r=mulberry32(4141),car=(x,z,kind)=>{const g=new THREE.Group();g.position.set(x,0,z);I.group.add(g);const col=kind==='tank'?'#1b1b1f':pick(r,['#7a2e1e','#2c5d8a','#5a4a3a','#3a5a40']);
+    if(kind==='tank'){const t=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,15,16),mat(col,{roughness:.5,metalness:.3}));t.rotation.z=Math.PI/2;t.position.y=2.4;t.castShadow=true;g.add(t);}
+    else gb(g,15,3.4,3,new THREE.MeshStandardMaterial({map:contTex,color:col,roughness:.7}),0,2.5,0);
+    gb(g,15.2,.15,3.1,SNOWM,0,kind==='tank'?3.95:4.25,0,0,false);for(const dx of [-5.5,5.5])gb(g,2.4,.7,2.4,M.dark,dx,.4,0);
+    I.cols.push({x0:I.ox+x-7.6,x1:I.ox+x+7.6,z0:I.oz+z-1.6,z1:I.oz+z+1.6});return g;};
+  for(const [x,z,k] of [[-60,-18,'box'],[-44,-18,'tank'],[-28,-18,'box'],[20,-18,'box'],[36,-18,'tank'],[52,-18,'box'],[-52,-1,'box'],[-20,-1,'tank'],[28,-1,'box'],[60,-1,'box'],[-36,18,'tank'],[10,18,'box'],[44,18,'box']])car(x,z,k);
+  const target=car(30,-14,'box');I.target=target;const tag=new THREE.Mesh(new THREE.PlaneGeometry(3,.7),new THREE.MeshStandardMaterial({map:signTex('CP 4471','#5a2a1a','#f2f2f2')}));tag.position.set(0,2.5,1.52);target.add(tag);
+  // locomotive
+  const loco=new THREE.Group();loco.position.set(-6,0,3);I.group.add(loco);gb(loco,18,3.8,3.1,mat('#c4302a',{roughness:.5,metalness:.3}),0,2.6,0);gb(loco,4,1.2,3.15,mat('#f2f2f2'),6.5,4.6,0);gb(loco,3.8,1,3.2,new THREE.MeshStandardMaterial({color:'#1b2330',emissive:'#ffe2b0',emissiveIntensity:.5}),6.5,3.9,0);
+  gb(loco,18.2,.18,3.2,SNOWM,0,4.55,0,0,false);I.cols.push({x0:I.ox-15.2,x1:I.ox+3.2,z0:I.oz+1.4,z1:I.oz+4.6});
+  // maintenance shed, fire barrels, floodlights, Calgary skyline with the tower
+  const shed=new THREE.MeshStandardMaterial({map:corrTex,color:'#7d8287',roughness:.7});ibox(I,14,6,10,shed,-52,3,30,0,true);ibox(I,14.4,.3,10.4,SNOWM,-52,6.15,30);I.cols.push({x0:I.ox-59,x1:I.ox-45,z0:I.oz+25,z1:I.oz+35});
+  ibox(I,3,3,.1,mat('#3a3a3a'),-52,1.5,24.95,0,false,false);
+  I.fires=[];for(const [x,z] of [[-30,36],[16,36],[52,6]]){icyl(I,.35,.35,.9,mat('#3a3a3a',{metalness:.5}),x,.45,z,12);const f=new THREE.Mesh(new THREE.ConeGeometry(.3,.8,8),new THREE.MeshBasicMaterial({color:'#ff8a2a',transparent:true,opacity:.85,blending:THREE.AdditiveBlending}));f.position.set(x,1.2,z);I.group.add(f);
+    const l=new THREE.PointLight('#ff8a3a',14,14,2);l.position.set(x,1.8,z);I.group.add(l);I.fires.push(f);I.cols.push({x0:I.ox+x-.4,x1:I.ox+x+.4,z0:I.oz+z-.4,z1:I.oz+z+.4});}
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#fff4d8',emissiveIntensity:0}),0,4);
+  for(const [x,z] of [[-40,-30],[0,-30],[40,-30],[-20,10],[20,10],[60,30]]){icyl(I,.12,.16,12,M.pole,x,6,z,8);ibox(I,.8,.3,.5,headM,x,12.1,z);const pl=new THREE.Mesh(new THREE.PlaneGeometry(18,18),M.pools);pl.rotation.x=-Math.PI/2;pl.position.set(x,.03,z);I.group.add(pl);}
+  for(const [x,z] of [[0,-30],[20,10]]){const l=new THREE.PointLight('#fff1d8',70,32,2);l.position.set(x,11,z);I.group.add(l);I.lights.push({l,kind:'lamp',base:70,night:true});}
+  const sk=mulberry32(5);for(let i=0;i<28;i++){const h=30+sk()*110;const b=new THREE.Mesh(new THREE.BoxGeometry(14+sk()*12,h,14),regNight(new THREE.MeshStandardMaterial({color:'#2a3038',emissive:'#ffd38a',emissiveIntensity:0}),0,.35));b.position.set(-200+i*15,h/2,-140-sk()*40);I.group.add(b);}
+  const ct=new THREE.Group();ct.position.set(40,0,-150);I.group.add(ct);gc(ct,3,4.5,160,mat('#c9c4bb'),0,80,0,16);gc(ct,9,7,10,mat('#c4302a'),0,162,0,24);gc(ct,1,1,14,mat('#888'),0,174,0,8);
+  for(const [a,b,c,d] of [[-81,-80,-51,51],[80,81,-51,51],[-81,81,-51,-50],[-81,81,50,51]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  I.group.visible=false;
+}
+function buildStop(){
+  const I=STOP;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  shell(I,IM.checker,new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#e6dfcf',roughness:.9}),3,0,[{x:-4.5,w:3.5,y0:.9,y1:2.4},{x:4.5,w:3.5,y0:.9,y1:2.4}]);
+  ibox(I,4,1.05,.8,mat('#c4302a',{roughness:.5}),3.5,.52,-3.4,0,true);I.cols.push({x0:I.ox+1.5,x1:I.ox+5.5,z0:I.oz-3.8,z1:I.oz-3});
+  const r=mulberry32(9);for(let s=0;s<3;s++)for(const x of [-4.8,-1.8]){ibox(I,2.2,.04,.5,mat('#bbb'),x,.5+s*.6,-1,0,false,false);for(let i=0;i<8;i++)ibox(I,.2,.3,.2,mat(pick(r,['#c4302a','#2c5d8a','#d4a017','#2f6b46','#eee'])),x-.9+i*.26,.68+s*.6,-1);}
+  I.cols.push({x0:I.ox-6.2,x1:I.ox-.6,z0:I.oz-1.3,z1:I.oz-.7});
+  ibox(I,1,1.6,.7,mat('#e9e9e4',{metalness:.3}),6.5,.8,1.5,0,true);ibox(I,.8,.5,.6,mat('#6b4a2f'),5.8,.25,-4.6,0,true);STOP.box={x:I.ox+5.8,z:I.oz-4};
+  const cof=new THREE.Mesh(new THREE.BoxGeometry(.5,.6,.4),mat('#222'));cof.position.set(2,1.4,-3.5);I.group.add(cof);
+  for(const z of [1,2.6]){icyl(I,.4,.4,.05,mat('#e9e6df'),-4.5,.76,z,16);icyl(I,.05,.2,.74,M.pole,-4.5,.37,z,8);I.cols.push({x0:I.ox-5,x1:I.ox-4,z0:I.oz+z-.5,z1:I.oz+z+.5});}
+  lamp(I,0,2.3,-1,8,'#f4f6ff','#ffffff');lamp(I,3.5,2.3,-3,6);
+  I.group.visible=false;
+}
+function buildRanch(){
+  const I=RANCH;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  snowGround(I,190,170);pathStrips(I,ARENAS.ranch.paths,4.5);
+  const mr=mulberry32(70);for(let i=0;i<10;i++){const x=-320+i*70+(mr()-.5)*30,h=220+mr()*220,rr=110+mr()*70;
+    const m=new THREE.Mesh(new THREE.ConeGeometry(rr,h,6),mat('#5a6470',{roughness:1,flatShading:true}));m.position.set(x,h/2-30,-260-mr()*80);I.group.add(m);
+    const cap=new THREE.Mesh(new THREE.ConeGeometry(rr*.5,h*.5,6),mat('#f2f6fa',{roughness:.9,flatShading:true}));cap.position.set(x,h-30-h*.25,m.position.z);I.group.add(cap);}
+  snowPines(I,110,712,(x,z)=>Math.abs(x)<14&&z>-70||Math.abs(x+30)<16&&Math.abs(z+28)<16||Math.abs(x-36)<14&&Math.abs(z+20)<12||Math.abs(x)<18&&Math.abs(z+54)<14||Math.abs(z)<8||Math.abs(x-0)<8);
+  // lodge (room), barn, bunkhouse, fences, frozen creek, gate
+  const logM=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#7a5235',roughness:.85});const W=LODGE,H=5;
+  const wall=(x0,z0,x1,z1)=>{const m=ibox(I,Math.max(.4,x1-x0),H,Math.max(.4,z1-z0),logM,(x0+x1)/2,H/2,(z0+z1)/2,0,true);collidableMeshes.push(m);};
+  wall(W.x0,W.z1-.2,-1.6,W.z1+.2);wall(1.6,W.z1-.2,W.x1,W.z1+.2);ibox(I,3.2,H-2.6,.4,logM,0,2.6+(H-2.6)/2,W.z1);wall(W.x0,W.z0-.2,W.x1,W.z0+.2);wall(W.x0-.2,W.z0,W.x0+.2,W.z1);wall(W.x1-.2,W.z0,W.x1+.2,W.z1);
+  for(const s of [-1,1]){const rf=ibox(I,12.5,.3,18,mat('#3a2f28'),s*5.8,H+2,(W.z0+W.z1)/2);rf.rotation.z=-s*.42;collidableMeshes.push(rf);const sr=ibox(I,12.5,.12,18,SNOWM,s*5.8,H+2.2,(W.z0+W.z1)/2);sr.rotation.z=-s*.42;}
+  ibox(I,1.4,7,1.4,mat('#6a6a6a'),8,4,-60);
+  const hearth=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.2,.6),new THREE.MeshStandardMaterial({color:'#2a1a12',emissive:'#ff7a2a',emissiveIntensity:1.3}));hearth.position.set(0,.6,-61.6);I.group.add(hearth);
+  const hl=new THREE.PointLight('#ff8a3a',16,16,2);hl.position.set(0,1.6,-60);I.group.add(hl);I.lights.push({l:hl,kind:'lamp',base:16});
+  ibox(I,3,.08,1.4,logM,0,.8,-55,0,true);iplane(I,.4,.3,IM.paper,0,.85,-55,-Math.PI/2,0,.2);I.cols.push({x0:I.ox-1.5,x1:I.ox+1.5,z0:I.oz-55.7,z1:I.oz-54.3});
+  const head=new THREE.Group();head.position.set(0,3,-61.7);I.group.add(head);gb(head,.8,.8,.5,mat('#5a3a22'),0,0,0,0,false);gb(head,1.8,.12,.12,mat('#e9e2d0'),0,.5,0,0,false);
+  const barn=new THREE.MeshStandardMaterial({map:corrTex,color:'#8a2a1e',roughness:.8});ibox(I,18,8,14,barn,-30,4,-28,0,true);ibox(I,18.5,.3,14.5,SNOWM,-30,8.2,-28);I.cols.push({x0:I.ox-39,x1:I.ox-21,z0:I.oz-35,z1:I.oz-21});
+  ibox(I,12,4,9,logM,36,2,-20,0,true);ibox(I,12.4,.3,9.4,SNOWM,36,4.2,-20);I.cols.push({x0:I.ox+30,x1:I.ox+42,z0:I.oz-24.5,z1:I.oz-15.5});
+  const fence=mat('#5a4030');for(const [a,b,z] of [[-80,-6,40],[6,80,40]]){ibox(I,b-a,.1,.1,fence,(a+b)/2,1.1,z,0,false,false);ibox(I,b-a,.1,.1,fence,(a+b)/2,.6,z,0,false,false);for(let x=a;x<=b;x+=4)ibox(I,.15,1.3,.15,fence,x,.65,z,0,false,false);I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+z-.2,z1:I.oz+z+.2});}
+  const arch=new THREE.Group();arch.position.set(0,0,40);I.group.add(arch);for(const x of [-5,5])gb(arch,.4,5,.4,fence,x,2.5,0);gb(arch,10.4,.5,.4,fence,0,5,0);
+  const sg=new THREE.Mesh(new THREE.PlaneGeometry(6,.9),new THREE.MeshStandardMaterial({map:signTex('BOW VALLEY RANCH','#4a3426','#f0e6c8')}));sg.position.set(0,4.2,.22);arch.add(sg);
+  const ice=new THREE.Mesh(new THREE.PlaneGeometry(190,6),new THREE.MeshStandardMaterial({color:'#b9d4e4',roughness:.08,metalness:.2}));ice.rotation.x=-Math.PI/2;ice.position.set(0,.02,0);I.group.add(ice);
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#fff4d8',emissiveIntensity:0}),0,3.5);
+  for(const [x,z] of [[0,30],[-10,-40],[20,-30],[-40,-15]]){icyl(I,.12,.16,8,M.pole,x,4,z,8);ibox(I,.6,.3,.5,headM,x,8.1,z);}
+  for(const [x,z] of [[0,30],[-10,-40]]){const l=new THREE.PointLight('#fff1d8',45,26,2);l.position.set(x,7.5,z);I.group.add(l);I.lights.push({l,kind:'lamp',base:45,night:true});}
+  for(const [a,b,c,d] of [[-86,-85,-76,76],[85,86,-76,76],[-86,86,-76,-75],[-86,86,75,76]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  I.group.visible=false;
+}
+/* --- snow particles, footprints, breath --- */
+const SNOW_N=1800,snowGeo=new THREE.BufferGeometry(),snowPos=new Float32Array(SNOW_N*3);for(let i=0;i<SNOW_N;i++)snowPos.set([(Math.random()-.5)*70,Math.random()*30,(Math.random()-.5)*70],i*3);
+snowGeo.setAttribute('position',new THREE.BufferAttribute(snowPos,3));const snowPts=new THREE.Points(snowGeo,new THREE.PointsMaterial({color:'#ffffff',size:.09,transparent:true,opacity:0,depthWrite:false}));snowPts.frustumCulled=false;snowPts.visible=false;scene.add(snowPts);
+function updateSnow(dt,center,amt,t){snowPts.visible=amt>.02;if(!snowPts.visible)return;snowPts.material.opacity=Math.min(1,amt*1.1);const a=snowPos;
+  for(let i=0;i<SNOW_N;i++){const k=i*3;a[k+1]-=dt*(1.3+(i%5)*.15);a[k]+=(Math.sin(t*.7+i)*.4+WIND.x*WIND.str*3)*dt;a[k+2]+=(Math.cos(t*.6+i*1.3)*.4+WIND.z*WIND.str*3)*dt;
+    if(a[k+1]<0)a[k+1]+=30;if(a[k]>35)a[k]-=70;if(a[k]<-35)a[k]+=70;if(a[k+2]>35)a[k+2]-=70;if(a[k+2]<-35)a[k+2]+=70;}
+  snowGeo.attributes.position.needsUpdate=true;snowPts.position.set(center.x,0,center.z);}
+const FP_N=260,fpMesh=new THREE.InstancedMesh(new THREE.PlaneGeometry(.16,.3).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#9aa7b5',transparent:true,opacity:.55,depthWrite:false}),FP_N);fpMesh.frustumCulled=false;scene.add(fpMesh);
+const FOOT={list:[],i:0,last:null,side:1};
+function resetFootprints(){FOOT.list=[];FOOT.i=0;FOOT.last=null;const o=new THREE.Object3D();o.scale.setScalar(0);o.updateMatrix();for(let i=0;i<FP_N;i++)fpMesh.setMatrixAt(i,o.matrix);fpMesh.instanceMatrix.needsUpdate=true;}
+function stepFootprints(p){const I=INTERIORS[S.location];if(!I||!I.snow){fpMesh.visible=false;return;}fpMesh.visible=true;
+  if(FOOT.last&&Math.hypot(p.x-FOOT.last.x,p.z-FOOT.last.z)<.75)return;FOOT.last={x:p.x,z:p.z};FOOT.side*=-1;
+  const sx=Math.cos(p.heading)*.12*FOOT.side,sz=-Math.sin(p.heading)*.12*FOOT.side;const fp={x:p.x+sx,z:p.z+sz,t:S.clock,h:p.heading};
+  FOOT.list[FOOT.i%FP_N]=fp;const o=new THREE.Object3D();o.position.set(fp.x,.03,fp.z);o.rotation.set(0,fp.h,0);o.updateMatrix();fpMesh.setMatrixAt(FOOT.i%FP_N,o.matrix);fpMesh.instanceMatrix.needsUpdate=true;FOOT.i++;}
+const BR_N=120,brGeo=new THREE.BufferGeometry(),brPos=new Float32Array(BR_N*3).fill(-9999),brAge=new Float32Array(BR_N).fill(9);brGeo.setAttribute('position',new THREE.BufferAttribute(brPos,3));
+const brPts=new THREE.Points(brGeo,new THREE.PointsMaterial({color:'#f4f8ff',size:.16,transparent:true,opacity:.45,depthWrite:false}));brPts.frustumCulled=false;scene.add(brPts);let brI=0,brT=0;
+function stepBreath(dt,t,temp){brPts.visible=temp<3&&!!S&&!(INTERIORS[S.location]&&INTERIORS[S.location].indoor);if(!brPts.visible)return;brT-=dt;
+  if(brT<=0){brT=.5;const heads=[oscarMesh];for(const k in enemyMeshes){const m=enemyMeshes[k];if(m.h.g.visible&&Math.hypot(m.h.g.position.x-S.player.x,m.h.g.position.z-S.player.z)<18)heads.push(m.h);}
+    for(const h of heads){if(Math.random()<.5)continue;const v=new THREE.Vector3();h.head.getWorldPosition(v);const f=new THREE.Vector3(Math.sin(h.g.rotation.y)*.2,-.05,Math.cos(h.g.rotation.y)*.2);
+      for(let k=0;k<4;k++){const i=brI++%BR_N;brPos.set([v.x+f.x+(Math.random()-.5)*.05,v.y+f.y,v.z+f.z+(Math.random()-.5)*.05],i*3);brAge[i]=0;}}}
+  for(let i=0;i<BR_N;i++){if(brAge[i]>2)continue;brAge[i]+=dt;brPos[i*3+1]+=dt*.25;brPos[i*3]+=WIND.x*WIND.str*dt;if(brAge[i]>1.4)brPos[i*3+1]=-9999;}brGeo.attributes.position.needsUpdate=true;}
+function onPlowed(x,z){const AD=ARENAS[S.location];if(!AD||!AD.paths)return true;const A=AD.area,lx=x-A.ox,lz=z-A.oz;
+  for(const path of AD.paths)for(let k=1;k<path.length;k++){const a=path[k-1],b=path[k],dx=b[0]-a[0],dz=b[1]-a[1],tt=clamp(((lx-a[0])*dx+(lz-a[1])*dz)/(dx*dx+dz*dz),0,1);if(Math.hypot(a[0]+dx*tt-lx,a[1]+dz*tt-lz)<2.6)return true;}return false;}
+/* --- NPCs --- */
+function buildABActors(){
+  buildYard();buildStop();buildRanch();
+  const add=(id,look,lx,lz,a,md,loc,I)=>{const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+    interiorNPCs.push({id,dlg:id,h,x:I.ox+lx,z:I.oz+lz,a,mode:md,loc,lvl:'ab'});if(md!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h};
+  const base={prop:'none',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.5,shAsym:0,browAsym:.1,headTilt:0,bald:false,long:false,beard:false,height:1,build:1,slouch:.08};
+  add('priya',{...base,skin:'#a46a3c',jacket:'#c4302a',pants:'#22223b',hair:'#1a1a1a',long:true,height:.95,build:.9,browAsym:.2},3.5,-4.3,0,'talk','stop',STOP);
+  add('dale',{...base,skin:'#ffdbac',jacket:'#2c5d8a',pants:'#3d405b',hair:'#8a8a8a',beard:true,height:1.03,build:1.2,slouch:.15,prop:'cup'},-4.5,.25,0,'sit','stop',STOP);
+  // gear lying around in the yard (meshes)
+  const parka=new THREE.Mesh(new THREE.CapsuleGeometry(.2,.4,4,8).scale(1.4,1,.6),clothMat('#b8352a'));parka.rotation.z=1.4;parka.position.set(YARD.ox-52,.95,YARD.oz+24.3);scene.add(parka);
+  const glove=new THREE.Mesh(new THREE.BoxGeometry(.16,.06,.22),clothMat('#2b2b2b'));glove.position.set(YARD.ox+.5,3.3,YARD.oz+3);scene.add(glove);
+  GEAR.meshes={parka,gloves:glove};for(const k in GEAR.meshes)GEAR.meshes[k].visible=false;
+  // gear worn by Oscar
+  const pk=new THREE.Mesh(new THREE.CapsuleGeometry(.2,.42,4,10).scale(1.35,1,.88),clothMat('#b8352a',.8));pk.position.y=.26;pk.visible=false;oscarMesh.spine.add(pk);
+  const fur=new THREE.Mesh(new THREE.TorusGeometry(.11,.05,8,14),clothMat('#d9cbb2'));fur.rotation.x=Math.PI/2;fur.position.y=.36;pk.add(fur);
+  const tq=new THREE.Mesh(new THREE.SphereGeometry(.13,12,8,0,Math.PI*2,0,Math.PI*.55),clothMat('#1d3557'));tq.position.y=.06;tq.visible=false;oscarMesh.head.add(tq);
+  const mitts=[oscarMesh.armL,oscarMesh.armR].map(a=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.09,.12,.06),clothMat('#2b2b2b'));m.position.y=-.06;m.visible=false;a.wr.add(m);return m});
+  const boots=[oscarMesh.legL,oscarMesh.legR].map(l=>{const b=new THREE.Mesh(new THREE.CylinderGeometry(.075,.08,.2,10),clothMat('#3b2a1e'));b.position.y=-.38;b.visible=false;l.kn.add(b);return b});
+  GEAR.worn={parka:[pk],tuque:[tq],gloves:mitts,boots};
+}
+const GEAR={meshes:{},worn:{}};
+function applyGear(){for(const k in GEAR.worn)for(const m of GEAR.worn[k])m.visible=!!(S&&S.flags[k]);
+  if(GEAR.meshes.parka){GEAR.meshes.parka.visible=S&&S.location==='yard'&&!S.flags.parka;GEAR.meshes.gloves.visible=S&&S.location==='yard'&&!S.flags.gloves;}}
+function gearFactor(){return 1-(S.flags.parka?.55:0)-(S.flags.tuque?.12:0)-(S.flags.gloves?.08:0)-(S.flags.boots?.08:0)}
+/* --- story --- */
+Object.assign(CLUES,{
+  railcar:{title:'Le wagon CP 4471',text:'Les caisses du Marie-Galante, et un bon de livraison : « Ranch Bow Valley — à l’attention de l’Éleveur ». Par la route 1, vers les Rocheuses.'},
+  trucker:{title:'Dale, camionneur',text:'Le ranch Bow Valley : des clôtures neuves, des hommes armés, des camions qui arrivent la nuit. Une entrée sous l’arche, gardée ; la forêt entoure le reste.'},
+  registre:{title:'Le registre de l’Éleveur',text:'L’argent d’Omer est blanchi par « le Notaire », un cabinet du port d’Halifax (Nouvelle-Écosse). Glissée dedans, une facture d’électricité pour une maison de Montréal ; l’adresse est déchirée : « …avenue, Westmount ».'},
+});
+Object.assign(DIALOGUES,{
+  priya:{who:'Priya, caissière du relais',start:S=>S.flags.lostFound?'p9':'p0',nodes:{
+    p0:{text:'Bienvenue au relais de la route 1. Café, essence, chauffage gratuit. T’as l’air complètement gelé.',choices:[{t:'J’ai tout perdu. Vous auriez des vêtements chauds ?',next:'p1',min:5},{t:'Un café brûlant.',end:true,money:4,min:10,fx:{call:'warm'}},{t:'Rien, merci.',end:true}]},
+    p1:{text:'Il y a la boîte des objets perdus, au fond, près de la porte de service. Prends ce qui te va : des bottes, une tuque… Personne vient jamais les chercher.',choices:[{t:'Merci, Priya.',end:true,fx:{flag:'lostFound'}}]},
+    p9:{text:'Bonne route. Et reste au chaud.',choices:[{t:'Merci.',end:true}]}}},
+  dale:{who:'Dale, camionneur',start:S=>S.tasks.chains==='secured'?'d8':S.tasks.chains==='done'?'d9':'d0',nodes:{
+    d0:{text:'Je monte vers Canmore, mais pas sans chaînes. Et mes doigts sont trop gelés pour les poser.',choices:[{t:'Je les pose pour toi.',next:'d2',min:2,need:{noTask:'chains'}},{t:'Tu connais le ranch Bow Valley ?',next:'d1',min:5},{t:'Bonne route.',end:true}]},
+    d1:{text:'Le ranch de l’Éleveur ? Clôtures neuves, gars armés, camions qui arrivent la nuit. L’entrée est sous l’arche, et la forêt fait le tour. Moi, je m’arrête jamais là-bas.',choices:[{t:'Merci.',end:true,fx:{clue:'trucker',flag:'ranchKnown'}}]},
+    d2:{text:'T’es sérieux ? Le camion est au fond du parking. Les chaînes sont dans le coffre latéral.',choices:[{t:'J’y vais.',end:true,fx:{task:['chains','active']}}]},
+    d8:{text:'Les chaînes tiennent ? Merci, l’ami. Monte : je te dépose à l’embranchement du ranch.',choices:[{t:'Merci, Dale.',end:true,fx:{flag:['rideReady','ranchKnown'],task:['chains','done'],clue:'trucker',bonus:1}}]},
+    d9:{text:'Quand tu veux, on part.',choices:[{t:'J’arrive.',end:true}]}}},
+  eleveur:{who:'L’Éleveur',start:()=>'e0',nodes:{
+    e0:{text:'(Il se réchauffe les mains au feu, sans se retourner.) Le soldat. Tu as traversé la moitié du pays pour une femme et un gamin. Je respecte ça. Assieds-toi.',choices:[{t:'Où sont-ils ?',next:'e1',min:1},{t:'Donne-moi Omer, et je te laisse ton ranch.',next:'e2',min:1},{t:'(Attaquer)',end:true,fx:{call:'bossFight'}}]},
+    e1:{text:'À l’est. Toujours plus à l’est. Mais toi, tu t’arrêtes ici, dans la neige.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]},
+    e2:{text:'Mon ranch ? Rien de ce qui est ici n’est à moi, petit. Tout est à Omer. Moi compris.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  eleveurSpot:{who:'L’Éleveur',start:()=>'s0',nodes:{s0:{text:'Il est entré ! Personne ne sort de ce ranch vivant !',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  eleveurI:{who:'L’Éleveur, à genoux',start:()=>'i0',nodes:{
+    i0:{text:'(Il crache dans la sciure.) Tu crois que je vais trahir Omer ?',choices:[{t:'Je crois que tu tiens plus à ta vie qu’à lui.',next:'i1',min:4},{t:'Le registre. Maintenant.',next:'i1',min:2}]},
+    i1:{text:'… Le registre, sur la table. L’argent passe par Halifax, chez « le Notaire ». Et Omer… il a une maison à Montréal. J’y ai jamais mis les pieds.',choices:[{t:'(Prendre le registre)',end:true,fx:{clue:'registre',flag:'registre',call:'levelComplete'}}]}}},
+});
+function objectiveAB(S){
+  const need=[!S.flags.parka&&'une parka',!S.flags.gloves&&'des mitaines'].filter(Boolean);
+  if(!S.clues.includes('railcar'))return{stage:0,text:'Trouve le wagon CP 4471 dans la gare de triage d’Alyth.'+(need.length?' Il fait −22 °C : trouve '+need.join(' et ')+' (atelier d’entretien, locomotive) et réchauffe-toi près des feux.':''),target:'railcar'};
+  if(S.location==='yard')return{stage:1,text:'Rejoins le relais routier de la route 1 pour trouver un moyen d’aller au ranch Bow Valley.',target:'stop'};
+  if(S.location!=='ranch')return{stage:2,text:'Trouve un moyen d’aller au ranch : le camion de Dale, une motoneige, ou à pied par la route 1.'+(S.flags.lostFound&&!S.flags.boots?' La boîte des objets perdus t’attend au fond du relais.':''),target:null};
+  if(!S.flags.bossMet)return{stage:3,text:'Infiltre le ranch de l’Éleveur. Attention : tes traces dans la neige peuvent te trahir, et la neige profonde ralentit (reste sur les chemins déneigés).',target:'lodge'};
+  if(!S.flags.bossDown)return{stage:4,text:'Affronte l’Éleveur.',target:'boss'};
+  if(!S.clues.includes('registre'))return{stage:5,text:'Interroge l’Éleveur (touche E).',target:'boss'};
+  return{stage:6,text:'Niveau 4 terminé. La piste mène à Halifax, en Nouvelle-Écosse (en construction).',target:null};
+}
+function abTarget(o){const t=o.target;
+  if(t==='railcar')return S.location==='yard'?{x:YARD.ox+30,z:YARD.oz-12}:null;
+  if(t==='stop')return S.location==='yard'?{x:YARD.ox+70,z:YARD.oz+42}:null;
+  if(t==='lodge')return S.location==='ranch'?{x:RANCH.ox,z:RANCH.oz-44}:null;
+  return undefined;}
+function abZones(){
+  const Y=YARD,Z=[];const z=o=>{Z.push({lvl:'ab',...o});};
+  z({loc:'yard',x:Y.ox-52,z:Y.oz+24,r:1.8,cond:()=>!S.flags.parka,label:()=>'Prendre la parka oubliée dans l’atelier',act:()=>{S.flags.parka=true;applyGear();addMinutes(2);toast('Une parka d’ouvrier, doublée de fourrure. Elle sent l’huile de moteur, mais elle est chaude.');checkObjective();}});
+  z({loc:'yard',x:Y.ox+.5,z:Y.oz+5,r:1.8,cond:()=>!S.flags.gloves,label:()=>'Fouiller la cabine de la locomotive',act:()=>{S.flags.gloves=true;applyGear();addMinutes(3);toast('Des mitaines de cheminot sur le tableau de bord. Tes doigts revivent : ta visée redevient stable.');checkObjective();}});
+  z({loc:'yard',x:Y.ox+30,z:Y.oz-12.2,r:1.8,label:()=>S.clues.includes('railcar')?'Wagon CP 4471 (déjà fouillé)':'Ouvrir le wagon CP 4471',act:()=>{addMinutes(8);findClueOnce('railcar');}});
+  for(const [x,zz] of [[-30,36],[16,36],[52,6]])z({loc:'yard',x:Y.ox+x,z:Y.oz+zz+1.2,r:1.6,label:()=>'Se réchauffer au feu (10 min)',act:()=>{addMinutes(10);S.player.heat=100;toast('Tes mains reprennent vie au-dessus des flammes.');}});
+  z({loc:'yard',x:Y.ox+70,z:Y.oz+42,r:2.4,cond:()=>S.clues.includes('railcar'),label:()=>'Marcher jusqu’au relais routier de la route 1 (30 min)',act:()=>{addMinutes(30);S.player.heat=Math.max(0,S.player.heat-25*gearFactor());enterInterior('stop');}});
+  z({loc:'stop',x:STOP.ox,z:STOP.oz+STOP.hd-.7,r:1.2,label:()=>'Sortir (retour vers la gare de triage)',act:()=>exitInterior()});
+  z({loc:'stop',x:STOP.box.x,z:STOP.box.z+.6,r:1.4,cond:()=>S.flags.lostFound&&!S.flags.boots,label:()=>'Fouiller la boîte des objets perdus',act:()=>{S.flags.boots=true;S.flags.tuque=true;applyGear();addMinutes(5);toast('Des bottes d’hiver à ta taille et une tuque bleue. La neige profonde te ralentira moins.');}});
+  z({loc:'stop',x:STOP.ox+6.2,z:STOP.oz+3.4,r:1.6,cond:()=>S.tasks.chains==='active',label:()=>'Sortir poser les chaînes du camion de Dale (25 min, −22 °C)',act:()=>{addMinutes(25);S.player.heat=Math.max(5,S.player.heat-40*gearFactor());S.tasks.chains='secured';toast('Les chaînes sont posées. Tes doigts brûlent de froid. Retourne voir Dale.');}});
+  z({loc:'stop',x:STOP.ox-4.5,z:STOP.oz+1.5,r:1.6,cond:()=>S.flags.rideReady,label:()=>'Partir avec Dale vers le ranch (1 h 30)',act:()=>travelTo('ranch',90,0,68,'Dale te dépose à l’embranchement. « Je peux pas attendre. Bonne chance. » Le ranch est au bout du chemin.')});
+  z({loc:'stop',x:STOP.ox+6.5,z:STOP.oz+.6,r:1.4,cond:()=>!S.flags.rideReady,label:()=>'Louer une motoneige (90 $, 1 h)',act:()=>{if(S.money<90){toast('Pas assez d’argent (90 $).');return;}S.money-=90;travelTo('ranch',60,0,68,'La motoneige s’arrête au bout de la piste. Le froid te mord le visage.');S.player.heat=Math.max(5,S.player.heat-30*gearFactor());}});
+  z({loc:'stop',x:STOP.ox,z:STOP.oz+3.2,r:1.2,cond:()=>!S.flags.rideReady&&S.flags.ranchKnown,label:()=>'Partir à pied par la route 1 (6 h, froid extrême)',act:()=>{travelTo('ranch',360,0,68,'Six heures dans la neige. Tu arrives au ranch épuisé et transi.');S.player.heat=Math.max(2,S.player.heat-80*gearFactor());S.player.stamina=20;}});
+  z({loc:'ranch',x:RANCH.ox-21.5,z:RANCH.oz-28,r:2,label:()=>'Se réchauffer contre l’étable (10 min)',act:()=>{addMinutes(10);S.player.heat=Math.min(100,S.player.heat+45);toast('La chaleur des bêtes traverse les planches.');}});
+  for(const n of interiorNPCs)if(n.lvl==='ab'){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.x,z:n.z+(n.id==='priya'?1.3:.9),r:1.6,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
+  return Z;
+}
+function CINES_abIntro(){const Y=YARD;return[
+  {set:'yard',d:7,clock:6*60+40,rain:0,cloud:.25,center:{x:Y.ox,z:Y.oz},snow:.6,title:'Calgary, Alberta — début décembre, 6 h 40. −22 °C.',
+    cam:[[Y.ox+60,18,Y.oz+60],[Y.ox+30,10,Y.oz+44],[Y.ox,6,Y.oz-20],[Y.ox-10,4,Y.oz-40]]},
+  {set:'yard',d:8,clock:6*60+42,rain:0,cloud:.25,snow:.6,center:{x:Y.ox,z:Y.oz+30},cam:[[Y.ox+2.6,1.7,Y.oz+42.5],[Y.ox+2,1.7,Y.oz+41.6],[Y.ox,1.6,Y.oz+39],[Y.ox-3,2.5,Y.oz+20]],
+    sub:[[.6,'Oscar','Moins vingt-deux… et moi en blouson du Brésil.'],[4.2,'Oscar','Trouver de quoi me couvrir. Puis le wagon.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(Y.ox,0,Y.oz+39);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.6,true);oc.armL.sh.rotation.set(-.7,0,.6);oc.armR.sh.rotation.set(-.7,0,-.6);oc.armL.el.rotation.x=-1.9;oc.armR.el.rotation.x=-1.9;}}];}
+
 /* --- 5d. CINÉMATIQUES (bloc 4) ---
    Moteur de plans : décor, acteurs, caméra (mouvement + caméra à l'épaule), sous-titres, titres, bandes noires.
    Mise en scène fidèle au plan du jeu (docs/PLAN.md §4) et aux directives de réalisme. */
@@ -2381,7 +2613,7 @@ function hideAll(){
   for(const h of pedMeshes)h.g.visible=false;for(const m of vehMeshes)m.g.visible=false;for(const m of tramMeshes)m.visible=false;for(const h of idlerMeshes)h.g.visible=false;
   for(const n of interiorNPCs)n.h.g.visible=false;for(const k in STORY_PROPS)STORY_PROPS[k].visible=false;oscarMesh.g.visible=false;M.marker.visible=false;
   for(const k in enemyMeshes){enemyMeshes[k].h.g.visible=false;enemyMeshes[k].bar.visible=false;}
-  for(const h of CACT)h.g.visible=false;for(const c of [A.suv1,A.suv2,A.taxi])if(c)c.visible=false;if(A.omer)A.omer.smoke.visible=false;if(A.headlight)A.headlight.intensity=0;
+  for(const h of CACT)h.g.visible=false;for(const k in GEAR.meshes)GEAR.meshes[k].visible=false;for(const c of [A.suv1,A.suv2,A.taxi])if(c)c.visible=false;if(A.omer)A.omer.smoke.visible=false;if(A.headlight)A.headlight.intensity=0;
 }
 function houseBefore(){const I=H();if(I.note)I.note.visible=false;if(I.fallen){I.fallen.rotation.set(0,Math.PI*.6,0);I.fallen.position.y=0;}if(I.door){I.door.rotation.y=0;}}
 function houseAfter(){const I=H();if(I.note)I.note.visible=true;if(I.fallen){I.fallen.rotation.set(.25,Math.PI*.6,Math.PI/2);I.fallen.position.y=.22;}}
@@ -2513,7 +2745,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
-  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
+  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
@@ -2527,7 +2759,7 @@ function stepCine(dt,T){
   const hand=s.video?.03:.012;p.x+=Math.sin(T*1.3)*hand;p.y+=Math.sin(T*1.7+1)*hand;p.z+=Math.cos(T*1.1)*hand;
   camera.position.copy(p);camera.lookAt(lerp(c[2][0],c[3][0],e),lerp(c[2][1],c[3][1],e),lerp(c[2][2],c[3][2],e));
   const sub=(s.sub||[]).filter(x=>t>=x[0]).pop();$('cineSub').innerHTML=sub&&sub[2]?(sub[1]?`<b>${sub[1]}</b>`:'')+`<span>${sub[2]}</span>`:'';
-  WIND.str=s.wind||0;WIND.x=Math.sin(-2.4);WIND.z=Math.cos(-2.4);
+  WIND.str=s.wind||0;WIND.x=Math.sin(-2.4);WIND.z=Math.cos(-2.4);SNOWAMT=s.snow||0;updateSnow(dt,s.center,s.snow||0,T);
   updateEnvironment(s.clock,s.rain||0,s.cloud??.3,s.center,dt,T,!!s.indoor);
   if(s.set==='brazil'&&FX.rotor)FX.rotor.rotation.y+=dt*28;
   for(const tr of CB.tracers)tr.t-=dt;CB.tracers=CB.tracers.filter(tr=>{if(tr.t<=0){scene.remove(tr.l);return false}return true});
@@ -2540,7 +2772,7 @@ function endCine(){if(!CINE.shots)return;csnd('rotorOff');show('cine',false);hid
 const $=id=>document.getElementById(id);
 let toastT=0;function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');toastT=5;}
 const HEART='<svg viewBox="0 0 24 22"><path d="M12 21 2.6 11.6A5.6 5.6 0 0 1 12 3.9a5.6 5.6 0 0 1 9.4 7.7Z" fill="FILL" stroke="#fff" stroke-opacity=".5"/></svg>';
-const WLABEL={clear:['Ensoleillé','Ciel dégagé'],cloudy:['Nuageux','Nuageux'],rain:['Averses','Pluie nocturne']};
+const WLABEL={clear:['Ensoleillé','Ciel dégagé'],cloudy:['Nuageux','Nuageux'],rain:['Averses','Pluie nocturne'],snow:['Neige','Neige']};
 function fmtClock(m){const h=Math.floor(m/60),mm=Math.floor(m%60);return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0')}
 let hudT=0;
 function updateHUD(){
@@ -2561,7 +2793,7 @@ function updateHUD(){
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
   let st='';if(AR()){const E=AS().enemies;st=AS().alarm&&!S.flags.bossDown?'Alerte':E.some(e=>!e.down&&e.meter>=40)?'Suspect':E.some(e=>!e.down&&e.meter>2)?'Observé':'Discret';}
   $('hStealth').textContent=st+(CB.crouch&&st?' · accroupi':'')+(S.flags.disguise&&st?' · déguisé':'');$('hStealth').className=st?'on '+{Alerte:'alert',Suspect:'sus',Observé:'sus',Discret:''}[st]:'';
-  $('cross').classList.toggle('aim',CB.aim);
+  $('cross').classList.toggle('aim',CB.aim);$('frost').style.opacity=clamp((45-S.player.heat)/45,0,1).toFixed(2);
   drawMap();
 }
 // minimap
@@ -2699,12 +2931,13 @@ function frame(now){
     const nm=S.msgs||0,due=[14,34,54][nm]*60;
     if(nm<3&&S.clock-S.startClock>=due&&!(AR()&&AS().alarm)&&!S.flags.levelDone&&CB.lockT<=0){S.msgs=nm+1;
       playCine('msg'+S.msgs,()=>{mode='play';applyLocation();oscarMesh.g.visible=true;if(!S.clues.includes('video')){S.clues.push('video');toast('Indice ajouté au carnet : '+CLUES.video.title);}store.save(S);});}
+    { const inI=INTERIORS[S.location];const sa=inI&&!inI.indoor?(S.weather.snow||0)*(inI.snow?1:0):0;updateSnow(dt,S.player,sa,t);stepBreath(dt,t,S.weather.temp);SNOWAMT=sa;}
     WIND.str=(INTERIORS[S.location]&&INTERIORS[S.location].indoor)?0:(S.weather.windStr||0);WIND.x=Math.sin(S.weather.windDir||0);WIND.z=Math.cos(S.weather.windDir||0);
     updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,dt,t,!!(INTERIORS[S.location]&&INTERIORS[S.location].indoor));
   } else if(mode==='cine'){
     stepCine(dt,t);
   } else if(mode==='title'){
-    viewClock+=dt*9;if(!S)stepAgentsTitle(dt);
+    viewClock+=dt*9;if(!S)stepAgentsTitle(dt);SNOWAMT=0;updateSnow(dt,{x:0,z:0},0,t);
     const a=t*.05;camera.position.set(40+Math.cos(a)*190,85,40+Math.sin(a)*190);camera.lookAt(60,40,60);
     updateEnvironment(viewClock,0,.15,{x:40,z:40},dt,t);syncTitle(dt,t);
   } else if(!S){
@@ -2729,7 +2962,7 @@ window.__oscar={weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCi
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});
