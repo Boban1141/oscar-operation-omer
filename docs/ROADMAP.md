@@ -3,9 +3,9 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.6.0)
-- **Niveaux 1 (Toronto) et 2 (Colombie-Britannique) jouables**, avec passage d'un niveau à l'autre : blocs 1 à 4 et 6 terminés.
-- **Prochaine étape proposée** : bloc 7 (niveau 3, Terre-Neuve).
+## État au 2026-11-20 (v0.7.0)
+- **Niveaux 1 (Toronto), 2 (Colombie-Britannique) et 3 (Terre-Neuve) jouables**, enchaînés : blocs 1 à 4, 6 et 7 terminés.
+- **Prochaine étape proposée** : bloc 8 (niveau 4, Alberta, début de l'hiver).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
 - **Dépôt GitHub** (`Boban1141/DUXIA`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
 
@@ -88,8 +88,19 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Tests : 36 vérifications (niveaux 1 et 2)
 - [ ] Test visuel et réglage par un humain
 
-## Blocs 7 à 11 — Provinces `[ ]`
-- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [ ] 7 Terre-Neuve · [ ] 8 Alberta · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
+## Bloc 7 — Niveau 3 : Terre-Neuve `[x]` (v0.7.0)
+- [x] Système de **vent** (tous niveaux) : ralentit la marche face au vent, rafales qui poussent, refroidissement éolien, visée moins précise, gardes qui voient et entendent moins, pluie oblique ; affiché dans la météo (km/h)
+- [x] Vagues animées selon la force du vent ; roulis de la caméra à bord
+- [x] Port de St. John's : maisons colorées de Water Street, Signal Hill et la tour Cabot, bateaux de pêche, ponton, quai 18
+- [x] Pub The Ship's Lantern : Bridget (pilote du port), Wilf (vieux pêcheur), Liam (matelot effrayé), un violoneux (écouter réchauffe)
+- [x] Quatre façons de monter à bord : mot de passe « Brume », pot-de-vin, force, ou la doris de Wilf jusqu'à l'échelle de poupe (tâche secondaire)
+- [x] Abordage du Marie-Galante de nuit en pleine tempête : 6 marins armés, timonerie, capitaine Roy (négociation, combat, interrogatoire)
+- [x] Piste du niveau 4 : train de marchandises vers Calgary, « l'Éleveur » ; confirmation du métro derrière Omer
+- [x] Cinématique d'arrivée ; tests : 50 vérifications (niveaux 1 à 3)
+- [ ] Test visuel et réglage par un humain
+
+## Blocs 8 à 11 — Provinces `[ ]`
+- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [ ] 8 Alberta · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
 - Systèmes d'hiver : neige, verglas, blizzard, équipement d'hiver
 
 ## Bloc 12 — Multijoueur `[ ]`

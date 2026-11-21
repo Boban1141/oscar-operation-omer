@@ -3,6 +3,7 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À valider** : tout le niveau 3 (Bridget, Wilf, Liam, la doris, le capitaine Roy, « l'Éleveur ») — `docs/PLAN.md` §10f.
 - **À valider** : tout le niveau 2 (Earl, Josh, Maggie, le Pasteur, l'Église de la Dernière Lumière, le « Marie-Galante », le dessin de Cédric) — `docs/PLAN.md` §10e.
 - **À valider** : Tiago « Faca » Moreira, le port, « le Pasteur » et la piste de Vancouver (`docs/PLAN.md` §10c).
 - **À régler après test humain** : difficulté (vitesse de repérage, précision des gardes), durée du chronomètre du niveau 1 (72 h de jeu = 72 minutes réelles).
@@ -14,6 +15,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Niveau 3 : Terre-Neuve (v0.7.0)
+- Fait : système de vent (déplacement, rafales, froid éolien, visée, repérage, pluie oblique, affichage), vagues animées, roulis à bord ; port de St. John's, pub, tâche de la doris, quatre façons d'aborder le Marie-Galante, combat sur le pont en tempête, capitaine Roy ; cinématique d'arrivée ; piste vers l'Alberta.
+- Fichiers : `game/index.html` (0.7.0), `docs/*`, `tests/run_logic_tests.py`.
+- Testé : 50/50 vérifications automatiques (niveaux 1 à 3), passage réel niveau 2 → 3 et combat sur le chalutier sans erreur. **Rendu visuel non vu par un humain.**
+- Reste à faire : niveau 4 (Alberta).
 
 ## 2026-11-20 — Claude — Niveau 2 : Colombie-Britannique (v0.6.0)
 - Fait : moteur rendu multi-niveaux (arènes génériques, zones/objectifs par niveau, passage de niveau, progression conservée). Niveau 2 complet : terminal de Vancouver, bar, surplus, trajet vers Squamish (3 options), forêt pluviale et camp du Pasteur, tâche de Josh (2e vie bonus), boss, interrogatoire, piste de Terre-Neuve ; imperméable et café chaud ; cinématique d'arrivée.

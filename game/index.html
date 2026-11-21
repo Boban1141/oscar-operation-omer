@@ -251,7 +251,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.6.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '0.7.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -272,10 +272,23 @@ const LEVELS = {
     weather:{clear:.08, cloudy:.22, rain:.7},
     density:{peds:0, cars:0, taxis:0, bikes:0},
     start:{loc:'vanport',x:0,z:46},
-    next:null,
+    next:'nl',
     ready:{kicker:'Vancouver · jour 1 · 6 h 10',title:'Pluie, brouillard, et le conteneur d’Omer.',text:'Le froid humide de la côte use les forces : un imperméable et un café chaud peuvent te sauver. Trouve le conteneur, puis le camp du Pasteur.'},
-    win:{kicker:'Squamish, Colombie-Britannique',title:'Niveau 2 terminé',text:'Le Pasteur a parlé. Le « Marie-Galante » part de St. John’s dans quatre jours. Et dans la valise, le dessin de Cédric : une montagne surmontée d’une grande croix lumineuse.',next:'Niveau 3 · Terre-Neuve · fin de l’automne, vents violents et tempêtes : en construction.'},
+    win:{kicker:'Squamish, Colombie-Britannique',title:'Niveau 2 terminé',text:'Le Pasteur a parlé. Le « Marie-Galante » part de St. John’s dans quatre jours. Et dans la valise, le dessin de Cédric : une montagne surmontée d’une grande croix lumineuse.',next:'Niveau 3 · Terre-Neuve · fin de l’automne, vents violents, tempête en mer.'},
     startToast:'Vancouver, 6 h 10. La pluie ne s’arrête pas. Le terminal de Centerm est de l’autre côté de la clôture.'
+  },
+  nl: {
+    id:'nl', index:3, name:'Terre-Neuve', region:'St. John’s', season:'Fin de l’automne', seed:1497,
+    startMinute: 18*60+45, timeLimitMin: 60*60,
+    temp:{min:-1, max:6}, coldFactor:0.6,
+    weather:{clear:.05, cloudy:.4, rain:.55},
+    wind:{base:.45, gust:.5, dir:-2.4},
+    density:{peds:0, cars:0, taxis:0, bikes:0},
+    start:{loc:'harbour',x:0,z:34},
+    next:null,
+    ready:{kicker:'St. John’s · jour 1 · 18 h 45',title:'Le vent hurle sur le port.',text:'Les rafales te ralentissent, te poussent et te glacent ; elles gênent aussi la visée et l’ouïe des gardes. Le Marie-Galante appareille à l’aube : trouve-le et monte à bord.'},
+    win:{kicker:'Au large de St. John’s',title:'Niveau 3 terminé',text:'Le carnet de bord du capitaine Roy : la cargaison part par train vers Calgary, chez « l’Éleveur ». Et Roy l’a confirmé : chaque fois qu’Omer appelle, un métro passe derrière.',next:'Niveau 4 · Alberta · début de l’hiver, froid sec à −25 °C, Rocheuses : en construction.'},
+    startToast:'St. John’s, 18 h 45. Avis de tempête. Le pub The Ship’s Lantern est sur Water Street, au pied des maisons colorées.'
   }
 };
 const ROADS=[-150,-75,0,75,150], CENTERS=[-112.5,-37.5,37.5,112.5], LOT=26.5, BOUND=163;
@@ -373,7 +386,7 @@ const DIALOGUES={
 };
 const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
-function objective(S){return S.level==='bc'?objectiveBC(S):objectiveToronto(S);}
+function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):objectiveToronto(S);}
 function objectiveToronto(S){
   if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
@@ -518,6 +531,7 @@ function stepWeather(dt){
   W.rain=lerp(W.rain,W.target.rain,k);W.cloud=lerp(W.cloud,W.target.cloud,k);
   const h=dayInfo(S.clock).hour;
   W.temp=lerp(L.temp.min,L.temp.max,.5+.5*Math.sin((h/24-.375)*Math.PI*2))-W.rain*2;
+  if(L.wind){const g=L.wind;W.windStr=clamp(g.base+g.gust*Math.max(0,Math.sin(S.clock*.11)*Math.sin(S.clock*.37+1))+W.rain*.15,0,1);W.windDir=g.dir+Math.sin(S.clock*.013)*.6;}else{W.windStr=0;W.windDir=0;}
 }
 function stepPlayer(dt){
   const p=S.player, L=LEVELS[S.level];
@@ -528,7 +542,9 @@ function stepPlayer(dt){
   const running=cmd.run&&ml>0&&p.stamina>4&&!CB.crouch&&!CB.aim&&!CB.block&&CB.lockT<=0;
   const sp=(ml>0&&CB.lockT<=0)?(running?6.6:CB.crouch?1.7:3.2)*(CB.aim?.6:1)*(CB.block?.5:1):0;
   const k=1-Math.exp(-dt*10);
-  p.vx=lerp(p.vx,mx*sp,k);p.vz=lerp(p.vz,mz*sp,k);
+  const indoorNow=INTERIORS[S.location]&&INTERIORS[S.location].indoor,ws=indoorNow?0:(S.weather.windStr||0),wdx=Math.sin(S.weather.windDir||0),wdz=Math.cos(S.weather.windDir||0);
+  const against=ml>0?Math.max(0,-(mx*wdx+mz*wdz)):0;const spW=sp*(1-.45*ws*against);
+  p.vx=lerp(p.vx,mx*spW,k);p.vz=lerp(p.vz,mz*spW,k);p.x+=wdx*ws*ws*.6*dt;p.z+=wdz*ws*ws*.6*dt;
   p.x+=p.vx*dt;p.z+=p.vz*dt;collide(p,.42);
   const gs=Math.hypot(p.vx,p.vz);
   if(CB.aim||(CB.fireCd>0&&playerWeapon()!=='fists'))p.heading=angLerp(p.heading,camYaw+Math.PI,1-Math.exp(-dt*20));
@@ -543,7 +559,8 @@ function stepPlayer(dt){
   const W=S.weather;
   const exposure=INTERIORS[S.location]&&INTERIORS[S.location].indoor?0:W.rain*(S.flags.raincoat?.3:1)+Math.max(0,(10-W.temp))/10;
   const warmth=running?.5:0;
-  if(exposure-warmth>.15)p.heat-=(exposure-warmth)*.35*L.coldFactor*dt*Math.max(1,timeScale/4);
+  const windChill=(INTERIORS[S.location]&&INTERIORS[S.location].indoor)?0:(S.weather.windStr||0)*.7;
+  if(exposure+windChill-warmth>.15)p.heat-=(exposure+windChill-warmth)*.35*L.coldFactor*dt*Math.max(1,timeScale/4);
   else p.heat+=.6*dt;
   p.heat=clamp(p.heat,0,100);
   if(p.heat<=0)p.health-=1.2*dt;else if(p.heat>40)p.health+=.4*dt;
@@ -1061,7 +1078,7 @@ rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPos,3));
 const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:'#a9bccf',transparent:true,opacity:0}));rain.frustumCulled=false;scene.add(rain);
 
 const C_DAY=new THREE.Color('#8ec3ef'),C_DUSK=new THREE.Color('#e9895a'),C_NIGHT=new THREE.Color('#0a1226'),C_GREY=new THREE.Color('#7f8b97'),C_GREYN=new THREE.Color('#151a22'),tmpC=new THREE.Color(),tmpC2=new THREE.Color();
-let nightF=0;
+let nightF=0;const WIND={x:0,z:0,str:0};
 function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   const m=((clock%1440)+1440)%1440,el=Math.sin((m/1440-.25)*Math.PI*2),az=(m/1440)*Math.PI*2;
   const day=smooth(-.12,.22,el);nightF=1-day;
@@ -1086,7 +1103,7 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   if(M.cnTip)M.cnTip.emissiveIntensity=(Math.sin(t*3)>0?1:.15)*lerp(.6,4,nightF);
   M.asphalt.roughness=lerp(.92,.32,rainAmt);M.asphalt.color.set(rainAmt>.3?'#232529':'#2b2d32');
   rain.material.opacity=rainAmt*.55;rain.visible=rainAmt>.02;
-  if(rain.visible){const a=rainGeo.attributes.position.array;for(let i=0;i<RAIN_N;i++){const k=i*6;a[k+1]-=dt*26;a[k+4]-=dt*26;if(a[k+4]<0){a[k+1]+=45;a[k+4]+=45;}}
+  if(rain.visible){const a=rainGeo.attributes.position.array,wx=WIND.x*WIND.str,wz=WIND.z*WIND.str;for(let i=0;i<RAIN_N;i++){const k=i*6;a[k+1]-=dt*26;a[k]+=wx*dt*22;a[k+2]+=wz*dt*22;if(a[k]>45)a[k]-=90;if(a[k]<-45)a[k]+=90;if(a[k+2]>45)a[k+2]-=90;if(a[k+2]<-45)a[k+2]+=90;if(a[k+1]<0)a[k+1]+=45;a[k+3]=a[k]-wx*.8;a[k+4]=a[k+1]-.6;a[k+5]=a[k+2]-wz*.8;}
     rainGeo.attributes.position.needsUpdate=true;rain.position.set(center.x,0,center.z);}
   updateInteriorLights(day*(1-cloud*.5),smooth(.25,.75,nightF));
   if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=.18+.22*day;hemi.color.set('#f3e6d2');
@@ -1129,6 +1146,7 @@ function updateCamera(dt){
   camera.position.lerp(tv,1-Math.exp(-dt*18));
   if(CB.shake>0){camera.position.x+=(Math.random()-.5)*.06;camera.position.y+=(Math.random()-.5)*.06;}
   camera.lookAt(head.x+rx-Math.sin(camYaw)*(CB.aim?4:0),head.y-.15,head.z+rz-Math.cos(camYaw)*(CB.aim?4:0));
+  if(S.location==='trawler'){const tt=performance.now()/1000,ws=S.weather.windStr||.5;camera.rotateZ(Math.sin(tt*.7)*.025*(.5+ws));camera.position.y+=Math.sin(tt*.9)*.18*(.5+ws);}
 }
 
 /* --- 5b. INTERIORS (bloc 2) ---
@@ -1362,6 +1380,7 @@ function checkObjective(){const o=objective(S);if(o.stage!==lastStage){if(lastSt
 function objectiveTarget(o){
   if(!o.target)return null;
   if(S.level==='bc'){const bt=bcTarget(o);if(bt!==undefined)return bt;}
+  if(S.level==='nl'){const nt=nlTarget(o);if(nt!==undefined)return nt;}
   if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
@@ -1393,11 +1412,13 @@ function updateInteriorLights(day,night){
   for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.night?L.base*night:L.base*(.45+.75*night);
 }
 function syncStory(dt,t){
+  if(S.location==='harbour'||S.location==='trawler'){animWaves(INTERIORS[S.location],t,S.weather.windStr||.5);if(TRAWL.wheel)TRAWL.wheel.rotation.x=Math.sin(t*.8)*.6;}
   if(S.location==='forest'&&FOREST.fire){FOREST.fire.scale.y=.8+Math.sin(t*11)*.25;FOREST.fireLight.intensity=16+Math.sin(t*17)*5;}
   for(const n of interiorNPCs){if(!n.h.g.visible)continue;
     if(n.mode!=='sit'){const dx=S.player.x-n.x,dz=S.player.z-n.z,d=Math.hypot(dx,dz);
       const target=d<4?Math.atan2(dx,dz):n.a;n.h.g.rotation.y=angLerp(n.h.g.rotation.y,target,1-Math.exp(-dt*(d<4?2.5:1)));}
-    animRig(n.h,dt,t+n.x,0,n.mode,0,true);}
+    animRig(n.h,dt,t+n.x,0,n.mode,0,true);
+    if(n.h.fiddle){n.h.armL.sh.rotation.set(-1.5,0,.55);n.h.armL.el.rotation.x=-1.9;n.h.armR.sh.rotation.set(-1.1,0,-.2+Math.sin(t*6)*.25);n.h.armR.el.rotation.x=-1.2+Math.sin(t*6)*.3;n.h.head.rotation.z=.35;}}
   const I=INTERIORS[S.location];if(I&&I.dust){const a=I.dust.geometry.attributes.position.array;for(let i=0;i<a.length;i+=3){a[i+1]+=Math.sin(t*.3+i)*.0006;a[i]+=Math.cos(t*.2+i*.7)*.0004;}I.dust.geometry.attributes.position.needsUpdate=true;}
 }
 /* --- dialogue, reading, notebook UI --- */
@@ -1615,7 +1636,7 @@ function tryFire(){
   if(A.mag<=0){if(A.res>0)reload();else toast('Plus de munitions.');CB.firing=false;return;}
   A.mag--;CB.fireCd=W.rate;CB.shake=.08;sfx('shot');oscarMesh.flash.intensity=6;
   // ray from the camera through the crosshair
-  const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=W.spread+(S.player.speed>.5?W.move:0)+(CB.aim?0:.03);
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=W.spread+(S.player.speed>.5?W.move:0)+(CB.aim?0:.03)+(S.weather.windStr||0)*.025;
   dir.x+=(Math.random()-.5)*sp*2;dir.y+=(Math.random()-.5)*sp*2;dir.z+=(Math.random()-.5)*sp*2;dir.normalize();
   const o=camera.position.clone();ray.set(o,dir);ray.far=120;const wh=ray.intersectObjects(collidableMeshes,false)[0];let tmax=wh?wh.distance:120;
   let hitE=null,hy=0;
@@ -1659,7 +1680,7 @@ function stepCombat(dt){
     const T=ETYPE[e.type];if(e.down)continue;if(e.friendly){continue;}
     const dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz);
     // perception
-    const fov=e.state==='combat'?Math.PI*1.6:Math.PI*.42,range=(e.state==='combat'?40:night?12:17)*(1-W.rain*.25);
+    const fov=e.state==='combat'?Math.PI*1.6:Math.PI*.42,range=(e.state==='combat'?40:night?12:17)*(1-W.rain*.25)*(1-(W.windStr||0)*.25);
     const ang=Math.acos(clamp((dx*Math.sin(e.heading)+dz*Math.cos(e.heading))/Math.max(d,.001),-1,1));
     const sees=d<range&&ang<fov&&losClear(e.x,e.z,p.x,p.z);
     if(e.gate&&S.flags.gateOpen&&!P2.alarm){e.meter=0;}
@@ -2017,6 +2038,198 @@ function CINES_bcIntro(){const V=VANP;return[
     sub:[[.5,'Oscar','Conteneur MSKU 448127. Si Tiago a dit vrai, le Pasteur n’est pas loin.'],[4.6,'Oscar','Eva… Cédric… Tenez bon.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(V.ox,0,V.oz+46);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.3,true);}}];}
 
+/* --- 5f. NIVEAU 3 : TERRE-NEUVE --- */
+const HARB={ox:3000,oz:0,hw:75,hd:56,indoor:false,label:'Port de St. John’s',cols:[],group:null,lights:[]};
+const PUB={ox:3000,oz:220,hw:7,hd:5.5,indoor:true,label:'The Ship’s Lantern',spawn:{x:0,z:4.3},exitLoc:'harbour',exitOut:()=>({x:HARB.ox-20,z:HARB.oz+38.6}),cols:[],group:null,lights:[]};
+const TRAWL={ox:3000,oz:420,hw:36,hd:9,indoor:false,label:'Le Marie-Galante',cols:[],group:null,lights:[]};
+INTERIORS.harbour=HARB;INTERIORS.pub=PUB;INTERIORS.trawler=TRAWL;
+const WHEEL={x0:16,x1:28,z0:-4,z1:4};
+ARENAS.harbour={area:HARB,lvl:'nl',water:{z:-4,side:-1},ground:'#55585c',
+  defs:[{id:'gw',type:'pistol',post:[44,-12.5,0]},{id:'n1',type:'pistol',route:[[30,-2.5],[68,-2.5]]},{id:'n2',type:'melee',route:[[41,-8],[41,-17],[49,-17],[49,-8]]}],
+  elook:{melee:{jacket:'#26323a',pants:'#1b1b1f'},pistol:{jacket:'#2b3a44',pants:'#22223b'}}};
+ARENAS.trawler={area:TRAWL,lvl:'nl',room:WHEEL,roomLabel:'Timonerie',ground:'#3a3d40',water:null,
+  defs:[{id:'c1',type:'rifle',route:[[-26,3.5],[10,3.5]]},{id:'c2',type:'melee',route:[[-26,-3.5],[10,-3.5]]},{id:'c3',type:'pistol',post:[-8,0,Math.PI/2]},
+    {id:'c4',type:'pistol',route:[[12,4.4],[30,4.4],[30,-4.4],[12,-4.4]]},{id:'c5',type:'melee',post:[-29,0,-Math.PI/2]},{id:'c6',type:'rifle',post:[6,-4,-Math.PI/2]},
+    {id:'b1',type:'pistol',post:[20,2.5,-Math.PI/2]},{id:'boss',type:'boss',post:[25,0,-Math.PI/2]}],
+  elook:{melee:{jacket:'#c9a227',pants:'#2b2d42'},pistol:{jacket:'#d4a017',pants:'#22223b'},rifle:{jacket:'#b8352a',pants:'#22223b'}},
+  bossLook:{skin:'#ffdbac',hair:'#d9d9d9',beard:true,bald:false,height:1.02,build:1.18,jacket:'#1d3557',pants:'#1b1b1f',slouch:.1},
+  bossDeco(h){const cap=new THREE.Mesh(new THREE.CylinderGeometry(.13,.14,.08,14),mat('#1b1b1f'));cap.position.y=.13;h.head.add(cap);const v=new THREE.Mesh(new THREE.BoxGeometry(.3,.02,.2),mat('#111'));v.position.set(0,.09,.12);h.head.add(v);
+    const coat=new THREE.Mesh(new THREE.CylinderGeometry(.27,.38,.6,14,1,true),new THREE.MeshStandardMaterial({color:'#c9a227',roughness:.4,side:THREE.DoubleSide}));coat.position.y=-.22;h.hips.add(coat);},
+  boss:{dlg:'roy',spot:'roySpot',interro:'royI',clue:'logbook',name:'le capitaine Roy',cp:[10,0],down:'Roy lâche son arme et s’agrippe au bastingage. « Arrête ! Le bateau va chavirer ! » Interroge-le (touche E).'}};
+/* --- builders --- */
+function waveMesh(I,w,d,seg,y,color){const g=new THREE.PlaneGeometry(w,d,seg,seg);g.rotateX(-Math.PI/2);const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:.18,metalness:.25,flatShading:true}));m.position.y=y;I.group.add(m);I.waves=m;I.wavesBase=g.attributes.position.array.slice();return m}
+function animWaves(I,t,str){if(!I.waves)return;const a=I.waves.geometry.attributes.position.array,b=I.wavesBase,A=.25+str*1.1;
+  for(let i=0;i<a.length;i+=3){const x=b[i],z=b[i+2];a[i+1]=Math.sin(x*.09+t*1.3)*A+Math.cos(z*.13+t*.9)*A*.7+Math.sin((x+z)*.21+t*2.1)*A*.25;}I.waves.geometry.attributes.position.needsUpdate=true;I.waves.geometry.computeVertexNormals();}
+function buildHarbour(){
+  const I=HARB;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const gtex=asphaltTex.clone();gtex.needsUpdate=true;gtex.repeat.set(30,14);
+  iplane(I,150,62,new THREE.MeshStandardMaterial({map:gtex,color:'#7a7d80',roughness:.5}),0,0,26);
+  waveMesh(I,320,180,70,-1.3,'#23404a');I.waves.position.z=-4-90;
+  ibox(I,150,1.4,1,M.concrete,0,-.6,-4.5,0,false,false);I.cols.push({x0:I.ox-75,x1:I.ox-55,z0:I.oz-8,z1:I.oz-4},{x0:I.ox-45,x1:I.ox+38,z0:I.oz-8,z1:I.oz-4},{x0:I.ox+52,x1:I.ox+75,z0:I.oz-8,z1:I.oz-4});
+  for(const [a,b,c,d] of [[-75,-53.5,-56,-4],[-46.5,37.8,-56,-4],[52.2,75,-56,-4],[-53.5,-46.5,-56,-26.5],[37.8,52.2,-56,-22.4]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  I.cols.push({x0:I.ox-76,x1:I.ox-75,z0:I.oz-30,z1:I.oz+56},{x0:I.ox+75,x1:I.ox+76,z0:I.oz-30,z1:I.oz+56},{x0:I.ox-75,x1:I.ox+75,z0:I.oz+55,z1:I.oz+56});
+  // west pontoon (Wilf's dory) and east wharf (quay 18)
+  const wood=mat('#6b5a45',{roughness:.9});ibox(I,6,.4,22,wood,-50,.05,-15,0,false);I.cols.push({x0:I.ox-53.2,x1:I.ox-46.8,z0:I.oz-26.5,z1:I.oz-26},{x0:I.ox-53.5,x1:I.ox-53,z0:I.oz-26,z1:I.oz-4},{x0:I.ox-47,x1:I.ox-46.5,z0:I.oz-26,z1:I.oz-4});
+  ibox(I,14,.8,18,M.concrete,45,-.2,-13,0,false);I.cols.push({x0:I.ox+37.8,x1:I.ox+38.2,z0:I.oz-22,z1:I.oz-4},{x0:I.ox+51.8,x1:I.ox+52.2,z0:I.oz-22,z1:I.oz-14},{x0:I.ox+38,x1:I.ox+52,z0:I.oz-22.4,z1:I.oz-22});
+  const dory=new THREE.Group();dory.position.set(-44.5,-.6,-18);I.group.add(dory);gb(dory,1.6,.6,5,mat('#c43c2a'),0,0,0);gb(dory,1.3,.1,4.6,wood,0,.32,0);I.dory=dory;
+  // the Marie-Galante alongside quay 18
+  const mg=new THREE.Group();mg.position.set(50,0,-30);I.group.add(mg);gb(mg,62,6,12,mat('#2a3a4a',{roughness:.6}),0,-1.5,0);gb(mg,62.2,.8,12.2,mat('#b8352a'),0,1.2,0);gb(mg,12,5,9,mat('#e9e6df'),18,4,0);
+  gb(mg,12.2,1.2,9.2,new THREE.MeshStandardMaterial({color:'#1b2330',emissive:'#ffe2b0',emissiveIntensity:.5}),18,5.4,0);gb(mg,.4,14,.4,M.pole,-6,8,0);gb(mg,.3,10,.3,M.pole,26,6,0);
+  const nm=new THREE.Mesh(new THREE.PlaneGeometry(9,1.3),new THREE.MeshStandardMaterial({map:signTex('MARIE-GALANTE','#2a3a4a','#f2f2f2')}));nm.position.set(-18,1.6,6.05);mg.add(nm);
+  ibox(I,1.4,.15,9,mat('#8a8f94',{metalness:.6}),45,1,-19.5,0,false);
+  const fenceM=new THREE.MeshStandardMaterial({color:'#9aa0a6',metalness:.6,roughness:.5,transparent:true,opacity:.5,side:THREE.DoubleSide});
+  for(const [a,b] of [[30,40],[50,74]]){iplane(I,b-a,2.6,fenceM,(a+b)/2,1.3,-1.5,0);I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz-1.75,z1:I.oz-1.25});}
+  I.cols.push({x0:I.ox+29.75,x1:I.ox+30.25,z0:I.oz-4,z1:I.oz-1.5});
+  // moored fishing boats
+  const br=mulberry32(31);for(let i=0;i<6;i++){const b=new THREE.Group();b.position.set(-30+i*11,-.8,-12-br()*6);I.group.add(b);gb(b,3.4,1.6,9,mat(pick(br,['#e9e6df','#1d3557','#2f6b46','#c43c2a'])),0,0,0);gb(b,2.4,1.8,2.6,mat('#e9e6df'),0,1.6,-1.5);gb(b,.15,6,.15,M.pole,0,3.5,1);}
+  // Water Street: jellybean row houses climbing the hill
+  const cols=['#e4572e','#f3a712','#29335c','#669bbc','#a8c686','#db5461','#8338ec','#ffbe0b','#3a86ff','#fb5607','#06d6a0','#ef476f'];
+  for(let i=0;i<14;i++){const x=-66+i*10,h=7+(i%3),c=cols[i%cols.length];
+    const F=facadeMat('concrete',700+i,c,4,2,.5);const o=new THREE.Mesh(facadeBox(9.6,h,8,10,6.2),F.m);o.position.set(I.ox+x,h/2+(i%2)*.4,I.oz+47);o.castShadow=o.receiveShadow=true;scene.add(o);o.userData.harb=true;I.group.add(o);o.position.set(x,h/2,47);
+    ibox(I,10,.35,8.6,mat('#2b2b2b'),x,h+.15,47);I.cols.push({x0:I.ox+x-4.8,x1:I.ox+x+4.8,z0:I.oz+43,z1:I.oz+51});collidableMeshes.push(o);
+    for(let k=0;k<2;k++){const o2=new THREE.Mesh(new THREE.BoxGeometry(9.6,8,8),mat(cols[(i+5+k*3)%cols.length]));o2.position.set(x,4+k*6+(i%3),58+k*10);I.group.add(o2);}}
+  const pubF=new THREE.Mesh(new THREE.PlaneGeometry(6,1.1),regNight(new THREE.MeshStandardMaterial({map:signTex('THE SHIP’S LANTERN','#1b3a2a','#ffd38a'),emissive:'#ffffff',emissiveIntensity:.3}),.3,1));pubF.material.emissiveMap=pubF.material.map;pubF.position.set(-20,5.2,42.95);I.group.add(pubF);
+  ibox(I,1.2,2.2,.1,mat('#2a1a12'),-20,1.1,42.96,0,false,false);
+  // Signal Hill and Cabot Tower
+  const hill=new THREE.Mesh(new THREE.ConeGeometry(70,55,9),mat('#4a5a3a',{roughness:1,flatShading:true}));hill.position.set(150,10,-60);I.group.add(hill);
+  const tw=new THREE.Group();tw.position.set(140,36,-58);I.group.add(tw);gb(tw,4,7,4,mat('#a89a82'),0,3.5,0);gb(tw,2.4,3,2.4,mat('#a89a82'),1,8.5,1);
+  // street lamps
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#ffd59a',emissiveIntensity:0}),0,3.5);
+  for(let x=-60;x<=60;x+=20){icyl(I,.08,.12,5,M.pole,x,2.5,40,8);ibox(I,.4,.2,.6,headM,x,5.1,40);const pl=new THREE.Mesh(new THREE.PlaneGeometry(10,10),M.pools);pl.rotation.x=-Math.PI/2;pl.position.set(x,.03,40);I.group.add(pl);}
+  const ql=new THREE.PointLight('#fff1d8',40,26,2);ql.position.set(45,7,-10);I.group.add(ql);I.lights.push({l:ql,kind:'lamp',base:40,night:true});icyl(I,.12,.16,8,M.pole,48,4,-5,8);
+  I.group.visible=false;
+}
+function buildPub(){
+  const I=PUB;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const floor=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#6a4a34',roughness:.55}),wall=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#2f4a3a',roughness:.85});
+  shell(I,floor,wall,3,0,[{x:-4,w:2.6,y0:1,y1:2.3},{x:4,w:2.6,y0:1,y1:2.3}]);
+  const dark=mat('#3a2418',{roughness:.5});ibox(I,6,1.05,.7,dark,-2,.52,-3.3,0,true);ibox(I,6.2,.07,.85,mat('#2a1a10',{roughness:.3}),-2,1.07,-3.28);
+  const taps=mulberry32(8);for(let i=0;i<5;i++)icyl(I,.03,.03,.3,mat('#c9a227',{metalness:.9,roughness:.2}),-3.5+i*.5,1.25,-3.4,8);
+  ibox(I,6,.4,.3,dark,-2,1.8,-5.3);for(let i=0;i<16;i++)icyl(I,.045,.045,.3,new THREE.MeshStandardMaterial({color:pick(taps,['#5a3a12','#2a4a1a','#d8d8e8']),emissive:'#ffb060',emissiveIntensity:.2,transparent:true,opacity:.85}),-4.6+i*.35,2.15,-5.3,8);
+  for(const [x,z] of [[3,-2.5],[4.6,1],[1.2,1.6]]){icyl(I,.5,.5,.05,dark,x,.76,z,16);icyl(I,.06,.2,.74,M.pole,x,.37,z,8);I.cols.push({x0:I.ox+x-.55,x1:I.ox+x+.55,z0:I.oz+z-.55,z1:I.oz+z+.55});}
+  ibox(I,2.4,.4,1.4,dark,-5.4,.2,1.8,0,true);I.cols.push({x0:I.ox-6.6,x1:I.ox-4.2,z0:I.oz+1.1,z1:I.oz+2.5});
+  const fire=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.1,.5),new THREE.MeshStandardMaterial({color:'#2a1a12',emissive:'#ff7a2a',emissiveIntensity:1.2}));fire.position.set(5.8,.55,-5.2);I.group.add(fire);
+  const fl=new THREE.PointLight('#ff8a3a',8,8,2);fl.position.set(5.8,1,-4.6);I.group.add(fl);I.lights.push({l:fl,kind:'lamp',base:8});
+  const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1),new THREE.MeshStandardMaterial({map:texCanvas(71,160,100,(g)=>{g.fillStyle='#f4f1e8';g.fillRect(0,0,160,100);g.fillStyle='#1d3557';g.beginPath();g.moveTo(0,0);g.lineTo(70,50);g.lineTo(0,100);g.fill();g.fillStyle='#c43c2a';g.beginPath();g.moveTo(160,20);g.lineTo(95,50);g.lineTo(160,80);g.fill();}),side:THREE.DoubleSide}));
+  flag.position.set(-6.88,2.1,-2);flag.rotation.y=Math.PI/2;I.group.add(flag);
+  lamp(I,-2,2.2,-2.8,6,'#ffcf8a','#2f4a3a');lamp(I,3,2.2,0,7);
+  I.group.visible=false;
+}
+function buildTrawler(){
+  const I=TRAWL;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  waveMesh(I,360,260,70,-3.2,'#1c3440');
+  gb(I.group,66,6,12.4,mat('#2a3a4a',{roughness:.6}),0,-3.05,0);gb(I.group,66.2,.9,12.6,mat('#b8352a'),0,-.4,0);
+  const deckT=texCanvas(72,256,256,(g,r)=>{g.fillStyle='#7a6a55';g.fillRect(0,0,256,256);for(let y=0;y<256;y+=16){g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,y,256,1);}for(let i=0;i<40;i++){g.fillStyle=`rgba(30,20,10,${.05+r()*.1})`;g.fillRect(r()*256,r()*256,4+r()*40,2+r()*10);}});deckT.repeat.set(10,2);
+  iplane(I,64,11,new THREE.MeshStandardMaterial({map:deckT,roughness:.5}),0,.01,0);
+  const rail=mat('#d9d9d4',{metalness:.5,roughness:.4});for(const z of [-5.6,5.6]){ibox(I,64,.06,.06,rail,0,1.05,z,0,false,false);for(let x=-31;x<=31;x+=2)icyl(I,.03,.03,1.05,rail,x,.52,z,6);}
+  I.cols.push({x0:I.ox-33,x1:I.ox+33,z0:I.oz-6.4,z1:I.oz-5.5},{x0:I.ox-33,x1:I.ox+33,z0:I.oz+5.5,z1:I.oz+6.4},{x0:I.ox-33,x1:I.ox-32,z0:I.oz-6,z1:I.oz+6},{x0:I.ox+32,x1:I.ox+33,z0:I.oz-6,z1:I.oz+6});
+  // wheelhouse (room) with door facing the bow
+  const wm=mat('#e9e6df',{roughness:.5});const W=WHEEL,H=3.2;
+  const wall=(x0,z0,x1,z1)=>{const m=ibox(I,Math.max(.25,x1-x0),H,Math.max(.25,z1-z0),wm,(x0+x1)/2,H/2,(z0+z1)/2,0,true);collidableMeshes.push(m);};
+  wall(W.x0-.12,W.z0,W.x0+.12,-1);wall(W.x0-.12,1,W.x0+.12,W.z1);ibox(I,.25,H-2.2,2,wm,W.x0,2.2+(H-2.2)/2,0);
+  wall(W.x1-.12,W.z0,W.x1+.12,W.z1);wall(W.x0,W.z0-.12,W.x1,W.z0+.12);wall(W.x0,W.z1-.12,W.x1,W.z1+.12);
+  const roof=ibox(I,12.6,.25,8.6,wm,22,H+.12,0);collidableMeshes.push(roof);
+  const gl=new THREE.MeshStandardMaterial({color:'#1b2330',emissive:'#ffe2b0',emissiveIntensity:.6});ibox(I,.05,.9,6,gl,W.x0-.14,2.2,-1.0>0?0:0,0,false,false);
+  ibox(I,1.4,1.1,.9,mat('#2b2b2b'),26,.55,0,0,true);const wheel=new THREE.Mesh(new THREE.TorusGeometry(.35,.04,6,16),mat('#6b4a2f'));wheel.position.set(25.2,1.35,0);wheel.rotation.y=Math.PI/2;I.group.add(wheel);I.wheel=wheel;
+  ibox(I,1.2,.05,.8,mat('#5a4030'),18,1.0,-3,0,true);iplane(I,.34,.26,IM.paper,18,1.03,-3,-Math.PI/2,0,.2);I.cols.push({x0:I.ox+25.3,x1:I.ox+26.7,z0:I.oz-.45,z1:I.oz+.45});
+  const wl=new THREE.PointLight('#ffd9a3',10,12,2);wl.position.set(22,2.8,0);I.group.add(wl);I.lights.push({l:wl,kind:'lamp',base:10});
+  // deck gear: hatch, winches, nets, crates, mast, A-frame
+  ibox(I,6,.5,4,mat('#5b6066',{metalness:.5}),-6,.25,0,0,true);I.cols.push({x0:I.ox-9,x1:I.ox-3,z0:I.oz-2,z1:I.oz+2});
+  for(const [x,z] of [[4,2.8],[4,-2.8],[-18,2.6]]){icyl(I,.6,.6,1.2,mat('#b8352a',{metalness:.5}),x,.8,z,14).rotation.x=Math.PI/2;I.cols.push({x0:I.ox+x-.7,x1:I.ox+x+.7,z0:I.oz+z-.7,z1:I.oz+z+.7});}
+  const net=mat('#4a6a5a',{roughness:1});for(const [x,z] of [[-14,-3.2],[10,0],[-24,3]]){const n=new THREE.Mesh(new THREE.SphereGeometry(1.1,10,6,0,Math.PI*2,0,Math.PI/2),net);n.scale.set(1.4,.6,1);n.position.set(x,0,z);n.castShadow=true;I.group.add(n);I.cols.push({x0:I.ox+x-1.4,x1:I.ox+x+1.4,z0:I.oz+z-1,z1:I.oz+z+1});}
+  for(const [x,z] of [[-20,-3.5],[-1,3.6],[13,-3.6]]){ibox(I,1.3,1.3,1.3,mat('#6b5a45'),x,.65,z,.2,true);}
+  icyl(I,.22,.26,14,M.pole,-12,7,0,10);ibox(I,6,.18,.18,M.pole,-12,10,0);
+  const ml=new THREE.PointLight('#fff4d8',35,30,2);ml.position.set(-12,9.5,0);I.group.add(ml);I.lights.push({l:ml,kind:'lamp',base:35});
+  for(const z of [-4.5,4.5])ibox(I,.4,6,.4,mat('#c9a227'),31,3,z);ibox(I,.4,.4,9.4,mat('#c9a227'),31,6,0);
+  // the harbour lights in the distance
+  const lightsFar=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(Array.from({length:240},(_,i)=>i%3===0?(Math.random()-.5)*300:i%3===1?2+Math.random()*25:-120-Math.random()*20)),3)),new THREE.PointsMaterial({color:'#ffd38a',size:2,sizeAttenuation:false}));I.group.add(lightsFar);
+  I.group.visible=false;
+}
+function buildNLActors(){
+  buildHarbour();buildPub();buildTrawler();
+  const add=(id,look,lx,lz,a,md,loc,I)=>{const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+    interiorNPCs.push({id,dlg:id,h,x:I.ox+lx,z:I.oz+lz,a,mode:md,loc,lvl:'nl'});if(md!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h};
+  const base={prop:'none',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.5,shAsym:0,browAsym:.1,headTilt:0,bald:false,long:false,beard:false,height:1,build:1,slouch:.08};
+  add('bridget',{...base,skin:'#f1c27d',jacket:'#1d3557',pants:'#22223b',hair:'#a8452a',long:true,height:.97,build:.95,browAsym:.2,prop:'cup'},3,-2.5+.9,Math.PI,'sit','pub',PUB);
+  add('wilf',{...base,skin:'#e8b9a4',jacket:'#c9a227',pants:'#3a3a3a',hair:'#e0e0e0',beard:true,height:.94,build:1.05,slouch:.25,headTilt:.06},-1,-2.45,Math.PI,'sit','pub',PUB);
+  add('liam',{...base,skin:'#ffdbac',jacket:'#2f3e46',pants:'#3d405b',hair:'#d9b382',height:.99,build:.86,slouch:.22,browAsym:.35,breath:2.2},-5.6,-.2,Math.PI*.35,'walk','pub',PUB);
+  const fid=add('fiddler',{...base,skin:'#d4a373',jacket:'#5a1414',pants:'#1b1b1f',hair:'#3b2a1e',beard:true},4.6,-3.9,Math.PI*1.15,'walk','pub',PUB);
+  const fd=new THREE.Mesh(new THREE.BoxGeometry(.18,.06,.5),mat('#7a3a12',{roughness:.4}));fd.position.set(0,-.06,.15);fid.armL.wr.add(fd);fid.fiddle=true;
+}
+/* --- story --- */
+Object.assign(CLUES,{
+  pilot:{title:'Bridget, pilote du port',text:'Le « Marie-Galante » appartient au capitaine Roy. Il appareille à l’aube depuis le quai 18, au bout du port. Ses hommes ne sont pas des pêcheurs.'},
+  liam:{title:'Liam, matelot du Marie-Galante',text:'Des hommes armés à bord, une cabine fermée sous la timonerie. Roy parle au téléphone avec un certain Omer. Mot de passe de la passerelle cette nuit : « Brume ».'},
+  logbook:{title:'Le carnet de bord du Marie-Galante',text:'La cargaison part par train de marchandises vers Calgary (Alberta). Contact : « l’Éleveur », un ranch au pied des Rocheuses. Roy confirme : chaque fois qu’Omer appelle, on entend un métro passer derrière.'},
+});
+Object.assign(DIALOGUES,{
+  bridget:{who:'Bridget, pilote du port',start:S=>S.clues.includes('pilot')?'b9':'b0',nodes:{
+    b0:{text:'Pas un temps à mettre un chat dehors, mon gars. Avis de tempête jusqu’à demain. Qu’est-ce qui t’amène à St. John’s ?',choices:[{t:'Ma famille a été enlevée. Les ravisseurs utilisent un bateau, le Marie-Galante.',next:'b1',min:10},{t:'Je cherche un bateau. Le Marie-Galante.',next:'b2',min:15},{t:'Rien, je me réchauffe.',end:true}]},
+    b1:{text:'Seigneur… Le Marie-Galante, c’est le bateau de Roy. Personne l’aime ici. Il appareille à l’aube, quai 18, au bout du port. Et ses hommes, c’est pas des pêcheurs.',choices:[{t:'Merci, Bridget.',end:true,fx:{clue:'pilot'}}]},
+    b2:{text:'Le bateau de Roy ? Pourquoi tu poses des questions ? … Bon. Quai 18, au bout du port. Mais je t’ai rien dit.',choices:[{t:'Merci.',end:true,fx:{clue:'pilot'}}]},
+    b9:{text:'Quai 18. Et fais attention : la mer va être mauvaise cette nuit.',choices:[{t:'Merci.',end:true}]}}},
+  wilf:{who:'Wilf, vieux pêcheur',start:S=>S.tasks.dory==='secured'?'w8':S.tasks.dory==='done'?'w9':'w0',nodes:{
+    w0:{text:'Ah, la tempête arrive, b’y. Ma doris est mal amarrée au ponton et j’ai plus les bras pour ça.',choices:[{t:'Je vais t’aider à l’amarrer.',next:'w1',min:2,need:{noTask:'dory'}},{t:'Tu connais le Marie-Galante ?',next:'w2',min:5},{t:'Bonne soirée.',end:true}]},
+    w1:{text:'T’es un bon gars. Elle est au ponton, à l’ouest du port. Double les nœuds, la houle va tirer fort.',choices:[{t:'J’y vais.',end:true,fx:{task:['dory','active']}}]},
+    w2:{text:'Le bateau de Roy… Il y a une échelle à la poupe, côté mer. Avec une doris, un gars pourrait monter sans passer par la passerelle.',choices:[{t:'Intéressant.',end:true,fx:{flag:'sternHint'}}]},
+    w8:{text:'Tu l’as amarrée ? Par ce temps ? Merci, b’y. Écoute : prends ma doris cette nuit. Elle t’amènera à la poupe du Marie-Galante, loin des gardes.',choices:[{t:'Merci, Wilf.',end:true,fx:{flag:'doryReady',task:['dory','done'],bonus:1}}]},
+    w9:{text:'La doris t’attend au ponton. Rame près des coques, ils te verront pas.',choices:[{t:'Merci.',end:true}]}}},
+  liam:{who:'Liam, matelot',start:S=>S.flags.password?'l9':'l0',nodes:{
+    l0:{text:'(Il sursaute.) Vous êtes pas un des hommes de Roy, hein ?',choices:[{t:'Non. Je cherche ma femme et mon fils. Roy travaille pour celui qui les a enlevés.',next:'l1',min:10},{t:'Tu travailles sur le Marie-Galante ?',next:'l2',min:3},{t:'Parle, ou je dis à Roy que tu bavardes.',next:'l3',min:2}]},
+    l1:{text:'… Il y a des hommes armés à bord, et une cabine fermée sous la timonerie. Roy parle au téléphone avec un certain Omer. Le mot de passe pour la passerelle cette nuit, c’est « Brume ». Je veux plus rien avoir à faire avec eux.',choices:[{t:'Rentre chez toi, Liam.',end:true,fx:{clue:'liam',flag:'password'}}]},
+    l2:{text:'Je… je peux pas parler. (Il jette un œil vers la porte.)',choices:[{t:'Je ne suis pas avec eux. Ma femme et mon fils ont été enlevés.',next:'l1',min:5},{t:'Laisse tomber.',end:true}]},
+    l3:{text:'D’accord ! D’accord… Le mot de passe, c’est « Brume ». Laissez-moi tranquille.',choices:[{t:'(Partir)',end:true,fx:{flag:'password'}}]},
+    l9:{text:'Je vous ai tout dit. Je prends le premier traversier demain.',choices:[{t:'Bonne chance.',end:true}]}}},
+  fiddler:{who:'Le violoneux',start:()=>'f0',nodes:{f0:{text:'(Il continue à jouer en souriant.) Une gigue pour la tempête, l’ami ! Ici, quand la mer gronde, on joue plus fort.',choices:[{t:'(Écouter un moment)',end:true,min:10,fx:{call:'warm'}},{t:'(Partir)',end:true}]}}},
+  gw:{who:'Sentinelle du quai 18',start:()=>'g0',nodes:{
+    g0:{text:'Halte. Quai privé. Qui va là ?',choices:[{t:'« Brume ». Roy m’attend.',next:'g1',min:1,need:{flag:'password'}},{t:'Cent dollars, et tu regardes la mer pendant cinq minutes.',next:'g1',money:100},{t:'(Attaquer)',end:true,fx:{call:'gwFight'}},{t:'Je me suis trompé de quai.',end:true}]},
+    g1:{text:'… Monte. Et fais pas de bruit à bord, le capitaine aime pas ça.',choices:[{t:'(Passer)',end:true,fx:{flag:'gangwayOpen',call:'gwOpen'}}]}}},
+  roy:{who:'Le capitaine Roy',start:()=>'r0',nodes:{
+    r0:{text:'(Il tient la barre malgré la houle.) T’es monté sur mon bateau par cette tempête ? T’as du cran. Ou t’es fou.',choices:[{t:'Où sont ma femme et mon fils ?',next:'r1',min:1},{t:'Fais demi-tour vers le port et livre-toi. Sinon ce bateau ne repartira jamais.',next:'r2',min:1},{t:'(Attaquer)',end:true,fx:{call:'bossFight'}}]},
+    r1:{text:'Pas à bord. Omer mélange jamais les cargaisons. Moi, je transporte. Et ce soir, je transporte ton cadavre.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]},
+    r2:{text:'Personne me donne d’ordres sur mon pont.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  roySpot:{who:'Le capitaine Roy',start:()=>'s0',nodes:{s0:{text:'Un passager clandestin ! Passez-le par-dessus bord !',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  royI:{who:'Roy, agrippé au bastingage',start:()=>'i0',nodes:{
+    i0:{text:'Arrête… Si personne tient la barre, on chavire !',choices:[{t:'Alors parle vite.',next:'i1',min:2},{t:'Tu tiendras la barre quand tu auras tout dit.',next:'i1',min:4}]},
+    i1:{text:'Le carnet de bord, sur la table de la timonerie… La cargaison part par train vers Calgary. Un ranch au pied des Rocheuses. Le patron là-bas, on l’appelle l’Éleveur.',choices:[{t:'Et Omer ?',next:'i2'}]},
+    i2:{text:'Je l’ai jamais vu. Juste sa voix au téléphone. Et chaque fois qu’il appelle… y a un métro qui passe derrière.',choices:[{t:'(Prendre le carnet de bord)',end:true,fx:{clue:'logbook',flag:'logbook',call:'levelComplete'}}]}}},
+});
+Object.assign(CALLS,{
+  gwOpen:()=>{const g=AS()&&AS().enemies.find(e=>e.id==='gw');if(g)g.friendly=true;checkObjective();},
+  gwFight:()=>{const g=AS()&&AS().enemies.find(e=>e.id==='gw');if(g){g.state='combat';g.meter=100;g.lx=S.player.x;g.lz=S.player.z;}},
+});
+function objectiveNL(S){
+  if(!S.clues.includes('pilot'))return{stage:0,text:'Trouve où est amarré le Marie-Galante. Les gens du port se retrouvent au pub The Ship’s Lantern, sur Water Street.',target:'pub'};
+  if(S.location!=='trawler')return{stage:1,text:'Monte à bord du Marie-Galante (quai 18) avant l’aube : mot de passe, pot-de-vin, force… ou par la mer, avec une doris.'+(S.tasks.dory==='active'?' Wilf attend que tu amarres sa doris au ponton ouest.':''),target:S.flags.doryReady?'dory':'quay'};
+  if(!S.flags.bossMet)return{stage:2,text:'Rejoins la timonerie, à l’arrière du chalutier. Le pont tangue, le vent hurle : reste à couvert.',target:'wheel'};
+  if(!S.flags.bossDown)return{stage:3,text:'Affronte le capitaine Roy.',target:'boss'};
+  if(!S.clues.includes('logbook'))return{stage:4,text:'Interroge Roy (touche E).',target:'boss'};
+  return{stage:5,text:'Niveau 3 terminé. La piste mène à Calgary, en Alberta (en construction).',target:null};
+}
+function nlTarget(o){const t=o.target;
+  if(t==='pub')return S.location==='harbour'?{x:HARB.ox-20,z:HARB.oz+41.5}:null;
+  if(t==='quay')return S.location==='harbour'?{x:HARB.ox+45,z:HARB.oz-12}:null;
+  if(t==='dory')return S.location==='harbour'?{x:HARB.ox-48,z:HARB.oz-18}:null;
+  if(t==='wheel')return S.location==='trawler'?{x:TRAWL.ox+15,z:TRAWL.oz}:null;
+  return undefined;}
+function nlZones(){
+  const H=HARB,Z=[];const z=o=>{Z.push({lvl:'nl',...o});};
+  z({loc:'harbour',x:H.ox-20,z:H.oz+41.6,r:1.8,label:()=>'Entrer au pub The Ship’s Lantern',act:()=>enterInterior('pub')});
+  z({loc:'pub',x:PUB.ox,z:PUB.oz+PUB.hd-.7,r:1.2,label:()=>'Sortir du pub',act:()=>exitInterior()});
+  z({loc:'harbour',x:H.ox-48.5,z:H.oz-18,r:2.2,cond:()=>S.tasks.dory==='active',label:()=>'Doubler les amarres de la doris de Wilf (15 min)',act:()=>{addMinutes(15);S.tasks.dory='secured';H.dory.rotation.y=0;toast('Les nœuds tiennent. La houle tire fort, mais la doris ne bougera plus. Retourne voir Wilf au pub.');}});
+  z({loc:'harbour',x:H.ox-48.5,z:H.oz-18,r:2.2,cond:()=>S.flags.doryReady,label:()=>'Ramer jusqu’à la poupe du Marie-Galante (40 min)',act:()=>{addMinutes(40);S.flags.boarded=true;travelTo('trawler',0,30.5,-4.2,'Tu te hisses par l’échelle de poupe, trempé, glacé. Personne ne t’a vu.');}});
+  z({loc:'harbour',x:H.ox+44,z:H.oz-11,r:2.2,cond:()=>{const g=AS().enemies.find(e=>e.id==='gw');return g&&!g.down&&!g.friendly&&g.state!=='combat'&&!AS().alarm},label:()=>'Parler à la sentinelle du quai 18',act:()=>openDialogue('gw')});
+  z({loc:'harbour',x:H.ox+45,z:H.oz-19,r:2,cond:()=>{const g=AS().enemies.find(e=>e.id==='gw');return S.flags.gangwayOpen||(g&&g.down)},label:()=>'Monter à bord par la passerelle',act:()=>{S.flags.boarded=true;travelTo('trawler',5,-27,4.4,'Tu prends pied sur le pont. Le Marie-Galante gémit sous la houle.');}});
+  for(const n of interiorNPCs)if(n.lvl==='nl'){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.x+(n.id==='wilf'?.2:n.id==='bridget'?0:0),z:n.z+(n.id==='wilf'?.95:n.id==='bridget'?.9:n.id==='fiddler'?1.3:0),r:1.6,label:()=>'Parler à '+(d.who.split(',')[0]),act:()=>openDialogue(n.dlg)});}
+  return Z;
+}
+function CINES_nlIntro(){const H=HARB;return[
+  {set:'harbour',d:7,clock:18*60+40,rain:.8,cloud:.95,wind:.9,center:{x:H.ox,z:H.oz},title:'St. John’s, Terre-Neuve — fin novembre, 18 h 40. Avis de tempête.',
+    cam:[[H.ox+70,24,H.oz-70],[H.ox+40,16,H.oz-50],[H.ox,4,H.oz+20],[H.ox+20,3,H.oz]]},
+  {set:'harbour',d:8,clock:18*60+42,rain:.8,cloud:.95,wind:.9,center:{x:H.ox,z:H.oz+30},cam:[[H.ox+3,1.8,H.oz+38],[H.ox+2.2,1.75,H.oz+37],[H.ox,1.6,H.oz+34],[H.ox+20,3,H.oz-20]],
+    sub:[[.5,'Oscar','Le Marie-Galante appareille à l’aube. Je dois être à bord avant.'],[4.4,'Oscar','Encore un pas, Cédric. Encore un.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(H.ox,0,H.oz+34);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.5,true);animWaves(H,T,.9);}}];}
+
 /* --- 5d. CINÉMATIQUES (bloc 4) ---
    Moteur de plans : décor, acteurs, caméra (mouvement + caméra à l'épaule), sous-titres, titres, bandes noires.
    Mise en scène fidèle au plan du jeu (docs/PLAN.md §4) et aux directives de réalisme. */
@@ -2300,7 +2513,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
-  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
+  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
@@ -2314,6 +2527,7 @@ function stepCine(dt,T){
   const hand=s.video?.03:.012;p.x+=Math.sin(T*1.3)*hand;p.y+=Math.sin(T*1.7+1)*hand;p.z+=Math.cos(T*1.1)*hand;
   camera.position.copy(p);camera.lookAt(lerp(c[2][0],c[3][0],e),lerp(c[2][1],c[3][1],e),lerp(c[2][2],c[3][2],e));
   const sub=(s.sub||[]).filter(x=>t>=x[0]).pop();$('cineSub').innerHTML=sub&&sub[2]?(sub[1]?`<b>${sub[1]}</b>`:'')+`<span>${sub[2]}</span>`:'';
+  WIND.str=s.wind||0;WIND.x=Math.sin(-2.4);WIND.z=Math.cos(-2.4);
   updateEnvironment(s.clock,s.rain||0,s.cloud??.3,s.center,dt,T,!!s.indoor);
   if(s.set==='brazil'&&FX.rotor)FX.rotor.rotation.y+=dt*28;
   for(const tr of CB.tracers)tr.t-=dt;CB.tracers=CB.tracers.filter(tr=>{if(tr.t<=0){scene.remove(tr.l);return false}return true});
@@ -2332,7 +2546,7 @@ let hudT=0;
 function updateHUD(){
   const L=LEVELS[S.level],p=S.player,di=dayInfo(S.clock),W=S.weather;
   $('hDay').textContent='Jour '+di.day;$('hClock').textContent=fmtClock(di.min);
-  const isDay=di.hour>=6.5&&di.hour<19.5;$('hWeather').textContent=WLABEL[W.kind][isDay?0:1];$('hTemp').textContent=Math.round(W.temp)+' °C';
+  const isDay=di.hour>=6.5&&di.hour<19.5;$('hWeather').textContent=WLABEL[W.kind][isDay?0:1]+((W.windStr||0)>.35?' · vent '+Math.round(25+W.windStr*85)+' km/h':'');$('hTemp').textContent=Math.round(W.temp)+' °C';
   const rem=Math.max(0,L.timeLimitMin-(S.clock-S.startClock));
   $('hTimer').textContent=Math.floor(rem/60)+' h '+String(Math.floor(rem%60)).padStart(2,'0')+' min';
   $('hTimerBox').className='timer'+(rem<360?' crit':rem<1440?' warn':'');
@@ -2485,6 +2699,7 @@ function frame(now){
     const nm=S.msgs||0,due=[14,34,54][nm]*60;
     if(nm<3&&S.clock-S.startClock>=due&&!(AR()&&AS().alarm)&&!S.flags.levelDone&&CB.lockT<=0){S.msgs=nm+1;
       playCine('msg'+S.msgs,()=>{mode='play';applyLocation();oscarMesh.g.visible=true;if(!S.clues.includes('video')){S.clues.push('video');toast('Indice ajouté au carnet : '+CLUES.video.title);}store.save(S);});}
+    WIND.str=(INTERIORS[S.location]&&INTERIORS[S.location].indoor)?0:(S.weather.windStr||0);WIND.x=Math.sin(S.weather.windDir||0);WIND.z=Math.cos(S.weather.windDir||0);
     updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,dt,t,!!(INTERIORS[S.location]&&INTERIORS[S.location].indoor));
   } else if(mode==='cine'){
     stepCine(dt,t);
@@ -2510,11 +2725,11 @@ function syncTitle(dt,t){
 }
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});

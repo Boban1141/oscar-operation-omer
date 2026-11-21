@@ -56,7 +56,22 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
     o.S.player.x=2000;o.S.player.z=520-70;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','le Pasteur : négociation');o.choose(0);o.choose(0);
     const boss=o.S.arenas.forest.enemies.find(e=>e.id==='boss');o.damage(boss,400);ok(o.S.flags.bossDown,'Pasteur vaincu');
     o.openDialogue('pasteurI');o.choose(0);o.choose(0);o.choose(0);ok(o.S.clues.includes('galante'),'valise : piste de Terre-Neuve');
-    return winOk().then(w2=>{ok(w2,'écran de fin de niveau 2');return r;});});
+    return winOk().then(w2=>{ok(w2,'écran de fin de niveau 2');
+      o.startLevel(null,'nl');ok(o.S.level==='nl'&&o.S.location==='harbour','niveau 3 : port de St. John’s');
+      o.S.clock+=5;o.weather(.1);const x0=o.S.player.x,z0=o.S.player.z;for(let i=0;i<120;i++)o.player(1/60);ok(o.S.weather.windStr>0&&Math.hypot(o.S.player.x-x0,o.S.player.z-z0)>0,'vent actif (force '+o.S.weather.windStr.toFixed(2)+', Oscar poussé par les rafales)');
+      zone('Ship').act();ok(o.S.location==='pub','entrer au pub');
+      o.openDialogue('bridget');o.choose(0);o.choose(0);ok(o.S.clues.includes('pilot'),'Bridget : quai 18');
+      o.openDialogue('wilf');o.choose(0);o.choose(0);ok(o.S.tasks.dory==='active','tâche de la doris');
+      o.openDialogue('liam');o.choose(0);o.choose(0);ok(o.S.flags.password,'Liam : mot de passe « Brume »');
+      zone('Sortir').act();o.S.player.x=3000-48.5;o.S.player.z=-18;zone('amarres').act();ok(o.S.tasks.dory==='secured','doris amarrée');
+      o.enterInterior('pub');o.openDialogue('wilf');o.choose(0);ok(o.S.flags.doryReady,'Wilf prête sa doris');zone('Sortir').act();
+      o.S.player.x=3000+44;o.S.player.z=-11;zone('sentinelle').act();o.choose(0);o.choose(0);ok(o.S.flags.gangwayOpen,'passerelle : mot de passe accepté');
+      o.S.player.x=3000+45;o.S.player.z=-19;zone('passerelle').act();ok(o.S.location==='trawler','à bord du Marie-Galante');
+      o.S.arenas.trawler.alarm=false;for(const e of o.S.arenas.trawler.enemies){if(!e.down){e.state='patrol';e.meter=0;}}
+      o.S.player.x=3000+20;o.S.player.z=420;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','capitaine Roy : négociation');o.choose(0);o.choose(0);
+      const roy=o.S.arenas.trawler.enemies.find(e=>e.id==='boss');o.damage(roy,400);ok(o.S.flags.bossDown,'Roy vaincu');
+      o.openDialogue('royI');o.choose(0);o.choose(0);o.choose(0);ok(o.S.clues.includes('logbook'),'carnet de bord : piste de l’Alberta');
+      return winOk().then(w3=>{ok(w3,'écran de fin de niveau 3');return r;});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

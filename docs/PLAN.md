@@ -160,6 +160,13 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - **Le Pasteur**, chef de secte au service d'Omer : négociation, combat, interrogatoire. **Piste du niveau 3** : le chalutier « Marie-Galante » part de **St. John's** dans quatre jours. Dans la valise, **un dessin de Cédric** : une montagne avec une grande croix lumineuse (le mont Royal, Montréal).
 - Climat : 4 à 11 °C, pluie presque constante. L'imperméable divise l'effet de la pluie ; café chaud et chauffage du pick-up rendent la chaleur.
 
+## 10f. Niveau 3 — Terre-Neuve (bloc 7)
+> Contenu **proposé par Claude**, à valider.
+- **St. John's, fin novembre, 18 h 45, avis de tempête** (−1 à 6 °C, vent de 60 à 110 km/h). Chronomètre : 60 h (niveau plus court).
+- **Pub The Ship's Lantern** : **Bridget**, pilote du port (le quai 18) ; **Wilf**, vieux pêcheur (sa doris) ; **Liam**, matelot du Marie-Galante qui a peur (le mot de passe « Brume ») ; un violoneux.
+- **Monter à bord** : mot de passe, 100 $ à la sentinelle, combat, ou par la mer avec la doris de Wilf (si on l'aide à l'amarrer dans la tempête).
+- **Le capitaine Roy**, au service d'Omer : négociation, combat sur le pont, interrogatoire. **Piste du niveau 4** : la cargaison part en train vers **Calgary**, chez **« l'Éleveur »**, un ranch au pied des Rocheuses. Roy confirme le **métro** qu'on entend derrière Omer.
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 

@@ -1,6 +1,6 @@
 # Architecture technique
 
-## État actuel (v0.6.0)
+## État actuel (v0.7.0)
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.
 - Lancer en local : servir le dossier `game/` (`python3 -m http.server -d game 8000`) puis ouvrir `http://localhost:8000`.
@@ -40,6 +40,9 @@
 - Zones : propriété `lvl` (par défaut `toronto`). Objectifs : `objective()` choisit `objectiveToronto` / `objectiveBC`.
 - Progression entre niveaux : `localStorage['oscar.progress']` (`levelsDone`, vies bonus, argent) ; `createState(levelId)` la relit.
 - **Ajouter une province** : `LEVELS.xx`, un module « 5x » (décors, PNJ, `ARENAS.xx`, `CLUES`, `DIALOGUES`, `objectiveXX`, zones), une cinématique `xxIntro`, et des vérifications dans `tests/run_logic_tests.py`.
+
+## Vent (bloc 7)
+- `LEVELS[id].wind = {base, gust, dir}` → `S.weather.windStr` (0 à 1) et `windDir`, calculés dans `stepWeather`. Effets : `stepPlayer` (vitesse face au vent, poussée, froid), `stepCombat` (portée de vue), `tryFire` (dispersion), pluie oblique (`WIND`), vagues (`animWaves`), HUD.
 
 ## Principes à respecter
 1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.
