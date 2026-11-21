@@ -303,7 +303,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.1.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.1.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1255,7 +1255,7 @@ function updateCamera(dt){
   const hit=ray.intersectObjects(collidableMeshes,false)[0];if(hit)d=Math.max(1.2,hit.distance-.35);
   if(CB.aim){d=Math.min(d,2.3);}
   tv.copy(head).addScaledVector(dir,d);if(tv.y<.4)tv.y=.4;
-  {const I=INTERIORS[S.location];if(I&&I.indoor&&I.hw&&I.hw<30){tv.x=clamp(tv.x,I.ox-I.hw+.4,I.ox+I.hw-.4);tv.z=clamp(tv.z,I.oz-I.hd+.4,I.oz+I.hd-.4);}}
+  {const I=INTERIORS[S.location];if(I&&I.indoor&&I.hw&&I.hw<30){const ox=tv.x,oz=tv.z;tv.x=clamp(tv.x,I.ox-I.hw+.4,I.ox+I.hw-.4);tv.z=clamp(tv.z,I.oz-I.hd+.4,I.oz+I.hd-.4);if(ox!==tv.x||oz!==tv.z)tv.y=Math.min(tv.y,p.y+2.1);}}
   const sh=CB.aim?.55:0,rx=Math.cos(camYaw)*sh,rz=-Math.sin(camYaw)*sh;tv.x+=rx;tv.z+=rz;
   camera.position.lerp(tv,1-Math.exp(-dt*18));
   if(CB.shake>0){camera.position.x+=(Math.random()-.5)*.06;camera.position.y+=(Math.random()-.5)*.06;}
@@ -2916,7 +2916,7 @@ function CINES_mbIntro(){const Wp=WPG;return[
 const WMT={ox:7000,oz:0,hw:70,hd:50,indoor:false,label:'Westmount, Montréal',cols:[],group:null,lights:[],ice:true,nightFill:.95};
 const REFUGE={ox:7000,oz:200,hw:8,hd:5.5,indoor:true,label:'Salle paroissiale (refuge)',spawn:{x:0,z:4.3},exitLoc:'westmount',exitOut:()=>({x:WMT.ox-30,z:WMT.oz+12.4}),cols:[],group:null,lights:[]};
 const MANOIR={ox:7000,oz:400,hw:60,hd:50,indoor:false,label:'Résidence d’Omer',cols:[],group:null,lights:[],ice:true,doors:{},nightFill:.85};
-const SOUSSOL={ox:7000,oz:600,hw:5,hd:4,indoor:true,label:'Sous-sol',spawn:{x:0,z:3},exitLoc:'manoir',exitOut:()=>({x:MANOIR.ox+19,z:MANOIR.oz-26.5}),cols:[],group:null,lights:[]};
+const SOUSSOL={ox:7000,oz:600,hw:5,hd:4,indoor:true,label:'Sous-sol',spawn:{x:0,z:1.6},exitLoc:'manoir',exitOut:()=>({x:MANOIR.ox+19,z:MANOIR.oz-26.5}),cols:[],group:null,lights:[]};
 INTERIORS.westmount=WMT;INTERIORS.refuge=REFUGE;INTERIORS.manoir=MANOIR;INTERIORS.soussol=SOUSSOL;
 const SALON={x0:6,x1:22,z0:-30,z1:-8};
 const inHouse=p=>{const x=p.x-MANOIR.ox,z=p.z-MANOIR.oz;return x>-22&&x<22&&z>-30&&z<0;};
@@ -3083,7 +3083,7 @@ function buildSoussol(){
   iplane(I,10,2.6,conc,0,1.3,4,0,Math.PI);const back=iplane(I,10,2.6,new THREE.MeshStandardMaterial({map:draw,roughness:1}),0,1.3,-4,0,0);iplane(I,8,2.6,conc,-5,1.3,0,0,Math.PI/2);iplane(I,8,2.6,conc,5,1.3,0,0,-Math.PI/2);iplane(I,10,8,conc,0,2.6,0,Math.PI/2);
   ibox(I,1.9,.18,1,clothMat('#8a8070'),-2.6,.09,-3.2);ibox(I,.9,.25,.6,clothMat('#5a5048'),-3.2,.22,-3.4);icyl(I,.15,.13,.3,mat('#3a3a3a'),3.6,.15,-3.5);
   for(let i=0;i<3;i++){const p=icyl(I,.06,.06,10,mat('#6a5a4a',{metalness:.6,roughness:.5}),0,2.35-i*.14,-3.6+i*.15,8);p.rotation.z=Math.PI/2;}
-  const bm=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshStandardMaterial({color:'#fff2c8',emissive:'#ffcf7a',emissiveIntensity:3}));bm.position.set(-.5,2.05,-1);I.group.add(bm);const bl=new THREE.PointLight('#ffcf8a',6,10,1.8);bl.position.set(-.5,2,-1);I.group.add(bl);
+  const bm=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshStandardMaterial({color:'#fff2c8',emissive:'#ffcf7a',emissiveIntensity:3}));bm.position.set(-.5,2.05,-1);I.group.add(bm);const bl=new THREE.PointLight('#ffcf8a',22,12,1.8);bl.position.set(-.5,2,-1);I.group.add(bl);
   ibox(I,1.4,2.3,.12,mat('#555b60',{metalness:.7}),0,1.15,3.94,0,false,false);
   I.group.visible=false;
 }
