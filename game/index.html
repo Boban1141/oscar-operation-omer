@@ -544,7 +544,7 @@ bus.on('death',()=>{
     else {bus.emit('fail','Oscar a perdu ses 3 vies.');return;}
   } else toast('Oscar est tombé. Il te reste '+p.lives+(p.lives>1?' vies':' vie')+' dans ce niveau.');
   S.location=S.checkpoint.loc||'outside';p.x=S.checkpoint.x;p.z=S.checkpoint.z;p.y=S.location==='outside'?.15:0;p.health=100;p.heat=100;p.vx=p.vz=0;
-  if(S.port){S.port.alarm=false;for(const e of S.port.enemies)if(!e.down){e.state='patrol';e.meter=0;e.x=e.sx;e.z=e.sz;e.hp=ETYPE[e.type].hp;if(e.id==='gate'&&S.flags.gateOpen)e.friendly=true;}}
+  for(const aid in (S.arenas||{})){const st=S.arenas[aid];st.alarm=false;for(const e of st.enemies)if(!e.down){e.state='patrol';e.meter=0;e.x=e.sx;e.z=e.sz;e.hp=ETYPE[e.type].hp;if(e.id==='gate'&&S.flags.gateOpen)e.friendly=true;}}
   Object.assign(CB,{block:false,aim:false,firing:false,crouch:false,lockT:0,reloadT:0});applyLocation();
 });
 
@@ -1311,10 +1311,11 @@ function storyZones(){
   z({loc:'outside',x:PORT.x,z:PORT.z,r:5,cond:()=>S.flags.leadPort,label:()=>'Entrer dans la zone portuaire (Harbourfront)',act:()=>{if(!S.flags.atPort){S.flags.atPort=true;S.checkpoint={x:PORTA.ox,z:PORTA.oz-47,loc:'port'};}enterInterior('port');checkObjective();store.save(S);}});
   const PA=PORTA;
   z({loc:'port',x:PA.ox,z:PA.oz-48.6,r:1.8,label:()=>'Quitter le port (retour en ville)',act:()=>exitInterior()});
-  z({loc:'port',x:PA.ox+2,z:PA.oz-46.6,r:2.2,cond:()=>{const g=S.port.enemies.find(e=>e.id==='gate');return !S.flags.gateOpen&&!S.port.alarm&&g&&!g.down&&g.state!=='combat'},label:()=>'Parler au garde de la barrière',act:()=>openDialogue('gate')});
+  z({loc:'port',x:PA.ox+2,z:PA.oz-46.6,r:2.2,cond:()=>{const g=S.arenas.port.enemies.find(e=>e.id==='gate');return !S.flags.gateOpen&&!S.arenas.port.alarm&&g&&!g.down&&g.state!=='combat'},label:()=>'Parler au garde de la barrière',act:()=>openDialogue('gate')});
   z({loc:'port',x:PA.ox-28.6,z:PA.oz+3.6,r:1.5,cond:()=>!S.flags.disguise,label:()=>'Enfiler le gilet de docker (déguisement)',act:()=>{S.flags.disguise=true;PORTA.vestMesh.visible=false;oscarMesh.vest.visible=true;addMinutes(2);toast('Gilet orange et casquette basse : de loin, tu passes pour un docker. Évite de courir et garde les mains vides.');}});
   z({loc:'port',x:PA.ox+11,z:PA.oz+23.6,r:1.5,cond:()=>!S.flags.crate,label:()=>'Ouvrir la caisse d’armes',act:()=>{S.flags.crate=true;const p=S.player;if(!p.weapons.includes('rifle'))p.weapons.push('rifle');p.ammo.rifle.mag=30;p.ammo.rifle.res+=60;if(!p.weapons.includes('pistol'))p.weapons.push('pistol');p.ammo.pistol.res+=24;equip('rifle');toast('Fusil d’assaut, pistolet et munitions. Touches 1, 2, 3 pour changer d’arme, R pour recharger.');}});
-  Z.push({loc:'port',get x(){const b=S.port.enemies.find(e=>e.id==='boss');return b.x},get z(){const b=S.port.enemies.find(e=>e.id==='boss');return b.z},r:2,cond:()=>S.flags.bossDown&&!S.clues.includes('manifest'),label:()=>'Interroger Tiago',act:()=>openDialogue('tiagoI')});
+  for(const aid in ARENAS){const AD=ARENAS[aid];if(!AD.boss)continue;const B=AD.boss,bz2=()=>S.arenas[aid]&&S.arenas[aid].enemies.find(e=>e.id==='boss');
+    Z.push({lvl:AD.lvl,loc:aid,get x(){const b=bz2();return b?b.x:-1e5},get z(){const b=bz2();return b?b.z:-1e5},r:2,cond:()=>S.flags.bossDown&&!S.clues.includes(B.clue),label:()=>'Interroger '+B.name,act:()=>openDialogue(B.interro)});}
   z({loc:'house',x:H.ox,z:H.oz+H.hd-.7,r:1.2,label:()=>'Sortir de la maison',act:()=>exitInterior()});
   z({loc:'house',x:H.ox-2.75,z:H.oz-.1,r:1.1,label:()=>S.clues.includes('note')?'Relire le mot d’Omer':'Prendre le mot sur la table',act:()=>readNote()});
   z({loc:'house',x:H.ox-3.3,z:H.oz-1.95,r:1,label:()=>'Regarder les devoirs de Cédric',act:()=>findClue('homework',2)});
@@ -1346,7 +1347,7 @@ function objectiveTarget(o){
   if(o.target==='port')return S.location==='port'?null:{x:PORT.x,z:PORT.z};
   if(o.target==='gate')return S.location==='port'?{x:PORTA.ox,z:PORTA.oz-43}:null;
   if(o.target==='warehouse')return S.location==='port'?{x:PORTA.ox+18,z:PORTA.oz+8}:null;
-  if(o.target==='boss'){const b=S.port&&S.port.enemies.find(e=>e.id==='boss');return S.location==='port'&&b?{x:b.x,z:b.z}:null;}
+  if(o.target==='boss'){const b=AS()&&AS().enemies.find(e=>e.id==='boss');return AR()&&b?{x:b.x,z:b.z}:null;}
 }
 function enterInterior(id){
   const I=INTERIORS[id],p=S.player;S.location=id;p.x=I.ox+I.spawn.x;p.z=I.oz+I.spawn.z;p.y=0;p.vx=p.vz=0;
@@ -1364,7 +1365,7 @@ function applyLocation(){
   STORY_PROPS.cigar.visible=loc==='outside'&&!S.clues.includes('cigar');
   if(INTERIORS.house.note)INTERIORS.house.note.visible=!S.clues.includes('note');
   STORY_PROPS.bag.visible=loc==='outside'&&S.tasks.tip==='active';
-  if(PORTA.vestMesh)PORTA.vestMesh.visible=!S.flags.disguise;if(oscarMesh&&oscarMesh.vest)oscarMesh.vest.visible=!!S.flags.disguise;applyGate();siren(loc==='port'&&S.port&&S.port.alarm&&!S.flags.bossDown);
+  if(PORTA.vestMesh)PORTA.vestMesh.visible=!S.flags.disguise;if(oscarMesh&&oscarMesh.vest)oscarMesh.vest.visible=!!S.flags.disguise;applyGate();siren(!!AR()&&AS().alarm&&!S.flags.bossDown);
 }
 function updateInteriorLights(day,night){
   for(const d of dayMats){if(d.opacity)d.m.opacity=d.base+d.k*day;else d.m.emissiveIntensity=d.base+d.k*day;}
@@ -1440,8 +1441,13 @@ const ENEMY_DEFS=[
   {id:'boss',type:'boss',post:[30.5,19.5,-Math.PI/2],inside:true},
 ];
 const ETYPE={melee:{hp:100,spd:3.7,dmg:11},pistol:{hp:100,spd:3.3,dmg:9,rate:.75,acc:.45,range:28},rifle:{hp:110,spd:3.1,dmg:7,rate:.16,acc:.38,range:34,burst:4},boss:{hp:320,spd:3.5,dmg:11,rate:.8,acc:.5,range:24,knife:17}};
-function newPortState(){return{alarm:false,bossMet:false,enemies:ENEMY_DEFS.map(d=>{const p=d.post?{x:d.post[0],z:d.post[1]}:{x:d.route[0][0],z:d.route[0][1]};
-  return{id:d.id,type:d.type,x:PORTA.ox+p.x,z:PORTA.oz+p.z,heading:d.post?d.post[2]:0,hp:ETYPE[d.type].hp,state:'patrol',meter:0,wp:1,down:false,looted:false,lx:0,lz:0,cool:0,burst:0,atk:0,investigate:null,sx:PORTA.ox+p.x,sz:PORTA.oz+p.z,stuck:0,bodySeen:false,surrender:false,friendly:false}})}}
+function newArenaState(id){const AD=ARENAS[id],A=AD.area;return{alarm:false,enemies:AD.defs.map(d=>{const p=d.post?{x:d.post[0],z:d.post[1]}:{x:d.route[0][0],z:d.route[0][1]};
+  return{id:d.id,type:d.type,x:A.ox+p.x,z:A.oz+p.z,heading:d.post?d.post[2]:0,hp:ETYPE[d.type].hp,state:'patrol',meter:0,wp:1,down:false,looted:false,lx:0,lz:0,cool:0,burst:0,atk:0,sx:A.ox+p.x,sz:A.oz+p.z,stuck:0,bodySeen:false,surrender:false,friendly:!!d.friendly}})}}
+const ARENAS={port:{area:PORTA,defs:ENEMY_DEFS,room:WH,lvl:'toronto',boss:{dlg:'tiago',spot:'tiagoSpot',interro:'tiagoI',clue:'manifest',name:'Tiago',cp:[18,6],down:'Tiago tombe à genoux. « Assez… assez ! » Interroge-le (touche E).'},
+  water:{z:47,side:1},
+  onStep(p){if(!S.flags.portInside&&p.z-PORTA.oz>-41.5){S.flags.portInside=true;S.checkpoint={x:p.x,z:p.z,loc:'port'};checkObjective();store.save(S);}}}};
+function AR(){return S&&ARENAS[S.location]||null}
+function AS(){return S&&S.arenas&&S.arenas[S.location]||null}
 /* --- build the harbour --- */
 const contTex=texCanvas(41,256,128,(g,r,w,h)=>{g.fillStyle='#d8d8d8';g.fillRect(0,0,w,h);for(let x=0;x<w;x+=6){g.fillStyle='rgba(0,0,0,.22)';g.fillRect(x,0,2,h);g.fillStyle='rgba(255,255,255,.2)';g.fillRect(x+3,0,1,h);}
   for(let i=0;i<60;i++){g.fillStyle=`rgba(90,50,20,${.05+r()*.12})`;g.fillRect(r()*w,r()*h,2+r()*14,1+r()*30);}g.fillStyle='rgba(0,0,0,.35)';g.fillRect(0,0,w,3);g.fillRect(0,h-3,w,3);});
@@ -1522,20 +1528,20 @@ function gunMesh(kind){const g=new THREE.Group(),m=mat('#1c1d20',{metalness:.7,r
 const enemyMeshes={};
 const ELOOK={melee:{jacket:'#26282e',pants:'#1b1b1f'},pistol:{jacket:'#3a3a3a',pants:'#22223b'},rifle:{jacket:'#2f3524',pants:'#2a2b25'},boss:{jacket:'#f0ece4',pants:'#1a1a1a'}};
 function buildEnemies(){
-  for(const k in enemyMeshes){scene.remove(enemyMeshes[k].h.g);scene.remove(enemyMeshes[k].bar);}
+  for(const k in enemyMeshes){scene.remove(enemyMeshes[k].h.g);scene.remove(enemyMeshes[k].bar);delete enemyMeshes[k];}
   const r=mulberry32(1500);
-  for(const e of S.port.enemies){
-    const base=mkLook(r),L=ELOOK[e.type];const look={...base,...L,prop:'none',rolled:0,height:e.type==='boss'?1.04:base.height,build:e.type==='boss'?1.15:base.build,bald:e.type==='boss'?true:base.bald,beard:e.type==='boss'?true:base.beard,slouch:.05};
-    const h=createHuman(look);scene.add(h.g);h.g.rotation.order='YXZ';
+  for(const aid in S.arenas){const AD=ARENAS[aid];for(const e of S.arenas[aid].enemies){
+    const base=mkLook(r),L=(AD.elook&&AD.elook[e.type])||ELOOK[e.type];const look={...base,...L,prop:'none',rolled:0,slouch:.05,...(e.type==='boss'?AD.bossLook||{height:1.04,build:1.15,bald:true,beard:true}:{}),...((AD.lookById||{})[e.id]||{})};
+    const h=createHuman(look);scene.add(h.g);h.g.rotation.order='YXZ';h.g.visible=false;
     if(e.type==='pistol'||e.type==='boss'){h.gun=gunMesh('pistol');h.armR.wr.add(h.gun);}
     if(e.type==='rifle'){h.gun=gunMesh('rifle');h.armR.wr.add(h.gun);}
-    if(e.type==='boss'){const ch=new THREE.Mesh(new THREE.TorusGeometry(.09,.012,6,16),mat('#d4a017',{metalness:.9,roughness:.25}));ch.rotation.x=Math.PI/2.4;ch.position.set(0,.5,.05);h.spine.add(ch);
-      const vest=new THREE.Mesh(new THREE.CapsuleGeometry(.17,.28,4,10).scale(1.3,1,.78),clothMat('#2a2a2e'));vest.position.y=.3;h.spine.add(vest);}
-    const bar=new THREE.Sprite(new THREE.SpriteMaterial({color:'#ffffff',transparent:true,opacity:0,depthTest:false}));bar.scale.set(.6,.07,1);scene.add(bar);
+    if(e.type==='boss'&&AD.bossDeco)AD.bossDeco(h);
+    const bar=new THREE.Sprite(new THREE.SpriteMaterial({color:'#ffffff',transparent:true,opacity:0,depthTest:false}));bar.scale.set(.6,.07,1);bar.visible=false;scene.add(bar);
     const flash=new THREE.PointLight('#ffb35c',0,6,2);h.g.add(flash);flash.position.set(.3,1.4,.6);
-    enemyMeshes[e.id]={h,bar,flash};
-  }
+    enemyMeshes[aid+':'+e.id]={h,bar,flash};}}
 }
+ARENAS.port.bossDeco=h=>{const ch=new THREE.Mesh(new THREE.TorusGeometry(.09,.012,6,16),mat('#d4a017',{metalness:.9,roughness:.25}));ch.rotation.x=Math.PI/2.4;ch.position.set(0,.5,.05);h.spine.add(ch);
+  const vest=new THREE.Mesh(new THREE.CapsuleGeometry(.17,.28,4,10).scale(1.3,1,.78),clothMat('#2a2a2e'));vest.position.y=.3;h.spine.add(vest);};
 /* --- audio (synthesised, no files) --- */
 let actx=null,sirenOsc=null,sirenGain=null;
 function audioInit(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume();}catch(e){actx=null}}
@@ -1549,37 +1555,37 @@ function siren(on){if(!actx)return;try{if(on&&!sirenOsc){sirenOsc=actx.createOsc
   if(!on&&sirenOsc){sirenOsc.stop();sirenOsc=null;}}catch(e){}}
 /* --- line of sight & helpers --- */
 function losClear(ax,az,bx,bz){
-  for(const c of PORTA.cols){let t0=0,t1=1;const dx=bx-ax,dz=bz-az;let ok=true;
+  const AA=AR().area;for(const c of AA.cols){let t0=0,t1=1;const dx=bx-ax,dz=bz-az;let ok=true;
     for(const [p,q] of [[-dx,ax-c.x0],[dx,c.x1-ax],[-dz,az-c.z0],[dz,c.z1-az]]){if(p===0){if(q<0){ok=false;break}}else{const t=q/p;if(p<0){if(t>t1){ok=false;break}if(t>t0)t0=t}else{if(t<t0){ok=false;break}if(t<t1)t1=t}}}
-    if(ok&&t0<=t1&&!(c===PORTA.gateCol))return false;}
+    if(ok&&t0<=t1&&!(c===AA.gateCol))return false;}
   return true;
 }
-function inWarehouse(x,z){const lx=x-PORTA.ox,lz=z-PORTA.oz;return lx>WH.x0&&lx<WH.x1&&lz>WH.z0&&lz<WH.z1}
-function enemyCollide(e){const o={x:e.x,z:e.z};const I=PORTA;for(const c of I.cols){const rad=.4;if(o.x+rad<c.x0||o.x-rad>c.x1||o.z+rad<c.z0||o.z-rad>c.z1)continue;
+function inWarehouse(x,z){const R2=AR();if(!R2||!R2.room)return false;const W=R2.room,lx=x-R2.area.ox,lz=z-R2.area.oz;return lx>W.x0&&lx<W.x1&&lz>W.z0&&lz<W.z1}
+function enemyCollide(e){const o={x:e.x,z:e.z};const I=AR().area;for(const c of I.cols){const rad=.4;if(o.x+rad<c.x0||o.x-rad>c.x1||o.z+rad<c.z0||o.z-rad>c.z1)continue;
   const pl=o.x+rad-c.x0,pr=c.x1-(o.x-rad),pt=o.z+rad-c.z0,pb=c.z1-(o.z-rad),m=Math.min(pl,pr,pt,pb);if(m===pl)o.x-=pl;else if(m===pr)o.x+=pr;else if(m===pt)o.z-=pt;else o.z+=pb;}
-  e.x=clamp(o.x,I.ox-59,I.ox+59);e.z=clamp(o.z,I.oz-49,I.oz+46);}
+  e.x=clamp(o.x,I.ox-I.hw+1,I.ox+I.hw-1);e.z=clamp(o.z,I.oz-I.hd+1,I.oz+I.hd-1);}
 /* --- combat state on the player --- */
 const CB={fireCd:0,meleeCd:0,reloadT:0,lockT:0,flash:0,aim:false,block:false,crouch:false,firing:false,atk:null,tracers:[],shake:0};
 function playerWeapon(){return S.player.weapon||'fists'}
 function hurtPlayer(n,melee){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
-function alarm(reason){const P2=S.port;if(P2.alarm)return;P2.alarm=true;for(const e of P2.enemies)if(!e.down){e.friendly=false;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}siren(true);toast('Alerte ! '+reason);}
+function alarm(reason){const P2=AS();if(P2.alarm)return;P2.alarm=true;for(const e of P2.enemies)if(!e.down){e.friendly=false;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}siren(true);toast('Alerte ! '+reason);}
 function damageEnemy(e,n,how){
-  if(e.down)return;e.hp-=n;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;const m=enemyMeshes[e.id];if(m)m.hit=.25;
+  if(e.down)return;e.hp-=n;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;const m=enemyMeshes[S.location+':'+e.id];if(m)m.hit=.25;
   if(e.type!=='boss'&&e.hp<=0){e.down=true;sfx('down');}
   if(e.type==='boss'&&e.hp<=0){e.hp=0;e.down=true;e.surrender=true;S.flags.bossDown=true;S.flags.bossMet=true;siren(false);
-    for(const o of S.port.enemies)if(!o.down){o.state='flee';}toast('Tiago tombe à genoux. « Assez… assez ! » Interroge-le (touche E).');checkObjective();store.save(S);}
-  if(how!=='silent'&&!S.port.alarm&&e.type!=='boss'){const witness=S.port.enemies.some(o=>o!==e&&!o.down&&Math.hypot(o.x-e.x,o.z-e.z)<18&&losClear(o.x,o.z,e.x,e.z));if(witness||how==='shot')alarm(how==='shot'?'Les coups de feu ont été entendus.':'Un garde a vu l’attaque.');}
+    for(const o of AS().enemies)if(!o.down){o.state='flee';}toast(AR().boss.down);checkObjective();store.save(S);}
+  if(how!=='silent'&&!AS().alarm&&e.type!=='boss'){const witness=AS().enemies.some(o=>o!==e&&!o.down&&Math.hypot(o.x-e.x,o.z-e.z)<18&&losClear(o.x,o.z,e.x,e.z));if(witness||how==='shot')alarm(how==='shot'?'Les coups de feu ont été entendus.':'Un garde a vu l’attaque.');}
 }
 /* --- player actions --- */
 function playerAttack(kind){
-  if(S.location!=='port'&&S.location!=='outside')return;if(CB.lockT>0||CB.block)return;
+  if(INTERIORS[S.location]&&INTERIORS[S.location].indoor)return;if(CB.lockT>0||CB.block)return;
   const w=playerWeapon();
   if(kind==='primary'&&w!=='fists'){CB.firing=true;tryFire();return;}
   if(CB.meleeCd>0)return;const kick=kind==='secondary';CB.meleeCd=kick?.8:.45;CB.atk={kind:kick?'kick':'punch',t:0};
   sfx('swing');
-  if(S.location!=='port')return;
+  if(!AR())return;
   const p=S.player,range=kick?2.0:1.7,fx=Math.sin(p.heading),fz=Math.cos(p.heading);
-  let best=null,bd=9;for(const e of S.port.enemies){if(e.down)continue;const dx=e.x-p.x,dz=e.z-p.z,d=Math.hypot(dx,dz);if(d>range)continue;if((dx*fx+dz*fz)/d<.5)continue;if(d<bd){bd=d;best=e;}}
+  let best=null,bd=9;for(const e of AS().enemies){if(e.down)continue;const dx=e.x-p.x,dz=e.z-p.z,d=Math.hypot(dx,dz);if(d>range)continue;if((dx*fx+dz*fz)/d<.5)continue;if(d<bd){bd=d;best=e;}}
   if(best)setTimeout(()=>{if(best.down)return;sfx('hit');damageEnemy(best,kick?32:20,'melee');if(kick){best.x+=fx*.9;best.z+=fz*.9;enemyCollide(best);}},kick?260:140);
 }
 function tryFire(){
@@ -1591,25 +1597,25 @@ function tryFire(){
   dir.x+=(Math.random()-.5)*sp*2;dir.y+=(Math.random()-.5)*sp*2;dir.z+=(Math.random()-.5)*sp*2;dir.normalize();
   const o=camera.position.clone();ray.set(o,dir);ray.far=120;const wh=ray.intersectObjects(collidableMeshes,false)[0];let tmax=wh?wh.distance:120;
   let hitE=null,hy=0;
-  if(S.location==='port')for(const e of S.port.enemies){if(e.down&&!e.surrender)continue;if(e.surrender)continue;
+  if(AR())for(const e of AS().enemies){if(e.down&&!e.surrender)continue;if(e.surrender)continue;
     const ox=e.x-o.x,oz=e.z-o.z,a=dir.x*dir.x+dir.z*dir.z,b=ox*dir.x+oz*dir.z,t=b/a;if(t<0||t>tmax)continue;
     const cx=o.x+dir.x*t-e.x,cz=o.z+dir.z*t-e.z;if(cx*cx+cz*cz>.36*.36)continue;const y=o.y+dir.y*t;if(y<0||y>1.85)continue;tmax=t;hitE=e;hy=y;}
   const end=o.clone().addScaledVector(dir,Math.min(tmax,120));addTracer(oscarMuzzle(),end,'#ffe7a0');
   if(hitE){damageEnemy(hitE,W.dmg*(hy>1.55?2.2:1),'shot');}
-  else if(S.location==='port'&&!S.port.alarm)alarm('Les coups de feu ont été entendus.');
+  else if(AR()&&!AS().alarm)alarm('Les coups de feu ont été entendus.');
   if(!W.auto)CB.firing=false;
 }
 function reload(){const w=playerWeapon();if(w==='fists')return;const A=S.player.ammo[w],W=WEAPONS[w];if(A.mag>=W.mag||A.res<=0||CB.reloadT>0)return;CB.reloadT=W.reload;toast('Rechargement…');}
 function equip(w){if(w!=='fists'&&!S.player.weapons.includes(w)){toast('Tu n’as pas encore de '+WEAPONS[w].name.toLowerCase()+'.');return;}S.player.weapon=w;CB.reloadT=0;}
 function takedownOrLoot(){
-  if(S.location!=='port')return false;const p=S.player;
+  if(!AR())return false;const p=S.player;
   // silent takedown from behind
-  for(const e of S.port.enemies){if(e.down||e.type==='boss'||e.friendly)continue;const dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz);if(d>1.7)continue;
+  for(const e of AS().enemies){if(e.down||e.type==='boss'||e.friendly)continue;const dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz);if(d>1.7)continue;
     const behind=(dx*Math.sin(e.heading)+dz*Math.cos(e.heading))/d<-.35;
     if(behind&&e.state!=='combat'){e.down=true;e.hp=0;CB.lockT=1.2;CB.atk={kind:'choke',t:0};sfx('down');p.heading=Math.atan2(-dx,-dz);toast('Garde neutralisé en silence.');
-      const w=S.port.enemies.some(o=>o!==e&&!o.down&&Math.hypot(o.x-e.x,o.z-e.z)<14&&losClear(o.x,o.z,e.x,e.z));if(w)alarm('Un garde t’a vu neutraliser son collègue.');return true;}}
+      const w=AS().enemies.some(o=>o!==e&&!o.down&&Math.hypot(o.x-e.x,o.z-e.z)<14&&losClear(o.x,o.z,e.x,e.z));if(w)alarm('Un garde t’a vu neutraliser son collègue.');return true;}}
   // loot bodies
-  for(const e of S.port.enemies){if(!e.down||e.looted||e.surrender)continue;if(Math.hypot(p.x-e.x,p.z-e.z)>1.8)continue;e.looted=true;
+  for(const e of AS().enemies){if(!e.down||e.looted||e.surrender)continue;if(Math.hypot(p.x-e.x,p.z-e.z)>1.8)continue;e.looted=true;
     const w=e.type==='rifle'?'rifle':e.type==='pistol'?'pistol':null;
     if(!w){S.money+=15;toast('Tu fouilles le corps : 15 $ et un trousseau de clés.');return true;}
     const got=!p.weapons.includes(w);if(got)p.weapons.push(w);p.ammo[w].res+=w==='rifle'?30:12;if(got){p.ammo[w].mag=WEAPONS[w].mag;equip(w);}
@@ -1623,9 +1629,8 @@ function stepCombat(dt){
   if(CB.reloadT>0){CB.reloadT-=dt;if(CB.reloadT<=0){const w=playerWeapon(),A=S.player.ammo[w],W=WEAPONS[w];const n=Math.min(W.mag-A.mag,A.res);A.mag+=n;A.res-=n;}}
   if(CB.firing&&WEAPONS[playerWeapon()]&&WEAPONS[playerWeapon()].auto)tryFire();
   for(const tr of CB.tracers)tr.t-=dt;
-  if(S.location!=='port')return;
-  const P2=S.port,p=S.player,lz=p.z-PORTA.oz;
-  if(!S.flags.portInside&&lz>-41.5){S.flags.portInside=true;S.checkpoint={x:p.x,z:p.z,loc:'port'};checkObjective();store.save(S);}
+  const ARn=AR();if(!ARn)return;const AA=ARn.area;
+  const P2=AS(),p=S.player;if(ARn.onStep)ARn.onStep(p);
   const dk=dayInfo(S.clock).hour,night=dk<6.5||dk>19.5,W=S.weather;
   const disguised=S.flags.disguise&&playerWeapon()==='fists'&&!CB.aim&&p.speed<4;
   for(const e of P2.enemies){
@@ -1646,8 +1651,8 @@ function stepCombat(dt){
     if(e.bodyAlarm){const bd=Math.hypot(e.lx-e.x,e.lz-e.z);if(bd<2.5){e.bodyAlarm-=dt;if(e.bodyAlarm<=0){e.bodyAlarm=0;alarm('Un garde a trouvé un corps.');}}}
     // movement
     let tx=e.x,tz=e.z,spd=0;
-    if(e.state==='patrol'){const def=ENEMY_DEFS.find(dd=>dd.id===e.id);
-      if(def.route){const w=def.route[e.wp%def.route.length];tx=PORTA.ox+w[0];tz=PORTA.oz+w[1];spd=1.35;if(Math.hypot(tx-e.x,tz-e.z)<.6)e.wp++;}
+    if(e.state==='patrol'){const def=ARn.defs.find(dd=>dd.id===e.id);
+      if(def.route){const w=def.route[e.wp%def.route.length];tx=AA.ox+w[0];tz=AA.oz+w[1];spd=1.35;if(Math.hypot(tx-e.x,tz-e.z)<.6)e.wp++;}
       else{tx=e.sx;tz=e.sz;spd=Math.hypot(tx-e.x,tz-e.z)>.4?1.3:0;if(!spd)e.heading=angLerp(e.heading,def.post[2]+Math.sin(S.clock*.05+e.sx)*.6,1-Math.exp(-dt));}}
     else if(e.state==='investigate'){tx=e.lx;tz=e.lz;spd=1.8;if(Math.hypot(tx-e.x,tz-e.z)<1.2&&!e.bodyAlarm){e.inv=(e.inv||0)+dt;if(e.inv>4){e.inv=0;e.state='patrol';e.meter=20;}spd=0;}}
     else if(e.state==='flee'){tx=e.x+(e.x-p.x);tz=e.z+(e.z-p.z);spd=3.5;}
@@ -1660,10 +1665,10 @@ function stepCombat(dt){
       if(ranged&&sees&&d<T.range&&e.cool<=0){
         if(e.type==='rifle'){e.burst=(e.burst||0)+1;e.cool=e.burst>=T.burst?(e.burst=0,1.3):T.rate;}else e.cool=T.rate+Math.random()*.4;
         let hp=T.acc*clamp(1.25-d/T.range,.25,1)*(CB.crouch?.75:1)*(p.speed>4?.55:1)*(night?.85:1);
-        const hit=Math.random()<hp;sfx('eshot',d);const m=enemyMeshes[e.id];if(m)m.flash.intensity=5;
+        const hit=Math.random()<hp;sfx('eshot',d);const m=enemyMeshes[S.location+':'+e.id];if(m)m.flash.intensity=5;
         const from=new THREE.Vector3(e.x+Math.sin(e.heading)*.5,1.45,e.z+Math.cos(e.heading)*.5);const to=new THREE.Vector3(p.x+(hit?0:(Math.random()-.5)*2.5),p.y+1.2+(hit?0:(Math.random()-.5)*1.5),p.z+(hit?0:(Math.random()-.5)*2.5));
         addTracer(from,to,'#ffb35c');if(hit)hurtPlayer(T.dmg,false);}
-      if(!ranged&&d<1.6&&e.cool<=0){e.cool=1.1;e.atk=.45;const m=enemyMeshes[e.id];if(m)m.swing=.45;
+      if(!ranged&&d<1.6&&e.cool<=0){e.cool=1.1;e.atk=.45;const m=enemyMeshes[S.location+':'+e.id];if(m)m.swing=.45;
         setTimeout(()=>{if(e.down||S.location!=='port')return;const dd=Math.hypot(S.player.x-e.x,S.player.z-e.z);if(dd<1.9){hurtPlayer(e.type==='boss'?T.knife:T.dmg,true);}},380);}
     }
     if(spd>0){const mx=tx-e.x,mz=tz-e.z,ml=Math.hypot(mx,mz);if(ml>.05){const step=Math.min(ml,spd*dt);const ox=e.x,oz=e.z;e.x+=mx/ml*step;e.z+=mz/ml*step;enemyCollide(e);
@@ -1675,13 +1680,13 @@ function stepCombat(dt){
   if(inWarehouse(p.x,p.z)&&!S.flags.bossMet&&!P2.alarm)triggerBossScene(false);
 }
 function triggerBossScene(spotted){
-  S.flags.bossMet=true;checkObjective();S.checkpoint={x:PORTA.ox+18,z:PORTA.oz+6,loc:'port'};store.save(S);
-  const boss=S.port.enemies.find(e=>e.id==='boss');boss.heading=Math.atan2(S.player.x-boss.x,S.player.z-boss.z);
-  if(mode==='play')openDialogue(spotted?'tiagoSpot':'tiago');
+  const B=AR().boss;S.flags.bossMet=true;checkObjective();S.checkpoint={x:AR().area.ox+B.cp[0],z:AR().area.oz+B.cp[1],loc:S.location};store.save(S);
+  const boss=AS().enemies.find(e=>e.id==='boss');boss.heading=Math.atan2(S.player.x-boss.x,S.player.z-boss.z);
+  if(mode==='play')openDialogue(spotted?B.spot:B.dlg);
 }
-function startBossFight(){for(const e of S.port.enemies)if(e.inside&&!e.down)e.state='combat';
-  for(const e of S.port.enemies)if(['boss','b1','b2'].includes(e.id)&&!e.down){e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}
-  siren(true);S.port.alarm=true;}
+function startBossFight(){for(const e of AS().enemies)if(e.inside&&!e.down)e.state='combat';
+  for(const e of AS().enemies)if(['boss','b1','b2'].includes(e.id)&&!e.down){e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}
+  siren(true);AS().alarm=true;}
 /* --- visuals: enemies, tracers, player poses --- */
 const tracerMat=new THREE.LineBasicMaterial({color:'#ffe7a0',transparent:true,opacity:.9});
 function addTracer(a,b,c){const g=new THREE.BufferGeometry().setFromPoints([a,b]);const l=new THREE.Line(g,tracerMat.clone());l.material.color.set(c);scene.add(l);CB.tracers.push({l,t:.07});}
@@ -1703,8 +1708,9 @@ function syncCombat(dt,t){
     if(CB.atk.kind==='kick'){h.legR.th.rotation.x=-1.45*ph;h.legR.kn.rotation.x=.15;h.spine.rotation.x-=.25*ph;h.armL.sh.rotation.x=.4*ph;}
     if(CB.atk.kind==='choke'){h.armR.sh.rotation.set(-1.2,0,-.6);h.armR.el.rotation.x=-1.9;h.armL.sh.rotation.set(-1.2,0,.6);h.armL.el.rotation.x=-1.9;}}
   // enemies
-  const inPort=S.location==='port';
-  for(const e of (S.port?S.port.enemies:[])){const m=enemyMeshes[e.id];if(!m)continue;m.h.g.visible=inPort;m.bar.visible=inPort&&!e.down&&e.meter>2&&e.state!=='combat';if(!inPort)continue;
+  for(const k in enemyMeshes)if(!k.startsWith(S.location+':')){enemyMeshes[k].h.g.visible=false;enemyMeshes[k].bar.visible=false;}
+  const inPort=!!AR();
+  for(const e of (AS()?AS().enemies:[])){const m=enemyMeshes[S.location+':'+e.id];if(!m)continue;m.h.g.visible=inPort;m.bar.visible=inPort&&!e.down&&e.meter>2&&e.state!=='combat';if(!inPort)continue;
     m.h.g.position.set(e.x,e.down&&!e.surrender?.12:0,e.z);
     if(e.down&&!e.surrender){m.h.g.rotation.set(-Math.PI/2+.05,e.heading,0);animRig(m.h,dt*.2,0,0,'walk',0,false);continue;}
     m.h.g.rotation.set(0,e.heading,0);
@@ -1721,9 +1727,9 @@ function syncCombat(dt,t){
 }
 
 const CALLS={
-  openGate:()=>{applyGate();const g=S.port.enemies.find(e=>e.id==='gate');if(g)g.friendly=true;checkObjective();},
-  gateFight:()=>{const g=S.port.enemies.find(e=>e.id==='gate');if(g){g.state='combat';g.lx=S.player.x;g.lz=S.player.z;g.meter=100;}
-    setTimeout(()=>{const g2=S.port.enemies.find(e=>e.id==='gate');if(g2&&!g2.down&&S.location==='port')alarm('Le garde de la barrière a appelé du renfort.');},9000);},
+  openGate:()=>{applyGate();const g=AS().enemies.find(e=>e.id==='gate');if(g)g.friendly=true;checkObjective();},
+  gateFight:()=>{const g=AS().enemies.find(e=>e.id==='gate');if(g){g.state='combat';g.lx=S.player.x;g.lz=S.player.z;g.meter=100;}
+    setTimeout(()=>{const g2=AS().enemies.find(e=>e.id==='gate');if(g2&&!g2.down&&S.location==='port')alarm('Le garde de la barrière a appelé du renfort.');},9000);},
   bossFight:()=>startBossFight(),
   levelComplete:()=>setTimeout(levelComplete,400),
 };
@@ -2070,7 +2076,7 @@ function updateHUD(){
   $('hMoney').textContent=S.money+' $';$('hLoc').textContent={outside:'Dehors',house:'Maison d’Oscar',diner:'Lina’s Diner'}[S.location];
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
-  let st='';if(S.location==='port'){const E=S.port.enemies;st=S.port.alarm&&!S.flags.bossDown?'Alerte':E.some(e=>!e.down&&e.meter>=40)?'Suspect':E.some(e=>!e.down&&e.meter>2)?'Observé':'Discret';}
+  let st='';if(AR()){const E=AS().enemies;st=AS().alarm&&!S.flags.bossDown?'Alerte':E.some(e=>!e.down&&e.meter>=40)?'Suspect':E.some(e=>!e.down&&e.meter>2)?'Observé':'Discret';}
   $('hStealth').textContent=st+(CB.crouch&&st?' · accroupi':'')+(S.flags.disguise&&st?' · déguisé':'');$('hStealth').className=st?'on '+{Alerte:'alert',Suspect:'sus',Observé:'sus',Discret:''}[st]:'';
   $('cross').classList.toggle('aim',CB.aim);
   drawMap();
@@ -2091,7 +2097,7 @@ function drawMapBg(){
 function drawMap(){
   mg.drawImage(mapBg,0,0);const p=S.player;
   const tg=objectiveTarget(objective(S));if(tg){mg.strokeStyle='#ff4b3e';mg.lineWidth=3;mg.beginPath();mg.arc(mx(tg.x),mz(tg.z),7+Math.sin(performance.now()/250)*2,0,7);mg.stroke();}
-  if(S.location==='port'){drawPortMap();return;}
+  if(AR()){drawPortMap();return;}
   if(S.location!=='outside'){mg.fillStyle='rgba(8,12,18,.72)';mg.fillRect(0,0,360,360);mg.fillStyle='#fff';mg.font='700 30px "Barlow Condensed"';mg.textAlign='center';mg.fillText('Intérieur',180,175);mg.font='500 22px "Barlow Condensed"';mg.fillText({house:'Maison d’Oscar',diner:'Lina’s Diner'}[S.location],180,205);mg.textAlign='left';return;}
   mg.fillStyle='rgba(255,220,120,.8)';for(const v of vehicles)if(v.visible&&v.kind!=='bike')mg.fillRect(mx(v.x)-1.5,mz(v.z)-1.5,3,3);
   mg.save();mg.translate(mx(p.x),mz(p.z));mg.rotate(-p.heading+Math.PI);mg.fillStyle='#fff';mg.strokeStyle='#000';mg.lineWidth=1.5;
@@ -2099,10 +2105,13 @@ function drawMap(){
 }
 
 function drawPortMap(){
-  const sx=x=>(x-PORTA.ox+60)*3,sz=z=>(z-PORTA.oz+55)*3;mg.fillStyle='#4a4d52';mg.fillRect(0,0,360,360);mg.fillStyle='#1d4a66';mg.fillRect(0,sz(PORTA.oz+47),360,360);
-  mg.fillStyle='rgba(0,0,0,.45)';for(const c of PORTA.cols)mg.fillRect(sx(c.x0),sz(c.z0),Math.max(2,(c.x1-c.x0)*3),Math.max(2,(c.z1-c.z0)*3));
-  mg.strokeStyle='#ffd166';mg.lineWidth=2;mg.strokeRect(sx(PORTA.ox+WH.x0),sz(PORTA.oz+WH.z0),(WH.x1-WH.x0)*3,(WH.z1-WH.z0)*3);mg.fillStyle='#ffd166';mg.font='700 22px "Barlow Condensed"';mg.fillText('7',sx(PORTA.ox+WH.x0)+6,sz(PORTA.oz+WH.z0)+24);
-  for(const e of S.port.enemies){if(e.down&&!e.surrender)continue;mg.fillStyle=e.state==='combat'?'#ff4b3e':e.meter>=40?'#ffb347':'#e8e8e8';mg.beginPath();mg.arc(sx(e.x),sz(e.z),4,0,7);mg.fill();}
+  const AD=AR(),A=AD.area,sc=340/(2*Math.max(A.hw,A.hd)),sx=x=>180+(x-A.ox)*sc,sz=z=>180+(z-A.oz)*sc;
+  mg.fillStyle=AD.ground||'#4a4d52';mg.fillRect(0,0,360,360);
+  if(AD.water){mg.fillStyle='#1d4a66';const wz=sz(A.oz+AD.water.z);if(AD.water.side>0)mg.fillRect(0,wz,360,360);else mg.fillRect(0,0,360,wz);}
+  if(AD.mapPaths){mg.strokeStyle='rgba(200,180,140,.55)';mg.lineWidth=5;for(const path of AD.mapPaths){mg.beginPath();path.forEach(([x,z],i)=>i?mg.lineTo(sx(A.ox+x),sz(A.oz+z)):mg.moveTo(sx(A.ox+x),sz(A.oz+z)));mg.stroke();}}
+  mg.fillStyle='rgba(0,0,0,.45)';for(const c of A.cols)mg.fillRect(sx(c.x0),sz(c.z0),Math.max(2,(c.x1-c.x0)*sc),Math.max(2,(c.z1-c.z0)*sc));
+  if(AD.room){const W=AD.room;mg.strokeStyle='#ffd166';mg.lineWidth=2;mg.strokeRect(sx(A.ox+W.x0),sz(A.oz+W.z0),(W.x1-W.x0)*sc,(W.z1-W.z0)*sc);if(AD.roomLabel){mg.fillStyle='#ffd166';mg.font='700 20px "Barlow Condensed"';mg.fillText(AD.roomLabel,sx(A.ox+W.x0)+5,sz(A.oz+W.z0)+20);}}
+  for(const e of AS().enemies){if((e.down&&!e.surrender)||e.friendly&&e.state!=='combat')continue;mg.fillStyle=e.state==='combat'?'#ff4b3e':e.meter>=40?'#ffb347':'#e8e8e8';mg.beginPath();mg.arc(sx(e.x),sz(e.z),4,0,7);mg.fill();}
   const tg=objectiveTarget(objective(S));if(tg){mg.strokeStyle='#ff4b3e';mg.lineWidth=3;mg.beginPath();mg.arc(sx(tg.x),sz(tg.z),8+Math.sin(performance.now()/250)*2,0,7);mg.stroke();}
   const p=S.player;mg.save();mg.translate(sx(p.x),sz(p.z));mg.rotate(-p.heading+Math.PI);mg.fillStyle='#6cc4ff';mg.strokeStyle='#000';mg.beginPath();mg.moveTo(0,-9);mg.lineTo(6,7);mg.lineTo(0,3);mg.lineTo(-6,7);mg.closePath();mg.fill();mg.stroke();mg.restore();
 }
@@ -2156,7 +2165,7 @@ function startLevel(fromSave){
   S=fromSave||createState('toronto');S.status='playing';
   camYaw=S.camYaw||0;timeScale=1;
   S.location=S.location||'outside';S.money??=START_MONEY;S.clues??=[];S.tasks??={};
-  S.port??=newPortState();S.player.weapons??=[];S.player.weapon??='fists';S.player.ammo??={pistol:{mag:0,res:0},rifle:{mag:0,res:0}};S.checkpoint.loc??='outside';
+  S.arenas??={};for(const aid in ARENAS)if(ARENAS[aid].lvl===S.level)S.arenas[aid]??=newArenaState(aid);S.player.weapons??=[];S.player.weapon??='fists';S.player.ammo??={pistol:{mag:0,res:0},rifle:{mag:0,res:0}};S.checkpoint.loc??='outside';
   Object.assign(CB,{block:false,aim:false,firing:false,crouch:false,lockT:0,reloadT:0,fireCd:0,meleeCd:0,atk:null});
   audioInit();siren(false);buildEnemies();show('win',false);
   applyLocation();lastStage=-1;checkObjective();dlgState=null;show('dialog',false);show('notebook',false);
@@ -2202,7 +2211,7 @@ function frame(now){
     hudT-=dt;if(hudT<=0){hudT=.1;updateHUD();}
     saveT+=dt;if(saveT>10){saveT=0;store.save(S);}
     const nm=S.msgs||0,due=[14,34,54][nm]*60;
-    if(nm<3&&S.clock-S.startClock>=due&&!(S.location==='port'&&S.port.alarm)&&!S.flags.levelDone&&CB.lockT<=0){S.msgs=nm+1;
+    if(nm<3&&S.clock-S.startClock>=due&&!(AR()&&AS().alarm)&&!S.flags.levelDone&&CB.lockT<=0){S.msgs=nm+1;
       playCine('msg'+S.msgs,()=>{mode='play';applyLocation();oscarMesh.g.visible=true;if(!S.clues.includes('video')){S.clues.push('video');toast('Indice ajouté au carnet : '+CLUES.video.title);}store.save(S);});}
     updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,dt,t,!!(INTERIORS[S.location]&&INTERIORS[S.location].indoor));
   } else if(mode==='cine'){

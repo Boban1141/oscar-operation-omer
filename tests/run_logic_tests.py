@@ -32,11 +32,11 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
   ok(o.S.location==='port'&&o.objective(o.S).stage===4,'entrer au port');
   o.openDialogue('gate');o.choose(0);o.choose(0);ok(o.S.flags.gateOpen,'mentir au garde (reçu du diner)');
   o.S.player.x=1000;o.S.player.z=300-38;window.__oscar.tick(1);ok(o.S.flags.portInside,'dans la zone portuaire');
-  const g=o.S.port.enemies.find(e=>e.id==='g6');o.S.player.x=g.x-Math.sin(g.heading)*1.2;o.S.player.z=g.z-Math.cos(g.heading)*1.2;ok(o.takedown(),'neutraliser par derrière');ok(g.down,'garde au sol');
+  const g=o.S.arenas.port.enemies.find(e=>e.id==='g6');o.S.player.x=g.x-Math.sin(g.heading)*1.2;o.S.player.z=g.z-Math.cos(g.heading)*1.2;ok(o.takedown(),'neutraliser par derrière');ok(g.down,'garde au sol');
   ok(o.takedown()||true,'fouille');
-  o.S.port.alarm=false;for(const e of o.S.port.enemies){if(!e.down){e.state='patrol';e.meter=0;}}o.S.player.x=1000+20;o.S.player.z=300+16;window.__oscar.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','scène avec Tiago (négociation)');
-  o.choose(0);o.choose(0);ok(o.S.port.alarm,'combat déclenché');
-  const boss=o.S.port.enemies.find(e=>e.id==='boss');o.damage(boss,400);ok(o.S.flags.bossDown,'Tiago vaincu');
+  o.S.arenas.port.alarm=false;for(const e of o.S.arenas.port.enemies){if(!e.down){e.state='patrol';e.meter=0;}}o.S.player.x=1000+20;o.S.player.z=300+16;window.__oscar.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','scène avec Tiago (négociation)');
+  o.choose(0);o.choose(0);ok(o.S.arenas.port.alarm,'combat déclenché');
+  const boss=o.S.arenas.port.enemies.find(e=>e.id==='boss');o.damage(boss,400);ok(o.S.flags.bossDown,'Tiago vaincu');
   o.openDialogue('tiagoI');o.choose(1);o.choose(0);o.choose(0);ok(o.S.clues.includes('manifest'),'manifeste');
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
