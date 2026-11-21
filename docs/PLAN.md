@@ -189,6 +189,12 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - Silos de Saint-Norbert : dépôt gardé (8 gardes), avion privé prêt à décoller. Boss **Viktor, le Bras droit** (manteau noir à col de fourrure, mallette en métal).
 - Indice : la mallette — maison d'Omer à Westmount, code du sous-sol **1967**, relève à minuit, « Vendredi, tempête de verglas sur Montréal ».
 
+## 10j. Niveau 7 — Montréal, le final (bloc 11)
+- Westmount, un vendredi, 22 h 30, tempête de verglas, panne générale. Chronomètre : 9 h (Omer quitte le pays à l'aube avec Eva et Cédric).
+- Refuge de la salle paroissiale : **Hélène** (bénévole de la Croix-Rouge), **Marie-Rose** (cuisinière d'Omer : elle nourrit Eva et Cédric en cachette ; porte de la cuisine ouverte à minuit ; mot de passe « La neige tombe sur Rio »), **Réjean** (monteur d'Hydro-Québec : la génératrice d'Omer, le fil tombé).
+- Maison d'Omer : gardes dehors et dedans, caméras, génératrice. **Omer** au grand salon avec deux femmes. Choix final : Oscar ne le tue pas, il le livre à la police.
+- Fin : Eva et Cédric libérés ; Omer arrêté ; le numéro masqué rappelle (« Quelqu'un qui devait quelque chose à Omer. On se reparlera. ») : le mystère reste entier.
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 

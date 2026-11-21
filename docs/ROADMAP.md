@@ -3,7 +3,7 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.10.0)
+## État au 2026-11-20 (v1.0.0) — le jeu solo est complet, du Brésil à Montréal
 - **Niveaux 1 à 5 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse) : blocs 1 à 4 et 6 à 9 terminés.
 - **Prochaine étape proposée** : bloc 10 (niveau 6, Manitoba : blizzard à −40 °C, le Bras droit d'Omer).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
@@ -134,8 +134,23 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Cinématique d'arrivée ; tests : 91 vérifications (niveaux 1 à 6)
 - [ ] Test visuel et réglage par un humain
 
-## Bloc 11 — Niveau 7 : Montréal (final) `[ ]`
-- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [x] 9 Nouvelle-Écosse (v0.9.0) · [x] 10 Manitoba (v0.10.0) · [ ] 11 Montréal (final)
+## Bloc 11 — Niveau 7 : Montréal (final) `[x]` (v1.0.0)
+- [x] **Tempête de verglas** : pluie verglaçante, sol glissant, **branches chargées de glace qui tombent** (craquement d'alerte, 1,5 s pour s'écarter), **fil électrique tombé** sous tension
+- [x] **Panne générale** : Westmount dans le noir, bougies aux fenêtres ; seule la maison d'Omer brille (génératrice)
+- [x] Refuge de la salle paroissiale : Hélène (Croix-Rouge, soupe, tâche du bois → vie bonus), Marie-Rose (cuisinière d'Omer), Réjean (monteur d'Hydro-Québec)
+- [x] Trois entrées : le **portail** (mot de passe, escorté comme homme de Viktor), la **ruelle de service** (porte de la cuisine ouverte de minuit à minuit 15), le **mur du jardin** (escalade risquée sans crampons) puis la porte-fenêtre (bruit)
+- [x] La maison : hall, cuisine, salle à manger, bibliothèque, grand salon ; vraies portes ; caméras ; **génératrice à saboter** (noir total, caméras aveugles, mais le pavé du sous-sol s'éteint)
+- [x] Boss **Omer** (300 PV) ; choix final : le frapper ou le livrer à la police (Oscar s'arrête toujours) ; clé du sous-sol ; code 1967
+- [x] Le sous-sol, les dessins de Cédric au charbon ; **cinématique de fin** (retrouvailles, arrestation d'Omer, dernier appel du numéro masqué) ; écran de fin du jeu
+- [x] Corrections : les gardes au corps à corps ne blessaient Oscar qu'au port de Toronto (tous les niveaux) ; le combat de boss réveille bien les gardes de la pièce ; caméras de surveillance réutilisables par tous les niveaux
+- [x] Tests : 112 vérifications (niveaux 1 à 7) ; passage réel 6 → 7 et cinématique de fin sans erreur
+- [ ] Test visuel et réglage par un humain
+
+## Après la v1.0 `[ ]`
+- [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
+- [ ] Décider l'identité du personnage mystérieux (suite possible)
+- [ ] Multijoueur (base prévue au §11 du plan)
+- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [x] 7 Terre-Neuve (v0.7.0) · [x] 8 Alberta (v0.8.0) · [x] 9 Nouvelle-Écosse (v0.9.0) · [x] 10 Manitoba (v0.10.0) · [x] 11 Montréal (final, v1.0.0)
 - Systèmes d'hiver : neige, verglas, blizzard, équipement d'hiver
 
 ## Bloc 12 — Multijoueur `[ ]`

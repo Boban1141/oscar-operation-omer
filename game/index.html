@@ -162,7 +162,7 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
       <div><kbd>T</kbd> accélérer le temps</div>
       <div><kbd>Échap</kbd> pause</div>
     </div>
-    <p class="small">Version 0.10 · six provinces jouables : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba. Le final à Montréal arrive dans le prochain bloc.</p>
+    <p class="small">Version 1.0 · le jeu complet : Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse, Manitoba, et le final à Montréal.</p>
   </div>
 </div>
 
@@ -255,7 +255,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.10.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.0.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -328,10 +328,23 @@ const LEVELS = {
     wind:{base:.5, gust:.45, dir:1.4},
     density:{peds:0, cars:0, taxis:0, bikes:0},
     start:{loc:'winnipeg',x:4,z:8},
-    next:null,
+    next:'mtl',
     ready:{kicker:'Winnipeg · jour 1 · 16 h 15 · −38 °C',title:'La poudrerie efface tout.',text:'À −40 °C, même bien équipé, le froid te tue en quelques minutes : passe d’un abri à l’autre. Dans les voiles blancs, personne ne voit à dix mètres, ni toi ni les gardes. Viktor s’envole dans 36 heures.'},
-    win:{kicker:'Silos de Saint-Norbert, Manitoba',title:'Niveau 6 terminé',text:'La mallette de Viktor : l’adresse de la maison d’Omer à Westmount, le code du sous-sol, l’heure de la relève. Et un mot d’Omer : « Vendredi, tempête de verglas sur Montréal. Personne ne viendra. »',next:'Niveau 7 · Montréal · cœur de l’hiver, tempête de verglas : l’assaut final (en construction).'},
+    win:{kicker:'Silos de Saint-Norbert, Manitoba',title:'Niveau 6 terminé',text:'La mallette de Viktor : l’adresse de la maison d’Omer à Westmount, le code du sous-sol, l’heure de la relève. Et un mot d’Omer : « Vendredi, tempête de verglas sur Montréal. Personne ne viendra. »',next:'Niveau 7 · Montréal · cœur de l’hiver, tempête de verglas : l’assaut final.'},
     startToast:'Winnipeg, 16 h 15, −38 °C. Le soleil se couche. Le Café de la Cathédrale est juste devant ; l’abribus est chauffé.'
+  },
+  mtl: {
+    id:'mtl', index:7, name:'Montréal', region:'Westmount', season:'Cœur de l’hiver', seed:1642,
+    startMinute: 22*60+30, timeLimitMin: 9*60,
+    temp:{min:-9, max:-4}, coldFactor:0.35,
+    weather:{clear:.02, cloudy:.18, rain:.8},
+    wind:{base:.3, gust:.3, dir:2.2},
+    density:{peds:0, cars:0, taxis:0, bikes:0},
+    start:{loc:'westmount',x:-50,z:8},
+    next:null,
+    ready:{kicker:'Montréal · vendredi · 22 h 30 · tempête de verglas',title:'Ils sont sous ses pieds.',text:'À l’aube, Omer quitte le pays avec Eva et Cédric : tu as jusqu’à 7 h 30. Le verglas fait tomber les branches et les fils électriques, toute la ville est dans le noir. Seule la maison d’Omer brille encore.'},
+    win:{kicker:'Westmount, Montréal · 3 h 50 du matin',title:'Opération Omer — Fin',text:'Eva et Cédric sont libres. Omer est entre les mains de la police de Montréal, et son réseau tombe province par province : Toronto, Vancouver, St. John’s, Calgary, Halifax, Winnipeg. Quelque part dans la tempête, un numéro masqué attend son heure.',next:'Fin du jeu. Merci d’avoir joué. Tu peux rejouer chaque niveau.'},
+    startToast:'Westmount, 22 h 30. Pluie verglaçante, panne générale. Au bout de la rue, une seule maison est éclairée. La salle paroissiale sert de refuge.'
   }
 };
 const ROADS=[-150,-75,0,75,150], CENTERS=[-112.5,-37.5,37.5,112.5], LOT=26.5, BOUND=163;
@@ -429,7 +442,7 @@ const DIALOGUES={
 };
 const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
-function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):S.level==='ns'?objectiveNS(S):S.level==='mb'?objectiveMB(S):objectiveToronto(S);}
+function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):S.level==='ns'?objectiveNS(S):S.level==='mb'?objectiveMB(S):S.level==='mtl'?objectiveMTL(S):objectiveToronto(S);}
 function objectiveToronto(S){
   if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
@@ -1430,6 +1443,7 @@ function objectiveTarget(o){
   if(S.level==='ab'){const at=abTarget(o);if(at!==undefined)return at;}
   if(S.level==='ns'){const nt2=nsTarget(o);if(nt2!==undefined)return nt2;}
   if(S.level==='mb'){const mt=mbTarget(o);if(mt!==undefined)return mt;}
+  if(S.level==='mtl'){const mt2=mtlTarget(o);if(mt2!==undefined)return mt2;}
   if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
@@ -1764,7 +1778,7 @@ function stepCombat(dt){
         const from=new THREE.Vector3(e.x+Math.sin(e.heading)*.5,1.45,e.z+Math.cos(e.heading)*.5);const to=new THREE.Vector3(p.x+(hit?0:(Math.random()-.5)*2.5),p.y+1.2+(hit?0:(Math.random()-.5)*1.5),p.z+(hit?0:(Math.random()-.5)*2.5));
         addTracer(from,to,'#ffb35c');if(hit)hurtPlayer(T.dmg,false);}
       if(!ranged&&d<1.6&&e.cool<=0){e.cool=1.1;e.atk=.45;const m=enemyMeshes[S.location+':'+e.id];if(m)m.swing=.45;
-        setTimeout(()=>{if(e.down||S.location!=='port')return;const dd=Math.hypot(S.player.x-e.x,S.player.z-e.z);if(dd<1.9){hurtPlayer(e.type==='boss'?T.knife:T.dmg,true);}},380);}
+        const L0=S.location;setTimeout(()=>{if(e.down||!S||S.location!==L0)return;const dd=Math.hypot(S.player.x-e.x,S.player.z-e.z);if(dd<1.9){hurtPlayer(e.type==='boss'?T.knife:T.dmg,true);}},380);}
     }
     if(spd>0){const mx=tx-e.x,mz=tz-e.z,ml=Math.hypot(mx,mz);if(ml>.05){const step=Math.min(ml,spd*dt);const ox=e.x,oz=e.z;e.x+=mx/ml*step;e.z+=mz/ml*step;enemyCollide(e);
       const moved=Math.hypot(e.x-ox,e.z-oz);if(moved<step*.3){e.stuck+=dt;if(e.stuck>.6){e.x+=(-mz/ml)*.8*(Math.random()<.5?1:-1);e.z+=(mx/ml)*.8;enemyCollide(e);e.stuck=0;if(e.state==='patrol')e.wp++;}}else e.stuck=0;
@@ -1779,7 +1793,7 @@ function triggerBossScene(spotted){
   const boss=AS().enemies.find(e=>e.id==='boss');boss.heading=Math.atan2(S.player.x-boss.x,S.player.z-boss.z);
   if(mode==='play')openDialogue(spotted?B.spot:B.dlg);
 }
-function startBossFight(){for(const e of AS().enemies)if(e.inside&&!e.down)e.state='combat';
+function startBossFight(){for(const e of AS().enemies)if((e.inside||inWarehouse(e.x,e.z))&&!e.down){e.friendly=false;e.state='combat';}
   for(const e of AS().enemies)if(['boss','b1','b2'].includes(e.id)&&!e.down){e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}
   siren(true);AS().alarm=true;}
 /* --- visuals: enemies, tracers, player poses --- */
@@ -2666,8 +2680,8 @@ function stepCameras(dt){const ARn=AR();if(!ARn||!ARn.cams)return;const st=AS();
   ARn.cams.forEach((c,i)=>{const cs=st.cams[i],t=S.clock*.35+i*2,ang=c.a+Math.sin(t)*c.sw;cs.ang=ang;if(S.flags.powerCut||st.alarm){cs.meter=0;return;}
     const cx=ARn.area.ox+c.x,cz=ARn.area.oz+c.z,dx=p.x-cx,dz=p.z-cz,d=Math.hypot(dx,dz);const a=Math.acos(clamp((dx*Math.sin(ang)+dz*Math.cos(ang))/Math.max(d,.01),-1,1));
     if(d<11&&a<.42&&losClear(cx,cz,p.x,p.z)){cs.meter+=(CB.crouch?45:90)*dt;if(cs.meter>=100){cs.meter=100;alarm('Une caméra t’a filmé.');}}else cs.meter=Math.max(0,cs.meter-30*dt);});}
-function syncCameras(){if(!OFFICE.camMeshes)return;const st=S&&S.arenas&&S.arenas.office;OFFICE.camMeshes.forEach((m,i)=>{const cs=st&&st.cams&&st.cams[i];const ang=cs?cs.ang:ARENAS.office.cams[i].a;m.g.rotation.y=ang;
-  const off=S&&S.flags.powerCut;m.cone.visible=!off;m.led.material.color.set(off?'#222':cs&&cs.meter>30?'#ffee00':'#ff2a2a');if(cs)m.cone.material.opacity=.06+cs.meter/100*.2;});}
+function syncCameras(){for(const aid in ARENAS){const AD=ARENAS[aid],I=AD.area;if(!AD.cams||!I.camMeshes)continue;const st=S&&S.arenas&&S.arenas[aid];I.camMeshes.forEach((m,i)=>{const cs=st&&st.cams&&st.cams[i];const ang=cs?cs.ang:AD.cams[i].a;m.g.rotation.y=ang;
+  const off=S&&S.flags.powerCut;m.cone.visible=!off;m.led.material.color.set(off?'#222':cs&&cs.meter>30?'#ffee00':'#ff2a2a');if(cs)m.cone.material.opacity=.06+cs.meter/100*.2;});}}
 function stepShredder(dt){if(S.location!=='office'||S.flags.bossDown||S.flags.shredded)return;const st=AS();if(!st||!st.alarm)return;
   S.flags.shredT=(S.flags.shredT||0)+dt;if(!S.flags.shredWarn){S.flags.shredWarn=1;toast('Le Notaire se rue vers la déchiqueteuse ! Fais vite !');}
   if(S.flags.shredT>50){S.flags.shredded=true;toast('Trop tard : la déchiqueteuse a avalé une bonne partie des dossiers.');}}
@@ -2842,6 +2856,310 @@ function CINES_mbIntro(){const Wp=WPG;return[
   {set:'winnipeg',d:8,clock:16*60+12,rain:0,cloud:.9,snow:1,wind:.8,center:{x:Wp.ox,z:Wp.oz},cam:[[Wp.ox+2.6,1.7,Wp.oz+11.5],[Wp.ox+2,1.7,Wp.oz+10.6],[Wp.ox,1.6,Wp.oz+8],[Wp.ox-20,5,Wp.oz-25]],
     sub:[[.5,'Oscar','Le Bras droit. Celui qui a les codes de la maison.'],[4.2,'Oscar','Eva, Cédric… Plus qu’une ville. Plus qu’une.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(Wp.ox,0,Wp.oz+8);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.7,true);}}];}
+
+/* --- 5j. NIVEAU 7 : MONTRÉAL — LE FINAL (tempête de verglas, Westmount, maison d'Omer) --- */
+const WMT={ox:7000,oz:0,hw:70,hd:50,indoor:false,label:'Westmount, Montréal',cols:[],group:null,lights:[],ice:true};
+const REFUGE={ox:7000,oz:200,hw:8,hd:5.5,indoor:true,label:'Salle paroissiale (refuge)',spawn:{x:0,z:4.3},exitLoc:'westmount',exitOut:()=>({x:WMT.ox-30,z:WMT.oz+12.4}),cols:[],group:null,lights:[]};
+const MANOIR={ox:7000,oz:400,hw:60,hd:50,indoor:false,label:'Résidence d’Omer',cols:[],group:null,lights:[],ice:true,doors:{}};
+const SOUSSOL={ox:7000,oz:600,hw:5,hd:4,indoor:true,label:'Sous-sol',spawn:{x:0,z:3},exitLoc:'manoir',exitOut:()=>({x:MANOIR.ox+19,z:MANOIR.oz-26.5}),cols:[],group:null,lights:[]};
+INTERIORS.westmount=WMT;INTERIORS.refuge=REFUGE;INTERIORS.manoir=MANOIR;INTERIORS.soussol=SOUSSOL;
+const SALON={x0:6,x1:22,z0:-30,z1:-8};
+const inHouse=p=>{const x=p.x-MANOIR.ox,z=p.z-MANOIR.oz;return x>-22&&x<22&&z>-30&&z<0;};
+const kitchenWindow=()=>{const m=((S.clock%1440)+1440)%1440;return m<15;};
+// falling ice-laden branches (outdoors in the storm) and a downed live wire
+function stormHazards(p,I,inside){
+  if(I===WMT&&!S.flags.wireSafe){const d=Math.hypot(p.x-(WMT.ox+14),p.z-(WMT.oz+11));if(d<1.1&&!(CB.wireCd>0)){CB.wireCd=2;hurtPlayer(40,false);p.x-=1.5;toast('Une décharge te projette en arrière : le fil tombé est encore sous tension !');}}
+  CB.wireCd=Math.max(0,(CB.wireCd||0)-1/60);
+  const br=I.branch;if(!br)return;
+  if(inside){br.fall=0;return;}
+  S.flags.brT=(S.flags.brT??40)-1/60;
+  if(S.flags.brT<=0&&!br.fall){br.fall=1.5;br.x=p.x+(Math.random()-.5)*1.4;br.z=p.z+(Math.random()-.5)*1.4;toast('Un craquement sec au-dessus de toi… Bouge !');csnd('thump');}
+  if(br.fall>0){br.fall-=1/60;const k=clamp(1-br.fall/.6,0,1);br.m.visible=true;br.m.position.set(br.x-I.ox,lerp(8,.15,k),br.z-I.oz);
+    if(br.fall<=0){br.fall=0;S.flags.brT=35+Math.random()*30;sfx('down');if(Math.hypot(p.x-br.x,p.z-br.z)<1.3){hurtPlayer(22,false);toast('Une branche chargée de glace s’écrase sur toi !');}}}
+}
+ARENAS.westmount={area:WMT,lvl:'mtl',ground:'#2c333b',
+  defs:[{id:'w1',type:'pistol',post:[40,-2.4,0],friendly:true},{id:'w2',type:'melee',route:[[30,1.5],[54,1.5]],friendly:true}],
+  elook:{melee:{jacket:'#121214',pants:'#121214'},pistol:{jacket:'#17191d',pants:'#121214'}},
+  onStep(p){stormHazards(p,WMT,false);syncWire();if(WMT.beacon)WMT.beacon.intensity=Math.max(0,Math.sin(S.clock*40))*6;}};
+ARENAS.manoir={area:MANOIR,lvl:'mtl',room:SALON,roomLabel:'Grand salon',ground:'#2c333b',
+  defs:[{id:'m1',type:'rifle',post:[0,3,0]},{id:'m2',type:'pistol',route:[[-15,20],[15,20],[15,8],[-15,8]]},{id:'m3',type:'rifle',route:[[-30,-38],[30,-38]]},{id:'m4',type:'pistol',route:[[24,-3],[44,-3],[44,-26],[24,-26]]},
+    {id:'i1',type:'pistol',route:[[-4,-2.5],[4,-2.5],[4,-10],[-4,-10]]},{id:'i2',type:'melee',post:[-14,-13,0]},{id:'i3',type:'pistol',route:[[-18,-24],[2,-24],[2,-14]]},
+    {id:'b1',type:'rifle',post:[9,-26,.6]},{id:'b2',type:'pistol',post:[19,-14,-Math.PI/2]},{id:'boss',type:'boss',post:[16,-24,0],hp:300}],
+  cams:[{x:2.5,z:.6,a:0,sw:.6},{x:-4,z:-30.6,a:Math.PI,sw:.6},{x:-5.4,z:-11.4,a:.8,sw:.5}],
+  elook:{melee:{jacket:'#121214',pants:'#121214'},pistol:{jacket:'#17191d',pants:'#121214'},rifle:{jacket:'#1d2024',pants:'#16171a'}},
+  bossLook:{skin:'#b9875a',hair:'#0f0f0f',bald:false,beard:true,height:1.04,build:1.12,jacket:'#18120f',pants:'#121212',slouch:.03,headTilt:.04,browAsym:-.3,shAsym:.018},
+  bossDeco(h){const coat=new THREE.Mesh(new THREE.CylinderGeometry(.27,.36,.75,14,1,true),new THREE.MeshStandardMaterial({color:'#1b1411',roughness:.42,metalness:.15,side:THREE.DoubleSide}));coat.position.y=-.3;h.hips.add(coat);
+    const ch=new THREE.Mesh(new THREE.TorusGeometry(.085,.013,6,18),mat('#d4a017',{metalness:.95,roughness:.2}));ch.rotation.x=Math.PI/2.3;ch.position.set(0,.5,.06);h.spine.add(ch);
+    const scar=new THREE.Mesh(new THREE.BoxGeometry(.006,.07,.004),skinMat('#e8b9a4'));scar.position.set(.06,.03,.1);scar.rotation.z=.5;h.head.add(scar);
+    const cig=new THREE.Mesh(new THREE.CylinderGeometry(.012,.013,.14,8),mat('#5a3a22'));cig.rotation.x=Math.PI/2;cig.position.set(0,-.1,.05);h.armL.wr.add(cig);},
+  boss:{dlg:'omer',spot:'omerSpot',interro:'omerI',clue:'omer',name:'Omer',cp:[14,-11],down:'Omer s’effondre contre le bar, le souffle court. Interroge-le (touche E).'},
+  onStep(p){const ins=inHouse(p);MANOIR.indoor=ins;MANOIR.ice=!ins;stormHazards(p,MANOIR,ins);syncDoors();
+    if(MANOIR.girls)for(const g of MANOIR.girls)g.visible=!S.flags.bossMet;
+    if(MANOIR.keypad)MANOIR.keypad.material.emissiveIntensity=S.flags.powerCut?0:1.6;
+    if(MANOIR.gen)MANOIR.gen.intensity=S.flags.powerCut?0:3+Math.sin(S.clock*90);}};
+function syncDoors(){for(const k in MANOIR.doors){const d=MANOIR.doors[k],open=!!S.flags['door_'+k];if(d.open===open)continue;d.open=open;
+  if(open){d.col.x0=d.col.x1=d.col.z0=d.col.z1=-1e7;d.m.rotation.y=d.m.userData.ry+1.4;}else{Object.assign(d.col,d.c0);d.m.rotation.y=d.m.userData.ry;}}}
+function camMeshesFor(I,cams){I.camMeshes=[];for(const c of cams){const g=new THREE.Group();g.position.set(c.x,2.7,c.z);I.group.add(g);gb(g,.18,.14,.3,mat('#ddd'),0,0,0,0,false);
+  const led=new THREE.Mesh(new THREE.SphereGeometry(.025,6,6),new THREE.MeshBasicMaterial({color:'#ff2a2a'}));led.position.set(0,.05,.16);g.add(led);
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(4.6,11,20,1,true),new THREE.MeshBasicMaterial({color:'#ff3a3a',transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+  cone.geometry.translate(0,-5.5,0);cone.rotation.x=-Math.PI/2+.42;g.add(cone);I.camMeshes.push({g,cone,led});}}
+function branchMesh(I){const g=new THREE.Group();const wd=mat('#3a2a1e',{roughness:.9}),ic=new THREE.MeshStandardMaterial({color:'#dff2ff',roughness:.05,transparent:true,opacity:.55});
+  const a=new THREE.Mesh(new THREE.CylinderGeometry(.07,.12,3,6),wd);a.rotation.z=Math.PI/2;g.add(a);const b=new THREE.Mesh(new THREE.CylinderGeometry(.1,.16,3.1,6),ic);b.rotation.z=Math.PI/2;g.add(b);
+  for(const [x,r] of [[-.8,.6],[.4,-.7],[1,.5]]){const c=new THREE.Mesh(new THREE.CylinderGeometry(.03,.05,1.2,5),wd);c.position.set(x,0,.3);c.rotation.set(Math.PI/2,0,r);g.add(c);}
+  g.visible=false;I.group.add(g);I.branch={m:g,fall:0};}
+function glazedTree(I,x,z,s=1){const t=new THREE.Group();t.position.set(x,0,z);t.scale.setScalar(s);I.group.add(t);const wd=mat('#2e241b',{roughness:.95});const ic=new THREE.MeshStandardMaterial({color:'#e6f6ff',roughness:.04,metalness:.2,transparent:true,opacity:.5});
+  gc(t,.18,.28,5,wd,0,2.5,0,8);const r=mulberry32((x*31+z*7)|0);for(let i=0;i<7;i++){const a=r()*Math.PI*2,y=3+r()*2.6,L=2+r()*2;const b=new THREE.Mesh(new THREE.CylinderGeometry(.04,.09,L,5),wd);b.position.set(Math.sin(a)*L*.4,y,Math.cos(a)*L*.4);b.rotation.set(Math.cos(a)*1.1,0,-Math.sin(a)*1.1);b.rotation.x+=.35;t.add(b);
+    const c=b.clone();c.material=ic;c.scale.set(1.5,1.02,1.5);t.add(c);}
+  I.cols.push({x0:I.ox+x-.3,x1:I.ox+x+.3,z0:I.oz+z-.3,z1:I.oz+z+.3});}
+function buildWestmount(){
+  const I=WMT;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  iplane(I,150,110,iceMat,0,0,0);const walk=new THREE.MeshStandardMaterial({color:'#5a6068',roughness:.08,metalness:.3});iplane(I,140,2.4,walk,0,.02,2.2);iplane(I,140,2.4,walk,0,.02,13);
+  // stone houses of Westmount, dark (blackout) — a few candles in the windows
+  for(let i=0;i<6;i++){const x=-58+i*16;if(x>24)break;const h=9+(i%2)*2,F=facadeMat('brick',1700+i,['#7d776c','#6e6458','#8a8478'][i%3],7,6,.04);const o=new THREE.Mesh(facadeBox(13,h,12,F.tw,F.th),F.m);o.position.set(x,h/2,-14);o.castShadow=o.receiveShadow=true;I.group.add(o);collidableMeshes.push(o);
+    I.cols.push({x0:I.ox+x-6.5,x1:I.ox+x+6.5,z0:I.oz-20,z1:I.oz-8});const rf=new THREE.Mesh(new THREE.ConeGeometry(9.4,4,4),mat('#2a2d33',{roughness:.3,metalness:.3}));rf.position.set(x,h+2,-14);rf.rotation.y=Math.PI/4;rf.scale.z=.9;I.group.add(rf);
+    icicles(I,x-6.4,x+6.4,h,-7.9);const cd=new THREE.PointLight('#ffb35a',1.6,5,2);cd.position.set(x-3,2.2,-7.6);I.group.add(cd);ibox(I,.08,.12,.08,new THREE.MeshStandardMaterial({color:'#fff',emissive:'#ffb35a',emissiveIntensity:3}),x-3,1.9,-7.85,0,false,false);}
+  // south side: the parish hall (refuge, lit by its generator) and other houses
+  for(let i=0;i<8;i++){const x=-58+i*16,h=8+(i%3);const isRef=x===-26;const F=facadeMat('brick',1750+i,isRef?'#8a8478':'#6e6458',7,6,isRef?.7:.04);const o=new THREE.Mesh(facadeBox(14,h,10,F.tw,F.th),F.m);o.position.set(x,h/2,20);o.castShadow=o.receiveShadow=true;I.group.add(o);collidableMeshes.push(o);
+    I.cols.push({x0:I.ox+x-7,x1:I.ox+x+7,z0:I.oz+15,z1:I.oz+25});icicles(I,x-6.8,x+6.8,h,14.9);}
+  const rs=new THREE.Mesh(new THREE.PlaneGeometry(7,1),regNight(new THREE.MeshStandardMaterial({map:signTex('REFUGE · SALLE PAROISSIALE','#7a1d1d','#fff3dc'),emissive:'#ffffff',emissiveIntensity:.4}),.4,1));rs.material.emissiveMap=rs.material.map;rs.position.set(-30,4.4,14.95);rs.rotation.y=Math.PI;I.group.add(rs);rs.rotation.y=0;
+  ibox(I,1.4,2.3,.1,mat('#3a2418'),-30,1.15,14.98,0,false,false);const rl=new THREE.PointLight('#ffcf8a',9,9,2);rl.position.set(-30,2.6,13.6);I.group.add(rl);
+  // trees glazed with ice, broken branches on the ground
+  for(const x of [-54,-42,-18,-6,6,18,34]){glazedTree(I,x,1,.95);}for(const x of [-50,-38,-14,2,26,46]){glazedTree(I,x,12.4,1);}
+  const r=mulberry32(77);for(let i=0;i<10;i++){const b=new THREE.Mesh(new THREE.CylinderGeometry(.06,.1,2+r()*2,5),mat('#3a2a1e'));b.rotation.set(Math.PI/2,0,r()*3);b.position.set(-60+r()*110,.1,r()<.5?r()*3:10+r()*3);I.group.add(b);}
+  // utility poles; one snapped, its wire down and sparking on the sidewalk
+  for(const x of [-46,-22,2,38]){icyl(I,.14,.18,9,mat('#4a3a2a'),x,4.5,14,8);ibox(I,2.4,.15,.15,mat('#4a3a2a'),x,8.4,14);}
+  const sp=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,6,8),mat('#4a3a2a'));sp.position.set(14,2.6,14.4);sp.rotation.z=.5;I.group.add(sp);
+  const wirePts=[new THREE.Vector3(12.6,5.2,14.4),new THREE.Vector3(13.6,2,12.8),new THREE.Vector3(14,.05,11)];const wire=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wirePts),20,.025,5),mat('#111'));I.group.add(wire);
+  const spark=new THREE.PointLight('#9fd0ff',0,6,2);spark.position.set(14,.3,11);I.group.add(spark);const sm=new THREE.Mesh(new THREE.SphereGeometry(.08,8,6),new THREE.MeshBasicMaterial({color:'#dff0ff'}));sm.position.copy(spark.position);I.group.add(sm);WMT.spark={l:spark,m:sm};
+  // Hydro-Québec truck with its orange beacon
+  const tr=createCar('car','#f2f2f2');tr.scale.set(1.25,1.5,1.5);tr.position.set(-8,0,5);tr.rotation.y=Math.PI/2;I.group.add(tr);I.cols.push({x0:I.ox-11.5,x1:I.ox-4.5,z0:I.oz+3.6,z1:I.oz+6.4});
+  const hs=new THREE.Mesh(new THREE.PlaneGeometry(3,.5),new THREE.MeshStandardMaterial({map:signTex('HYDRO-QUÉBEC','#f2f2f2','#1d4f91')}));hs.position.set(-8,1.4,3.55);hs.rotation.y=Math.PI;I.group.add(hs);
+  const bc=new THREE.PointLight('#ff8a1a',0,12,2);bc.position.set(-8,2.6,5);I.group.add(bc);WMT.beacon=bc;
+  // Omer's estate: stone wall, iron gate, guard post lit by the generator, the mansion beyond
+  const stone=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#7d776c',roughness:.95});
+  for(const [a,b] of [[26,37.6],[42.4,56]]){ibox(I,b-a,2.6,.6,stone,(a+b)/2,1.3,-4,0,true);}for(const x of [37.6,42.4])ibox(I,.9,3.4,.9,stone,x,1.7,-4,0,true);
+  const gate=new THREE.Group();gate.position.set(40,0,-4);I.group.add(gate);for(let i=0;i<10;i++)gb(gate,.05,2.8,.05,mat('#111',{metalness:.7}),-2+i*.44,1.4,0,0,false);gb(gate,4.2,.08,.08,mat('#111',{metalness:.7}),0,2.6,0,0,false);
+  I.cols.push({x0:I.ox+38,x1:I.ox+42,z0:I.oz-4.3,z1:I.oz-3.7});const gl=new THREE.PointLight('#fff1d8',14,14,2);gl.position.set(40,3.6,-3);I.group.add(gl);
+  const man=new THREE.Group();man.position.set(40,0,-34);I.group.add(man);gb(man,30,10,14,stone,0,5,0);const mr=new THREE.Mesh(new THREE.ConeGeometry(21,6,4),mat('#2a2d33',{roughness:.3,metalness:.3}));mr.position.y=13;mr.rotation.y=Math.PI/4;mr.scale.z=.5;man.add(mr);
+  for(let i=0;i<6;i++)for(const y of [2.6,6.6])gb(man,1.6,2,.05,new THREE.MeshStandardMaterial({color:'#2a1d10',emissive:'#ffc47a',emissiveIntensity:1.4}),-12+i*4.8,y,7.05,0,false);
+  I.cols.push({x0:I.ox+25,x1:I.ox+55,z0:I.oz-41,z1:I.oz-27});
+  // the Mount Royal cross on the horizon
+  const cr=new THREE.Group();cr.position.set(-40,0,-220);I.group.add(cr);const cm=new THREE.MeshBasicMaterial({color:'#e8eeff'});gb(cr,1.2,30,1.2,cm,0,60,0,0,false);gb(cr,14,1.2,1.2,cm,0,66,0,0,false);
+  // police (finale only)
+  const pol=new THREE.Group();I.group.add(pol);pol.visible=false;WMT.police=pol;WMT.polLights=[];
+  for(const [x,z,ry] of [[36,6,Math.PI/2],[46,8.6,1.2]]){const c=createCar('car','#f4f4f4');c.position.set(x,0,z);c.rotation.y=ry;pol.add(c);const lb=new THREE.Mesh(new THREE.BoxGeometry(.3,.12,1.2),mat('#222'));lb.position.set(x,1.55,z);lb.rotation.y=ry;pol.add(lb);
+    for(const [col,o] of [['#ff2a2a',-.5],['#2a5aff',.5]]){const l=new THREE.PointLight(col,0,16,2);l.position.set(x+Math.cos(ry)*o,1.8,z-Math.sin(ry)*o);pol.add(l);WMT.polLights.push(l);}}
+  branchMesh(I);
+  for(const [a,b,c,d] of [[-71,-70,-51,51],[70,71,-51,51],[-71,71,-51,-50],[-71,71,50,51]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
+  I.group.visible=false;
+}
+function buildRefuge(){
+  const I=REFUGE;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  shell(I,new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#8a6a48',roughness:.6}),new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#e4dccb',roughness:.9}),3.4,0,[{x:-5,w:2,y0:1.2,y1:2.6},{x:5,w:2,y0:1.2,y1:2.6}]);
+  // camp beds with blankets and sleepers, the soup table, the wood stove
+  const blank=['#7a2e2e','#2e4a7a','#4a6a3a','#8a7a5a','#5a3a6a'];for(let i=0;i<6;i++){const x=-6.5+i*2.4,z=-3.8;ibox(I,.8,.35,1.9,mat('#556',{metalness:.3}),x,.18,z,0,false);ibox(I,.84,.12,1.6,clothMat(blank[i%5]),x,.42,z+.1,0,false);
+    if(i%2===0){const lump=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.9,4,8),clothMat(blank[(i+2)%5]));lump.rotation.x=Math.PI/2;lump.position.set(x,.6,z);I.group.add(lump);}I.cols.push({x0:I.ox+x-.45,x1:I.ox+x+.45,z0:I.oz+z-1,z1:I.oz+z+1});}
+  ibox(I,3,.8,.9,mat('#e9e6df'),-4.5,.4,-.6,0,true);const pot=new THREE.Mesh(new THREE.CylinderGeometry(.3,.28,.4,16),mat('#9aa1a6',{metalness:.7}));pot.position.set(-5,1,-.6);I.group.add(pot);
+  const rc=new THREE.Mesh(new THREE.PlaneGeometry(.9,.9),new THREE.MeshStandardMaterial({map:texCanvas(97,64,64,(g)=>{g.fillStyle='#fff';g.fillRect(0,0,64,64);g.fillStyle='#d0021b';g.fillRect(24,8,16,48);g.fillRect(8,24,48,16);})}));rc.position.set(-4.5,2.2,-5.38);I.group.add(rc);
+  const stove=new THREE.Mesh(new THREE.BoxGeometry(.9,.9,.7),new THREE.MeshStandardMaterial({color:'#1a1a1a',emissive:'#ff5a1a',emissiveIntensity:.5}));stove.position.set(6.6,.45,-.5);I.group.add(stove);I.cols.push({x0:I.ox+6.1,x1:I.ox+7.1,z0:I.oz-.9,z1:I.oz-.1});
+  icyl(I,.08,.08,2.5,M.pole,6.6,2.1,-.5,8);const sl=new THREE.PointLight('#ff7a2a',5,6,2);sl.position.set(6.6,1,-.5);I.group.add(sl);
+  for(let i=0;i<5;i++){const lg=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.6,8),mat('#6a4a2a'));lg.rotation.z=Math.PI/2;lg.position.set(5.6+(i%3)*.05,.1+Math.floor(i/3)*.2,.8+i%3*.22);I.group.add(lg);}
+  for(const [x,z] of [[1.5,1.5],[4,1.8]]){icyl(I,.5,.5,.05,mat('#7a5a3a'),x,.76,z,16);icyl(I,.06,.2,.74,M.pole,x,.37,z,8);I.cols.push({x0:I.ox+x-.55,x1:I.ox+x+.55,z0:I.oz+z-.55,z1:I.oz+z+.55});
+    const cdl=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.15,8),new THREE.MeshStandardMaterial({color:'#fff8e0',emissive:'#ffb35a',emissiveIntensity:1.5}));cdl.position.set(x,.86,z);I.group.add(cdl);}
+  lamp(I,-3,2.6,-1,6,'#ffd9a3');lamp(I,3,2.6,0,6,'#ffd9a3');
+  I.group.visible=false;
+}
+function buildManoir(){
+  const I=MANOIR;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  iplane(I,130,110,iceMat,0,0,0);const lawn=SNOWM.clone();lawn.color.set('#dde6ee');lawn.roughness=.25;for(const x of [-28,28])iplane(I,26,30,lawn,x,.01,24);iplane(I,110,18,lawn,0,.01,-40);
+  const stone=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#7d776c',roughness:.95});
+  // estate wall, gate (inside)
+  for(const [a,b,c,d] of [[-60,-59,-50,50],[59,60,-50,50],[-60,60,-50,-49],[-60,-2,46,47],[2,60,46,47]]){ibox(I,b-a,2.6,d-c,stone,(a+b)/2,1.3,(c+d)/2,0,true);}
+  // the house: exterior and interior walls, doors (closed by colliders)
+  const H=3.6,wm=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#e8e0d0',roughness:.85});
+  const W=(x0,z0,x1,z1,m=wm)=>{const o=ibox(I,Math.max(.3,x1-x0),H,Math.max(.3,z1-z0),m,(x0+x1)/2,H/2,(z0+z1)/2,0,true);collidableMeshes.push(o);};
+  W(-22,-.15,-1.5,.15,stone);W(1.5,-.15,22,.15,stone);W(-22,-30.15,-11.5,-29.85,stone);W(-8.5,-30.15,22,-29.85,stone);W(-22.15,-30,-21.85,-9.5,stone);W(-22.15,-6.5,-21.85,0,stone);W(21.85,-30,22.15,0,stone);
+  W(-6.15,-16,-5.85,-7.5);W(-6.15,-4.5,-5.85,0);W(5.85,-12,6.15,-7.5);W(5.85,-4.5,6.15,0);W(6,-8.15,12.5,-7.85);W(15.5,-8.15,22,-7.85);W(-6,-12.15,-1.5,-11.85);W(1.5,-12.15,6,-11.85);
+  W(-22,-16.15,-15.5,-15.85);W(-12.5,-16.15,-6,-15.85);W(5.85,-30,6.15,-21.5);W(5.85,-18.5,6.15,-12);
+  const roof=ibox(I,44.6,.3,30.6,mat('#2a2d33',{roughness:.3,metalness:.3}),0,H+.15,-15);collidableMeshes.push(roof);icicles(I,-22,22,H,.35);icicles(I,-22,22,H,-30.35);
+  const floor=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#5a3a24',roughness:.35});iplane(I,44,30,floor,0,.02,-15);
+  const door=(k,x,z,w,alongX)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(alongX?w:.12,2.4,alongX?.12:w),mat('#3a2418',{roughness:.5}));m.geometry.translate(alongX?w/2:0,0,alongX?0:w/2);
+    m.position.set(alongX?x-w/2:x,1.2,alongX?z:z-w/2);m.userData.ry=0;I.group.add(m);const c0=alongX?{x0:I.ox+x-w/2,x1:I.ox+x+w/2,z0:I.oz+z-.2,z1:I.oz+z+.2}:{x0:I.ox+x-.2,x1:I.ox+x+.2,z0:I.oz+z-w/2,z1:I.oz+z+w/2};
+    const col={...c0};I.cols.push(col);I.doors[k]={m,col,c0,open:false};};
+  door('front',0,0,3,true);door('terrace',-10,-30,3,true);door('kitchen',-22,-8,3,false);
+  // windows lit from inside (generator)
+  const wl=new THREE.MeshStandardMaterial({color:'#2a1d10',emissive:'#ffc47a',emissiveIntensity:1.3});I.winMat=wl;for(const x of [-18,-12,-6,6,12,18])ibox(I,1.6,1.8,.05,wl,x,1.9,.2,0,false,false);for(const x of [-18,0,8,16])ibox(I,1.6,1.8,.05,wl,x,1.9,-30.2,0,false,false);
+  // hall: chandelier, staircase
+  for(let i=0;i<8;i++)ibox(I,2.4,.2,.5,mat('#4a2a1a'),3.6,.1+i*.4,-10.8+i*.5,0,false);I.cols.push({x0:I.ox+2.4,x1:I.ox+4.8,z0:I.oz-11,z1:I.oz-6.8});
+  // kitchen: counters (low cover), stove
+  const ctr=mat('#d8d4cc',{roughness:.3});ibox(I,6,1,1.2,ctr,-14,.5,-6,0,false);I.cols.push({x0:I.ox-17,x1:I.ox-11,z0:I.oz-6.6,z1:I.oz-5.4,low:true});ibox(I,10,1,.8,ctr,-14,.5,-.7,0,true);
+  ibox(I,1,1,.8,mat('#222',{metalness:.6}),-19,.5,-.7,0,false);const pots=new THREE.Mesh(new THREE.CylinderGeometry(.25,.22,.3,14),mat('#9aa1a6',{metalness:.7}));pots.position.set(-15,1.15,-6);I.group.add(pots);
+  // dining: long table
+  ibox(I,8,.1,1.6,mat('#3a2216',{roughness:.3}),-10,.78,-23,0,false);for(const x of [-13,-7])icyl(I,.12,.12,.76,mat('#3a2216'),x,.38,-23,8);I.cols.push({x0:I.ox-14,x1:I.ox-6,z0:I.oz-23.8,z1:I.oz-22.2,low:true});
+  // salon: leather sofas, bar, bottles, neon, the women, basement door with keypad
+  const leather=mat('#1a1412',{roughness:.4});ibox(I,5,.45,1,leather,14,.32,-26.5);ibox(I,5,.7,.25,leather,14,.75,-27);ibox(I,1,.45,3.2,leather,10.5,.32,-24);I.cols.push({x0:I.ox+11.5,x1:I.ox+16.5,z0:I.oz-27.2,z1:I.oz-26,low:true});
+  ibox(I,2.4,.06,1.2,mat('#111',{roughness:.05,metalness:.8}),14,.45,-24.5);ibox(I,5,1.1,.7,mat('#2a1a10',{roughness:.4}),18.5,.55,-10,0,true);
+  const bot=mulberry32(19);for(let i=0;i<12;i++)icyl(I,.05,.05,.32,new THREE.MeshStandardMaterial({color:pick(bot,['#7a4a1a','#2a5a2a','#d8d8e8','#8a1a1a']),emissive:'#ffb060',emissiveIntensity:.25,transparent:true,opacity:.85}),16.6+i*.33,1.26,-10,8);
+  const neon=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,14),new THREE.MeshStandardMaterial({color:'#ff2aa0',emissive:'#ff2aa0',emissiveIntensity:3}));neon.position.set(21.7,3.3,-19);I.group.add(neon);
+  MANOIR.girls=[];for(const [x,z,a,c] of [[12.5,-25.8,.3,'#9d0208'],[15.8,-25.9,-.2,'#1f5c4a']]){const g=createHuman({prop:'cup',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.6,shAsym:0,browAsym:.1,headTilt:0,slouch:.1,bald:false,long:true,beard:false,build:.88,height:.97,skin:c==='#9d0208'?'#8d5524':'#ffdbac',jacket:c,pants:c,hair:c==='#9d0208'?'#1a1a1a':'#d9b382'});
+    g.g.position.set(x,0,z);g.g.rotation.y=a;I.group.add(g.g);MANOIR.girls.push(g.g);}
+  ibox(I,1.4,2.3,.12,mat('#555b60',{metalness:.7,roughness:.3}),20.4,1.15,-29.8,0,false,false);const kp=new THREE.Mesh(new THREE.BoxGeometry(.18,.26,.04),new THREE.MeshStandardMaterial({color:'#113',emissive:'#2aff6a',emissiveIntensity:1.6}));kp.position.set(19.4,1.35,-29.75);I.group.add(kp);MANOIR.keypad=kp;
+  // interior lights (die when the generator is sabotaged)
+  for(const [x,z,c] of [[0,-6,'#ffe2b0'],[-14,-8,'#fff1d8'],[-10,-22,'#ffd9a3'],[14,-4,'#ffd9a3'],[14,-19,'#ffcf7a'],[18,-26,'#ff2aa0']]){const l=new THREE.PointLight(c,10,13,2);l.position.set(x,3.1,z);I.group.add(l);I.lights.push({l,kind:'office',base:10});}
+  // garage and its diesel generator (east side)
+  const hg=new THREE.MeshStandardMaterial({map:corrTex,color:'#5a5e63',roughness:.7});ibox(I,12,4,16,stone,32,2,-14,0,true);ibox(I,12.4,.3,16.4,mat('#2a2d33'),32,4.15,-14);
+  ibox(I,1.6,1.1,1,mat('#c9a227',{roughness:.5}),32,.55,-4.2,0,true);ibox(I,.2,.6,.2,mat('#333'),31.4,1.4,-4.2);const gl=new THREE.PointLight('#fff1d8',3,6,2);gl.position.set(32,2,-3);I.group.add(gl);MANOIR.gen=gl;
+  MANOIR.genPos={x:I.ox+32,z:I.oz-2.6};
+  // yard: driveway, hedges glazed in ice, cars, lamp posts, patio
+  const dw=new THREE.MeshStandardMaterial({color:'#3a4048',roughness:.06,metalness:.35});iplane(I,6,46,dw,0,.015,23);
+  const hedge=new THREE.MeshStandardMaterial({color:'#2a3a2a',roughness:.2,metalness:.1});for(const x of [-6,6])for(let z=8;z<44;z+=4)ibox(I,1,1.1,3.2,hedge,x,.55,z,0,false);
+  for(const [x,z] of [[-12,30],[12,30],[-40,-40],[40,-40]])glazedTree(I,x,z,1.1);
+  for(const [x,z,c] of [[-14,12,'#0b0b0c'],[14,12,'#0b0b0c']]){const car=createCar('car',c);car.position.set(x,0,z);car.scale.set(1.08,1.25,1.1);I.group.add(car);I.cols.push({x0:I.ox+x-1.1,x1:I.ox+x+1.1,z0:I.oz+z-2.6,z1:I.oz+z+2.6});}
+  for(const [x,z] of [[-3.5,8],[3.5,8],[-3.5,30],[3.5,30]]){icyl(I,.08,.12,4,M.pole,x,2,z,8);const l=new THREE.PointLight('#fff1d8',8,10,2);l.position.set(x,4,z);I.group.add(l);I.lights.push({l,kind:'office',base:8});}
+  camMeshesFor(I,ARENAS.manoir.cams);branchMesh(I);
+  I.group.visible=false;
+}
+function buildSoussol(){
+  const I=SOUSSOL;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const conc=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#7d7a74',roughness:1});iplane(I,10,8,mat('#55524c',{roughness:1}),0,0,0);
+  const draw=texCanvas(1967,512,128,(g,r,w,h)=>{g.fillStyle='#7d7a74';g.fillRect(0,0,w,h);g.strokeStyle='#1a1a1a';g.lineWidth=3;g.lineCap='round';
+    for(let i=0;i<4;i++){const x=60+i*110,y=40;g.beginPath();g.arc(x,y,10,0,7);g.moveTo(x,y+10);g.lineTo(x,y+50);g.moveTo(x-18,y+25);g.lineTo(x+18,y+25);g.moveTo(x,y+50);g.lineTo(x-12,y+78);g.moveTo(x,y+50);g.lineTo(x+12,y+78);g.stroke();}
+    g.font='bold 26px sans-serif';g.fillStyle='#1a1a1a';g.fillText('PAPA',420,110);});
+  iplane(I,10,2.6,conc,0,1.3,4,0,Math.PI);const back=iplane(I,10,2.6,new THREE.MeshStandardMaterial({map:draw,roughness:1}),0,1.3,-4,0,0);iplane(I,8,2.6,conc,-5,1.3,0,0,Math.PI/2);iplane(I,8,2.6,conc,5,1.3,0,0,-Math.PI/2);iplane(I,10,8,conc,0,2.6,0,Math.PI/2);
+  ibox(I,1.9,.18,1,clothMat('#8a8070'),-2.6,.09,-3.2);ibox(I,.9,.25,.6,clothMat('#5a5048'),-3.2,.22,-3.4);icyl(I,.15,.13,.3,mat('#3a3a3a'),3.6,.15,-3.5);
+  for(let i=0;i<3;i++){const p=icyl(I,.06,.06,10,mat('#6a5a4a',{metalness:.6,roughness:.5}),0,2.35-i*.14,-3.6+i*.15,8);p.rotation.z=Math.PI/2;}
+  const bm=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshStandardMaterial({color:'#fff2c8',emissive:'#ffcf7a',emissiveIntensity:3}));bm.position.set(-.5,2.05,-1);I.group.add(bm);const bl=new THREE.PointLight('#ffcf8a',6,10,1.8);bl.position.set(-.5,2,-1);I.group.add(bl);
+  ibox(I,1.4,2.3,.12,mat('#555b60',{metalness:.7}),0,1.15,3.94,0,false,false);
+  I.group.visible=false;
+}
+function buildMTLActors(){
+  buildWestmount();buildRefuge();buildManoir();buildSoussol();
+  const add=(id,look,lx,lz,a,md,loc,I)=>{const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+    interiorNPCs.push({id,dlg:id,h,x:I.ox+lx,z:I.oz+lz,a,mode:md,loc,lvl:'mtl'});if(md!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h};
+  const base={prop:'none',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.5,shAsym:0,browAsym:.1,headTilt:0,bald:false,long:false,beard:false,height:1,build:1,slouch:.08};
+  add('helene',{...base,skin:'#f1c27d',jacket:'#c8102e',pants:'#2b2d42',hair:'#9a9a9a',long:true,height:.95,build:1.02,browAsym:.15},-4.5,-1.5,0,'talk','refuge',REFUGE);
+  add('marierose',{...base,skin:'#5c3a21',jacket:'#3d3a5c',pants:'#22223b',hair:'#1a1a1a',long:false,height:.96,build:1.1,slouch:.22,browAsym:.3,breath:2,prop:'cup'},1.5,.75,Math.PI,'sit','refuge',REFUGE);
+  add('rejean',{...base,skin:'#ffdbac',jacket:'#1d4f91',pants:'#2b2d42',hair:'#6f4e37',beard:true,height:1.02,build:1.15,slouch:.12,prop:'cup'},4,1.05,Math.PI,'sit','refuge',REFUGE);
+  add('eva',{...base,skin:'#e0ac69',jacket:'#d9c5a0',pants:'#3d405b',hair:'#3b2a1e',long:true,height:.97,build:.92,browAsym:.15,breath:1.9,slouch:.25},-2.9,-3,0,'talk','soussol',SOUSSOL);
+  add('cedric',{...base,skin:'#d4a373',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.15,breath:2.2},-2.1,-3.1,-.3,'talk','soussol',SOUSSOL);
+}
+Object.assign(CLUES,{
+  rose:{title:'Marie-Rose, la cuisinière d’Omer',text:'Eva et Cédric sont vivants, au sous-sol. À minuit, pendant la relève, Marie-Rose laisse la porte de la cuisine ouverte dix minutes (ruelle de service). Mot de passe du portail ce soir : « La neige tombe sur Rio ».'},
+  generatrice:{title:'La génératrice d’Omer',text:'Toute la rue est privée de courant sauf la maison d’Omer : une génératrice diesel, devant son garage, côté est. Si elle s’arrête, plus de lumière ni de caméras.'},
+  omer:{title:'Omer, menotté',text:'Omer est menotté au radiateur du salon ; la police de Montréal est prévenue. La clé du sous-sol était à sa ceinture. Le code : 1967, l’année de l’Expo, l’année où son père est arrivé à Montréal.'},
+});
+Object.assign(DIALOGUES,{
+  helene:{who:'Hélène, bénévole de la Croix-Rouge',start:()=>'h0',nodes:{
+    h0:{text:'Entrez, entrez ! Votre manteau est couvert de glace. Il reste de la soupe aux légumes. Et si vous avez deux bras, le bois du poêle ne va pas se rentrer tout seul.',choices:[{t:'Une soupe, merci.',end:true,min:10,fx:{call:'warm'}},{t:'Je vous rentre le bois. (30 min)',end:true,min:30,need:{noTask:'bois'},fx:{task:['bois','done'],bonus:true,call:'warm'}},{t:'Je ne fais que passer.',end:true}]}}},
+  marierose:{who:'Marie-Rose, cuisinière',start:S=>S.flags.roseClosed?'r8':S.clues.includes('rose')?'r9':'r0',nodes:{
+    r0:{text:'(Une femme d’une cinquantaine d’années, un tablier sous son manteau, serre une tasse sans la boire.) Vous regardez la grande maison depuis la fenêtre. Vous n’êtes pas d’ici.',choices:[{t:'Je m’appelle Oscar. La femme et l’enfant dans ce sous-sol, ce sont les miens.',next:'r1',min:5},{t:'Vous travaillez pour Omer ?',next:'r2',min:3},{t:'Dites-moi tout sur cette maison. Tout de suite.',next:'r3'}]},
+    r1:{text:'(Ses yeux se remplissent de larmes.) Mon Dieu… Je leur descends à manger chaque soir. Le petit dessine des soldats sur le mur avec du charbon. Écoutez : à minuit, à la relève, j’apporte le souper des gardes par la ruelle. Je laisserai la porte de la cuisine ouverte. Dix minutes. Et au portail, le mot de passe de ce soir, c’est « La neige tombe sur Rio ».',choices:[{t:'Merci, Marie-Rose. Ensuite, rentrez chez vous et ne revenez pas.',end:true,fx:{clue:'rose',flag:['mot','kitchenPlan']}}]},
+    r2:{text:'Je fais la cuisine. Je ne pose pas de questions. (Elle baisse la voix.) Mais une cuisinière voit des choses.',choices:[{t:'Je m’appelle Oscar. La femme et l’enfant dans le sous-sol sont les miens.',next:'r1',min:5},{t:'Laissez tomber.',end:true}]},
+    r3:{text:'(Elle se lève.) Vous parlez comme lui. Je n’ai rien à vous dire.',choices:[{t:'(La laisser partir)',end:true,fx:{flag:'roseClosed'}}]},
+    r8:{text:'Laissez-moi tranquille.',choices:[{t:'…',end:true}]},
+    r9:{text:'Minuit. La porte de la cuisine. Ramenez-les, monsieur.',choices:[{t:'Je vous le promets.',end:true}]}}},
+  rejean:{who:'Réjean, monteur d’Hydro-Québec',start:()=>'j0',nodes:{
+    j0:{text:'(Casque sur les genoux, il souffle sur son café.) Trente-deux heures debout. Les pylônes tombent comme des allumettes. Ici, toute la rue est noire… sauf le bonhomme au bout, avec sa génératrice.',choices:[{t:'Sa génératrice ?',next:'j1',min:3},{t:'Il y a un fil tombé sur le trottoir, devant l’abribus.',next:'j2',min:2},{t:'Bon courage.',end:true}]},
+    j1:{text:'Une grosse diesel, devant son garage, côté est. Ça fait un vacarme… Si elle s’arrête, sa maison est aussi noire que les autres. Caméras comprises, j’imagine.',choices:[{t:'Merci, Réjean.',end:true,fx:{clue:'generatrice'}}]},
+    j2:{text:'Le fil sous tension ? N’approche pas, il est encore vivant ! J’y vais, je vais l’isoler au poteau. (Il remet son casque.)',choices:[{t:'Merci.',end:true,min:20,fx:{flag:'wireSafe',call:'wireFix'}}]}}},
+  portier:{who:'Garde du portail',start:S=>S.flags.gateDone?'p9':'p0',nodes:{
+    p0:{text:'(Un colosse en parka noire, la capuche couverte de glace, lève sa lampe vers toi.) C’est fermé. Dégage.',choices:[{t:'Viktor m’envoie. J’ai sa mallette pour le patron.',next:'p1',min:1},{t:'Je me suis trompé de maison.',end:true},{t:'(L’attaquer)',end:true,fx:{call:'gateFail'}}]},
+    p1:{text:'(Il regarde la mallette en métal.) Viktor devait venir lui-même. Le mot de passe.',choices:[{t:'« La neige tombe sur Rio. »',end:true,need:{flag:'mot'},fx:{flag:'gateDone',call:'gateIn'}},{t:'« Le Bras droit m’envoie. »',end:true,fx:{call:'gateFail'}},{t:'« Vendredi, tempête de verglas. »',end:true,fx:{call:'gateFail'}}]},
+    p9:{text:'Avance. Le patron est au salon.',choices:[{t:'…',end:true}]}}},
+  omer:{who:'Omer',start:()=>'o0',nodes:{
+    o0:{text:'(Affalé sur le canapé de cuir, un cigare aux lèvres, il ne se lève pas.) Le soldat. Tout le Canada à genoux dans la glace pour arriver jusqu’ici. Tu veux un verre ?',choices:[{t:'Où sont-ils ?',next:'o1',min:1},{t:'Rends-les-moi, et tu vis.',next:'o2',min:1},{t:'(Attaquer)',end:true,fx:{call:'bossFight'}}]},
+    o1:{text:'Sous nos pieds. Ils entendent tout, tu sais. Chaque fête, chaque rire. (Aux femmes :) Les filles, dehors.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]},
+    o2:{text:'Tu as détruit ce que j’ai bâti. Je t’avais écrit que tu saurais ce qu’est la souffrance. La leçon n’est pas finie.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  omerSpot:{who:'Omer',start:()=>'s0',nodes:{s0:{text:'(Il jette son cigare.) Le soldat est dans ma maison ! Tuez-le !',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  omerI:{who:'Omer, à terre',start:()=>'i0',nodes:{
+    i0:{text:'(Il rit en crachant du sang.) Vas-y, soldat. Finis-le. Montre à ton fils qui tu es vraiment.',choices:[{t:'(Lever le poing)',next:'i1',min:1},{t:'Non. Tu vas passer le reste de ta vie en prison.',next:'i2',min:2}]},
+    i1:{text:'(Oscar s’arrête. Dans sa tête, la petite voix de Cédric : « Papa appelle quand ? ») … Non.',choices:[{t:'(Baisser le poing)',next:'i2'}]},
+    i2:{text:'(Oscar le menotte au radiateur et prend la clé à sa ceinture.) Omer : « 1967. L’Expo. L’année où mon père est arrivé ici… Tu ne comprends rien, soldat. »',choices:[{t:'(Aller au sous-sol)',end:true,fx:{clue:'omer',flag:'omerKey'}}]}}},
+  eva:{who:'Eva',start:()=>'e0',nodes:{e0:{text:'(Elle serre Cédric contre elle, les yeux immenses dans la pénombre.) Oscar… ? Dis-moi que c’est vraiment toi.',choices:[{t:'C’est moi. On s’en va.',end:true,fx:{call:'free'}}]}}},
+  cedric:{who:'Cédric',start:()=>'c0',nodes:{c0:{text:'Papa ! J’ai dessiné des soldats sur le mur. C’était toi.',choices:[{t:'Viens là, mon grand. On rentre.',end:true,fx:{call:'free'}}]}}},
+  clavier:{who:'Porte du sous-sol',start:S=>S.flags.powerCut?'k1':'k0',nodes:{
+    k0:{text:'Une porte blindée. Un pavé numérique éclairé en vert attend quatre chiffres.',choices:[{t:'1967',end:true,fx:{call:'codeOk'}},{t:'1976',end:true,fx:{call:'codeBad'}},{t:'1697',end:true,fx:{call:'codeBad'}},{t:'(Utiliser la clé d’Omer)',end:true,need:{flag:'omerKey'},fx:{call:'codeOk'}}]},
+    k1:{text:'Le pavé est éteint : la génératrice est coupée. Il reste la serrure mécanique de secours.',choices:[{t:'(Utiliser la clé d’Omer)',end:true,need:{flag:'omerKey'},fx:{call:'codeOk'}},{t:'(Revenir plus tard)',end:true}]}}},
+});
+Object.assign(CALLS,{
+  wireFix:()=>{toast('Réjean coupe la ligne au poteau. Le fil tombé ne crache plus d’étincelles.');},
+  gateIn:()=>{S.flags.door_front=true;S.flags.inManor=true;for(const e of S.arenas.manoir.enemies)if(e.id[0]==='m'||e.id[0]==='i')e.friendly=true;travelTo('manoir',2,0,42,'Le garde t’escorte dans l’allée glacée. « Le patron est au salon. Et touche pas aux filles. »');},
+  gateFail:()=>{S.location='westmount';alarm('Le garde du portail a compris.');},
+  codeOk:()=>{S.flags.basementOpen=true;sfx('down');enterInterior('soussol');toast('Clic. La porte blindée s’ouvre sur un escalier de béton. Une ampoule nue, en bas.');},
+  codeBad:()=>{addMinutes(5);toast('Code refusé. Une sirène hurle dans la maison.');const st=S.arenas.manoir;if(!st.alarm&&S.location==='manoir')alarm('Le pavé du sous-sol a donné l’alerte.');},
+  free:()=>{if(S.flags.freed)return;S.flags.freed=true;checkObjective();playCine('finale',()=>levelComplete());},
+});
+function objectiveMTL(S){
+  if(!S.flags.inManor)return S.clues.includes('rose')?{stage:1,text:'Entre chez Omer : par le portail (le mot de passe), par la ruelle de service à minuit (porte de la cuisine), ou par-dessus le mur du jardin. Attention aux branches qui tombent et au fil électrique tombé.',target:'gate'}
+    :{stage:0,text:'Westmount est plongé dans le noir. Seule la maison d’Omer est éclairée. Réfugie-toi dans la salle paroissiale : réchauffe-toi et renseigne-toi.',target:'refuge'};
+  if(!S.flags.bossMet)return{stage:2,text:'Trouve Omer dans le grand salon (aile est).'+(S.flags.powerCut?'':' Saboter la génératrice, devant le garage, aveuglerait les caméras.'),target:'salon'};
+  if(!S.flags.bossDown)return{stage:3,text:'Affronte Omer.',target:'boss'};
+  if(!S.clues.includes('omer'))return{stage:4,text:'Omer est à terre. Approche-toi (touche E).',target:'boss'};
+  if(!S.flags.basementOpen)return{stage:5,text:'Ouvre la porte du sous-sol, au fond du salon.',target:'bdoor'};
+  if(!S.flags.freed)return{stage:6,text:'Eva et Cédric sont là. Libère-les.',target:'family'};
+  return{stage:7,text:'Opération Omer terminée.',target:null};
+}
+function mtlTarget(o){const t=o.target;
+  if(t==='refuge')return S.location==='westmount'?{x:WMT.ox-30,z:WMT.oz+13.6}:null;
+  if(t==='gate')return S.location==='westmount'?{x:WMT.ox+40,z:WMT.oz-1.2}:null;
+  if(t==='salon')return S.location==='manoir'?{x:MANOIR.ox+14,z:MANOIR.oz-9}:null;
+  if(t==='bdoor')return S.location==='manoir'?{x:MANOIR.ox+20.4,z:MANOIR.oz-28.6}:null;
+  if(t==='family')return S.location==='soussol'?{x:SOUSSOL.ox-2.5,z:SOUSSOL.oz-2.4}:null;
+  return undefined;}
+function mtlZones(){
+  const Wm=WMT,Mo=MANOIR,Z=[];const z=o=>{Z.push({lvl:'mtl',...o});};
+  z({loc:'westmount',x:Wm.ox-30,z:Wm.oz+13.6,r:1.8,label:()=>'Entrer dans la salle paroissiale (refuge)',act:()=>enterInterior('refuge')});
+  z({loc:'refuge',x:REFUGE.ox,z:REFUGE.oz+REFUGE.hd-.7,r:1.2,label:()=>'Sortir sous le verglas',act:()=>exitInterior()});
+  z({loc:'westmount',x:Wm.ox+40,z:Wm.oz-1.2,r:1.8,cond:()=>!S.arenas.westmount.alarm,label:()=>'Parler au garde du portail',act:()=>openDialogue('portier')});
+  z({loc:'westmount',x:Wm.ox+58,z:Wm.oz-3,r:2.2,label:()=>'Prendre la ruelle de service (porte de la cuisine)',act:()=>{S.flags.inManor=true;travelTo('manoir',3,-30,-8,'La ruelle est une patinoire. Au bout, la porte de la cuisine d’Omer, sous une lampe.');}});
+  z({loc:'westmount',x:Wm.ox+30,z:Wm.oz-2.6,r:2,label:()=>'Escalader le mur du jardin couvert de glace (risqué)',act:()=>{addMinutes(8);if(!S.flags.crampons&&Math.random()<.5){hurtPlayer(25,false);toast('Tes mains glissent sur la pierre gelée : tu retombes lourdement sur le trottoir.');return;}S.flags.inManor=true;travelTo('manoir',0,-44,-44,'Tu bascules dans le jardin d’Omer. Des haies de glace, une terrasse, une caméra au-dessus de la porte-fenêtre.');}});
+  z({loc:'manoir',x:Mo.ox-23.4,z:Mo.oz-8,r:1.5,cond:()=>!S.flags.door_kitchen,label:()=>S.flags.kitchenPlan&&kitchenWindow()?'Entrer par la cuisine : Marie-Rose a laissé la porte ouverte':'Porte de la cuisine (verrouillée)',
+    act:()=>{if(S.flags.kitchenPlan&&kitchenWindow()){S.flags.door_kitchen=true;toast('La poignée tourne. Ça sent le riz et les épices. Marie-Rose a tenu parole.');}else toast(S.flags.kitchenPlan?'Verrouillée. Marie-Rose l’ouvrira à minuit, pendant la relève.':'Verrouillée.');}});
+  z({loc:'manoir',x:Mo.ox-10,z:Mo.oz-31.4,r:1.5,cond:()=>!S.flags.door_terrace,label:()=>'Forcer la porte-fenêtre de la terrasse (bruyant)',act:()=>{addMinutes(2);S.flags.door_terrace=true;sfx('down');const p=S.player;
+    const near=S.arenas.manoir.enemies.some(e=>!e.down&&!e.friendly&&Math.hypot(e.x-p.x,e.z-p.z)<12);if(near)alarm('Le verre de la porte-fenêtre a éclaté.');else toast('Le verrou cède dans un craquement. Personne n’a entendu… pour l’instant.');}});
+  z({loc:'manoir',x:Mo.ox,z:Mo.oz+1.4,r:1.5,cond:()=>!S.flags.door_front,label:()=>'Porte d’entrée (verrouillée)',act:()=>toast('Verrouillée. Le garde du portail a la confiance du patron, pas toi.')});
+  z({loc:'manoir',x:Mo.genPos.x,z:Mo.genPos.z,r:1.5,cond:()=>!S.flags.powerCut,label:()=>'Saboter la génératrice',act:()=>{S.flags.powerCut=true;addMinutes(2);sfx('down');toast('Tu arraches les câbles. Le moteur tousse et meurt : la maison d’Omer plonge dans le noir, comme le reste de la rue. Caméras aveugles.');}});
+  z({loc:'manoir',x:Mo.ox,z:Mo.oz+44.5,r:2,label:()=>'Ressortir dans la rue',act:()=>{exitTo('westmount',Wm.ox+40,Wm.oz+2);}});
+  z({loc:'manoir',x:Mo.ox+20.4,z:Mo.oz-28.6,r:1.6,label:()=>S.flags.bossDown?'Porte du sous-sol':'Porte du sous-sol (Omer d’abord)',act:()=>{if(!S.flags.bossDown){toast('Omer et ses hommes sont encore debout.');return;}openDialogue('clavier');}});
+  z({loc:'soussol',x:SOUSSOL.ox,z:SOUSSOL.oz+3.4,r:1.2,cond:()=>!S.flags.freed,label:()=>'Remonter au salon',act:()=>exitInterior()});
+  z({loc:'soussol',x:SOUSSOL.ox-2.5,z:SOUSSOL.oz-2,r:1.8,cond:()=>!S.flags.freed,label:()=>'Libérer Eva et Cédric',act:()=>CALLS.free()});
+  for(const n of interiorNPCs)if(n.lvl==='mtl'&&DIALOGUES[n.dlg]){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.x,z:n.z+(n.id==='helene'?1.3:.95),r:1.6,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
+  return Z;
+}
+function syncWire(){if(!WMT.spark)return;const on=!(S&&S.flags.wireSafe);WMT.spark.m.visible=on;WMT.spark.l.intensity=on&&Math.random()<.3?8*Math.random():0;}
+function CINES_mtlIntro(){const Wm=WMT;return[
+  {set:'westmount',d:7,clock:22*60+30,rain:.8,cloud:.95,wind:.35,center:{x:Wm.ox,z:Wm.oz},title:'Westmount, Montréal — vendredi, 22 h 30. Tempête de verglas. Tout le quartier est privé de courant.',
+    cam:[[Wm.ox-40,8,Wm.oz+30],[Wm.ox-20,5,Wm.oz+20],[Wm.ox+30,3,Wm.oz-20],[Wm.ox+40,4,Wm.oz-30]],upd(){syncWire();}},
+  {set:'westmount',d:8,clock:22*60+32,rain:.8,cloud:.95,wind:.35,center:{x:Wm.ox,z:Wm.oz},cam:[[Wm.ox-47.4,1.7,Wm.oz+10.4],[Wm.ox-48,1.7,Wm.oz+10],[Wm.ox-50,1.6,Wm.oz+8],[Wm.ox+40,4,Wm.oz-30]],
+    sub:[[.5,'Oscar','La seule maison éclairée de la rue. Évidemment.'],[4.2,'Oscar','Eva, Cédric… j’arrive.']],
+    upd(t,k,dt,T){syncWire();const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(Wm.ox-50,0,Wm.oz+8);oc.g.rotation.set(0,Math.PI*.6,0);animRig(oc,dt,T,0,'walk',.6,true);}}];}
+function CINES_finale(){const s=SOUSSOL,sx=x=>s.ox+x,sz=z=>s.oz+z,Wm=WMT,wx=x=>Wm.ox+x,wz=z=>Wm.oz+z;
+  A.hood??=(()=>{const h=cactor({skin:'#6a4a3a',jacket:'#1a1c20',pants:'#1a1c20',hair:'#111',height:1.01,build:1});const hd=new THREE.Mesh(new THREE.SphereGeometry(.17,12,8,0,Math.PI*2,0,Math.PI*.62),clothMat('#1a1c20'));hd.position.set(0,.06,-.02);hd.scale.set(1,1.1,1.2);h.head.add(hd);return h;})();
+  A.cop1??=cactor({skin:'#f1c27d',jacket:'#14213d',pants:'#14213d',hair:'#2b1d14',build:1.05});A.cop2??=cactor({skin:'#8d5524',jacket:'#14213d',pants:'#14213d',hair:'#111',bald:true,build:1.1});
+  const cuffed=h=>{h.armL.sh.rotation.set(.45,0,.2);h.armR.sh.rotation.set(.45,0,-.2);h.armL.el.rotation.x=-.6;h.armR.el.rotation.x=-.6;h.head.rotation.x=.15;};
+  const pol=T=>{Wm.police.visible=true;Wm.polLights.forEach((l,i)=>l.intensity=Math.max(0,Math.sin(T*9+i*Math.PI))*14);};
+  return[
+  {set:'soussol',indoor:true,d:7,clock:3*60+20,center:{x:sx(0),z:sz(0)},cam:[[sx(1.6),1.6,sz(2.6)],[sx(1.2),1.5,sz(2.2)],[sx(-1.6),.8,sz(-2.4)],[sx(-.6),1,sz(0)]],
+    sub:[[.6,'Cédric','… Papa ?'],[2.6,'Oscar','Je suis là. Je suis là, mon grand.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(sx(0),0,lerp(sz(3.2),sz(.6),ease(clamp(k*1.6,0,1))));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,k<.6?1:0,'walk',.4,true);
+      place(A.eva,sx(-2.9),sz(-3),0,'walk',T,dt,0,.18);pose.floorSit(A.eva);pose.protect(A.eva);
+      if(t<2.2){place(A.cedric,sx(-2.1),sz(-3.1),-.3,'walk',T,dt,0,.18);pose.floorSit(A.cedric);}else walkTo(A.cedric,[sx(-2.1),sz(-3)],[sx(-.1),sz(.1)],clamp((t-2.2)/2.4,0,1),2.4,T,dt);}},
+  {set:'soussol',indoor:true,d:8,clock:3*60+21,center:{x:sx(0),z:sz(0)},cam:[[sx(1.3),1.3,sz(1.2)],[sx(1.1),1.25,sz(1)],[sx(0),1,sz(0)],[sx(0),1.05,sz(0)]],
+    sub:[[.4,'Eva','Je savais que tu viendrais. Je le lui disais tous les soirs.'],[4.4,'Oscar','On rentre à la maison.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(sx(0),0,sz(.5));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.4,true);pose.kneel(oc);pose.hug(oc);
+      place(A.cedric,sx(0),sz(-.1),0,'walk',T,dt);pose.hug(A.cedric);walkTo(A.eva,[sx(-1.8),sz(-1.6)],[sx(-.5),sz(-.2)],clamp(k*1.8,0,1),3,T,dt);if(k>.55)pose.hug(A.eva);}},
+  {set:'westmount',d:8,clock:3*60+40,rain:.6,cloud:.95,wind:.3,center:{x:wx(36),z:wz(4)},cam:[[wx(26),3.2,wz(12)],[wx(28),2.6,wz(10)],[wx(38),1.4,wz(3)],[wx(37),1.4,wz(5)]],
+    sub:[[.5,'','(Les gyrophares de la police de Montréal colorent le verglas en rouge et bleu.)'],[3.6,'Omer','(Il crache par terre.) Ce n’est pas fini, soldat.'],[6,'Oscar','Pour toi, si.']],
+    upd(t,k,dt,T){pol(T);syncWire();walkTo(A.omer,[wx(40),wz(-2)],[wx(37.2),wz(4.6)],k,8,T,dt);cuffed(A.omer);walkTo(A.cop1,[wx(40.7),wz(-2.4)],[wx(37.9),wz(4.2)],k,8,T,dt);walkTo(A.cop2,[wx(39.2),wz(-2.6)],[wx(36.4),wz(4)],k,8,T,dt);
+      const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(wx(31),0,wz(3.2));oc.g.rotation.set(0,1.2,0);animRig(oc,dt,T,0,'walk',.4,true);
+      place(A.eva,wx(30.2),wz(2.6),1.1,'walk',T,dt);pose.hug(A.eva);place(A.cedric,wx(30.6),wz(3.6),1.3,'walk',T,dt);}},
+  {set:'westmount',d:9,clock:3*60+44,rain:.6,cloud:.95,wind:.3,center:{x:wx(30),z:wz(8)},cam:[[wx(32.5),1.8,wz(1.8)],[wx(32.2),1.75,wz(2.2)],[wx(26),1.6,wz(14)],[wx(25),1.6,wz(15)]],
+    enter(){setTimeout(()=>csnd('ring'),300);},
+    sub:[[.4,'','(Le téléphone d’Oscar vibre. Numéro masqué.)'],[2.2,'Voix déformée','Bien joué, Oscar. Rentre chez toi. Cette fois, pour de bon.'],[5.2,'Oscar','Qui êtes-vous ?'],[6.6,'Voix déformée','Quelqu’un qui devait quelque chose à Omer. On se reparlera.']],
+    upd(t,k,dt,T){pol(T);syncWire();const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(wx(31.6),0,wz(3.4));oc.g.rotation.set(0,-.5,0);animRig(oc,dt,T,0,'walk',.4,true);if(t>.8)pose.phoneEar(oc);
+      if(k<.78){place(A.hood,wx(26),wz(14.6),Math.PI*.85,'walk',T,dt);pose.phoneEar(A.hood);}else walkTo(A.hood,[wx(26),wz(14.6)],[wx(14),wz(15.4)],(k-.78)/.22,2,T,dt);}},
+  {set:'westmount',d:6,clock:3*60+50,rain:.6,cloud:.95,wind:.3,center:{x:wx(20),z:wz(0)},title:'Opération Omer — Fin. Eva et Cédric sont libres.',cam:[[wx(10),6,wz(20)],[wx(4),12,wz(30)],[wx(36),2,wz(0)],[wx(36),3,wz(-10)]],
+    upd(t,k,dt,T){pol(T);syncWire();}}];}
 
 /* --- 5d. CINÉMATIQUES (bloc 4) ---
    Moteur de plans : décor, acteurs, caméra (mouvement + caméra à l'épaule), sous-titres, titres, bandes noires.
@@ -3126,7 +3444,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
-  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='mbIntro'?CINES_mbIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
+  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='mbIntro'?CINES_mbIntro():name==='mtlIntro'?CINES_mtlIntro():name==='finale'?CINES_finale():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
@@ -3341,11 +3659,11 @@ function syncTitle(dt,t){
 }
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});

@@ -1,6 +1,7 @@
 # Architecture technique
 
-## État actuel (v0.10.0)
+## État actuel (v1.0.0)
+- Niveau 7 (section 5j) : lieux `westmount`, `refuge`, `manoir`, `soussol`. `MANOIR.indoor`/`ice` basculent chaque pas selon `inHouse(p)` (la maison est dans une arène extérieure). Portes : `MANOIR.doors[k]` + `S.flags.door_<k>` (`syncDoors`). `stormHazards()` : branches et fil tombé. `camMeshesFor(I,cams)` + `syncCameras()` générique (toutes les arènes avec `cams`). Cinématique `finale` → `levelComplete()`.
 - Niveau 6 (section 5i) : lieux `winnipeg`, `cafe`, `silos` ; `whiteout()` (0–1, neige × vent sur les lieux `snow`) réduit le brouillard et la détection des gardes (×(1−0,5·whiteout)) ; `S.thermos` + `drinkThermos()` (touche H).
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.

@@ -116,7 +116,26 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             o.S.player.x=6000+28;o.S.player.z=400-24;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','Viktor : négociation');o.choose(0);o.choose(0);
             const vk=o.S.arenas.silos.enemies.find(e=>e.id==='boss');o.damage(vk,400);ok(o.S.flags.bossDown,'Viktor vaincu');
             o.openDialogue('viktorI');o.choose(0);o.choose(0);ok(o.S.clues.includes('mallette'),'mallette : adresse et code du sous-sol');
-            return winOk().then(w6=>{ok(w6,'écran de fin de niveau 6');return r;});});});});});});
+            return winOk().then(w6=>{ok(w6,'écran de fin de niveau 6');
+            o.startLevel(null,'mtl');ok(o.S.level==='mtl'&&o.S.location==='westmount','niveau 7 : Westmount, Montréal');
+            ok(o.manoir().ice&&o.wmt().ice,'sol verglacé');
+            window.__oscarGod=false;const h0=o.S.player.health;o.S.player.x=7000+14;o.S.player.z=11;o.tick(.05);ok(o.S.player.health<h0,'fil électrique tombé : décharge');window.__oscarGod=true;o.S.player.health=100;
+            o.S.player.x=7000-30;o.S.player.z=13.6;zone('salle paroissiale').act();ok(o.S.location==='refuge','refuge de la salle paroissiale');
+            o.openDialogue('marierose');o.choose(0);o.choose(0);ok(o.S.clues.includes('rose')&&o.S.flags.mot,'Marie-Rose : cuisine à minuit et mot de passe');
+            o.openDialogue('rejean');o.choose(0);o.choose(0);ok(o.S.clues.includes('generatrice'),'Réjean : la génératrice');
+            o.openDialogue('rejean');o.choose(1);o.choose(0);ok(o.S.flags.wireSafe,'Réjean isole le fil tombé');
+            o.openDialogue('helene');o.choose(1);ok(o.S.tasks.bois==='done','Hélène : le bois du poêle (tâche)');
+            zone('Sortir').act();o.S.player.x=7000+40;o.S.player.z=-1.2;zone('garde du portail').act();o.choose(0);o.choose(0);
+            ok(o.S.location==='manoir'&&o.S.flags.door_front&&o.S.arenas.manoir.enemies.find(e=>e.id==='m1').friendly,'portail : mot de passe, escorté comme homme de Viktor');
+            o.tick(.05);ok(o.manoir().cols.some(c=>c.x0<-1e6),'porte d’entrée ouverte');
+            o.S.player.x=7000+32;o.S.player.z=400-2.6;zone('génératrice').act();ok(o.S.flags.powerCut,'génératrice sabotée : maison dans le noir');
+            o.S.player.x=7000;o.S.player.z=400-6;o.tick(.05);ok(o.manoir().indoor===true,'dans la maison : intérieur');
+            o.S.arenas.manoir.alarm=false;o.S.player.x=7000+14;o.S.player.z=400-10;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','Omer : face-à-face au salon');o.choose(0);o.choose(0);
+            const om=o.S.arenas.manoir.enemies.find(e=>e.id==='boss');ok(om.hp===300,'Omer : 300 PV');o.damage(om,500);ok(o.S.flags.bossDown,'Omer vaincu');
+            o.openDialogue('omerI');o.choose(1);o.choose(0);ok(o.S.clues.includes('omer')&&o.S.flags.omerKey,'Omer menotté, clé du sous-sol');
+            o.S.player.x=7000+20.4;o.S.player.z=400-28.6;zone('sous-sol').act();ok(o.mode==='ui','porte du sous-sol');o.choose(0);ok(o.S.location==='soussol','sous-sol ouvert (serrure de secours)');
+            zone('Libérer').act();ok(o.mode==='cine'&&o.cine.name==='finale','cinématique de fin');o.endCine();
+            return winOk().then(w7=>{ok(w7,'écran de fin du jeu');ok(document.getElementById('bNext').classList.contains('hidden'),'pas de niveau suivant');return r;});});});});});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

@@ -3,6 +3,8 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À décider** : l'identité du personnage mystérieux (la fin garde le mystère et ouvre une suite).
+- **À valider** : tout le niveau 7 (Hélène, Marie-Rose, Réjean, le mot de passe, la fin, Omer livré à la police) — `docs/PLAN.md` §10j.
 - **À valider** : tout le niveau 6 (Mireille, Nadia, Louis, Viktor, le code 1967, la tempête de verglas) — `docs/PLAN.md` §10i.
 - **À valider** : tout le niveau 5 (Gisèle, Chloé, Sam, Bernie, le Notaire, le Bras droit à Winnipeg) — `docs/PLAN.md` §10h.
 - **À valider** : tout le niveau 4 (Priya, Dale, l'Éleveur, le Notaire, Westmount) — `docs/PLAN.md` §10g.
@@ -18,6 +20,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Niveau 7 : Montréal, le final (v1.0.0)
+- Fait : tempête de verglas (branches, fil tombé), panne générale, refuge, trois entrées dans la maison d'Omer, génératrice, boss Omer, sous-sol, cinématique de fin et écran de fin du jeu.
+- Corrigé : les gardes au corps à corps ne blessaient Oscar qu'au port de Toronto ; `startBossFight` ne réveillait pas les gardes de la pièce ; `syncCameras` généralisé.
+- Tests : 112/112 ; passage réel 6 → 7 et cinématique de fin sans erreur console.
+- Suite : test humain complet, réglage, identité du personnage mystérieux.
 
 ## 2026-11-20 — Claude — Niveau 6 : Manitoba (v0.10.0)
 - Fait : blizzard −40 °C, voiles blancs (vue réduite pour Oscar et les gardes), thermos (H), abris chauffés, Saint-Boniface, café, silos de Saint-Norbert, boss Viktor, mallette ; enchaînement Nouvelle-Écosse → Manitoba.
