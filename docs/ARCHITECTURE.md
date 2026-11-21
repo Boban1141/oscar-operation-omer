@@ -1,6 +1,6 @@
 # Architecture technique
 
-## État actuel (v0.5.0)
+## État actuel (v0.6.0)
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.
 - Lancer en local : servir le dossier `game/` (`python3 -m http.server -d game 8000`) puis ouvrir `http://localhost:8000`.
@@ -33,6 +33,13 @@
 - Section « 5d » : décors `CSET` (brazil, lair, basement) placés loin de la ville ; acteurs `A.*` créés avec `createHuman` (mêmes règles de réalisme) ; poses dans `pose.*`.
 - Un script = liste de plans `{set, d, clock, rain, cloud, indoor, center, title, cam:[départ, arrivée, regard départ, regard arrivée], sub:[[t, qui, texte]], enter(), upd(t,k,dt,T)}`. Scripts : `CINES_intro`, `CINES_msg(n)`, `CINES_fail`.
 - `playCine(nom, fin)` passe en mode `cine` ; `endCine()` rend la main.
+
+## Multi-niveaux (bloc 6)
+- `LEVELS[id]` : saison, météo, températures, `coldFactor`, `start` (lieu de départ), `next`, textes `ready` / `win` / `startToast`.
+- Lieux : `INTERIORS[id]` (`indoor`, `label`, `exitLoc`). Arènes de combat : `ARENAS[id]` (`area`, `defs`, `room`, `boss`, `elook`, `bossLook`, `bossDeco`, `lvl`). État : `S.arenas[id]`. Accès : `AR()` (arène du lieu actuel), `AS()` (son état).
+- Zones : propriété `lvl` (par défaut `toronto`). Objectifs : `objective()` choisit `objectiveToronto` / `objectiveBC`.
+- Progression entre niveaux : `localStorage['oscar.progress']` (`levelsDone`, vies bonus, argent) ; `createState(levelId)` la relit.
+- **Ajouter une province** : `LEVELS.xx`, un module « 5x » (décors, PNJ, `ARENAS.xx`, `CLUES`, `DIALOGUES`, `objectiveXX`, zones), une cinématique `xxIntro`, et des vérifications dans `tests/run_logic_tests.py`.
 
 ## Principes à respecter
 1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.

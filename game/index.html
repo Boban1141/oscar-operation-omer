@@ -208,20 +208,20 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
 </div>
 <div id="ready" class="screen hidden">
   <div class="card">
-    <p class="cond" style="font-size:20px;margin:0">Toronto · jour 1 · 7 h 30</p>
-    <h1 style="font-size:clamp(48px,9vw,84px)">La maison est vide.</h1>
-    <p class="sub">72 heures pour trouver la première piste. Fouille la maison, interroge les voisins, remonte jusqu’aux hommes d’Omer.</p>
+    <p class="cond" style="font-size:20px;margin:0" id="readyKicker"></p>
+    <h1 style="font-size:clamp(44px,8vw,80px)" id="readyTitle"></h1>
+    <p class="sub" id="readyText"></p>
     <div class="btns"><button class="primary" id="bReady">Prendre le contrôle d’Oscar</button></div>
   </div>
 </div>
 <div id="win" class="screen hidden">
   <div class="card">
-    <p class="cond" style="font-size:20px;margin:0">Toronto, Ontario</p>
-    <h1 style="font-size:clamp(52px,10vw,92px)">Niveau 1 terminé</h1>
-    <p class="sub">Tiago a parlé. Eva et Cédric ne sont pas à Toronto : la piste mène à Vancouver, où « le Pasteur » attend le conteneur d’Omer.</p>
+    <p class="cond" style="font-size:20px;margin:0" id="winKicker"></p>
+    <h1 style="font-size:clamp(52px,10vw,92px)" id="winTitle"></h1>
+    <p class="sub" id="winText"></p>
     <div class="stats" id="winStats"></div>
-    <p>Niveau 2 · Colombie-Britannique · automne, pluie constante, forêts et montagnes : en construction.</p>
-    <div class="btns"><button class="primary" id="bExplore">Continuer à explorer Toronto</button><button id="bReplay">Rejouer le niveau 1</button></div>
+    <p id="winNext"></p>
+    <div class="btns"><button class="primary hidden" id="bNext">Niveau suivant</button><button id="bExplore">Continuer à explorer</button><button id="bReplay">Rejouer ce niveau</button></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -251,7 +251,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '0.5.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '0.6.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -259,7 +259,23 @@ const LEVELS = {
     temp:{min:7, max:16}, coldFactor:0.25,
     weather:{clear:.5, cloudy:.3, rain:.2},
     density:{peds:38, cars:22, taxis:4, bikes:8},
-    objective:{text:"Rejoindre le restaurant Lina’s Diner, sur King Street, pour interroger les habitués.", done:"Objectif atteint. Prochaine étape (bloc 2) : entrer, interroger les habitués et trouver le premier indice."}
+    objective:{text:"Rejoindre le restaurant Lina’s Diner, sur King Street, pour interroger les habitués.", done:"Objectif atteint. Prochaine étape (bloc 2) : entrer, interroger les habitués et trouver le premier indice."},
+    next:'bc',
+    ready:{kicker:'Toronto · jour 1 · 7 h 30',title:'La maison est vide.',text:'72 heures pour trouver la première piste. Fouille la maison, interroge les voisins, remonte jusqu’aux hommes d’Omer.'},
+    win:{kicker:'Toronto, Ontario',title:'Niveau 1 terminé',text:'Tiago a parlé. Eva et Cédric ne sont pas à Toronto : la piste mène à Vancouver, où « le Pasteur » attend le conteneur d’Omer.',next:'Niveau 2 · Colombie-Britannique · automne, pluie constante, forêts et montagnes.'},
+    startToast:'Toronto, 7 h 30. Tu rentres du Brésil. La porte est entrouverte, la maison silencieuse. Entre et cherche des indices.'
+  },
+  bc: {
+    id:'bc', index:2, name:'Colombie-Britannique', region:'Vancouver', season:'Automne', seed:604,
+    startMinute: 6*60+10, timeLimitMin: 72*60,
+    temp:{min:4, max:11}, coldFactor:0.45,
+    weather:{clear:.08, cloudy:.22, rain:.7},
+    density:{peds:0, cars:0, taxis:0, bikes:0},
+    start:{loc:'vanport',x:0,z:46},
+    next:null,
+    ready:{kicker:'Vancouver · jour 1 · 6 h 10',title:'Pluie, brouillard, et le conteneur d’Omer.',text:'Le froid humide de la côte use les forces : un imperméable et un café chaud peuvent te sauver. Trouve le conteneur, puis le camp du Pasteur.'},
+    win:{kicker:'Squamish, Colombie-Britannique',title:'Niveau 2 terminé',text:'Le Pasteur a parlé. Le « Marie-Galante » part de St. John’s dans quatre jours. Et dans la valise, le dessin de Cédric : une montagne surmontée d’une grande croix lumineuse.',next:'Niveau 3 · Terre-Neuve · fin de l’automne, vents violents et tempêtes : en construction.'},
+    startToast:'Vancouver, 6 h 10. La pluie ne s’arrête pas. Le terminal de Centerm est de l’autre côté de la clôture.'
   }
 };
 const ROADS=[-150,-75,0,75,150], CENTERS=[-112.5,-37.5,37.5,112.5], LOT=26.5, BOUND=163;
@@ -357,7 +373,8 @@ const DIALOGUES={
 };
 const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
-function objective(S){
+function objective(S){return S.level==='bc'?objectiveBC(S):objectiveToronto(S);}
+function objectiveToronto(S){
   if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
   if(!S.flags.leadPort)return{stage:2,text:'Retrouve les trois hommes vus au Lina’s Diner : interroge Lina et les habitués.',target:'restaurant'};
@@ -446,13 +463,16 @@ function generateCity(seed){
 }
 
 /* ---------------- 3. STATE ---------------- */
+function loadProgress(){try{return JSON.parse(localStorage.getItem('oscar.progress'))||{}}catch(e){return{}}}
 function createState(levelId){
   const L=LEVELS[levelId], city=CITY;
-  const h=city.oscarHouse, sx=h.x, sz=h.z+h.d/2+5;
+  const h=city.oscarHouse;let sx=h.x, sz=h.z+h.d/2+5, loc='outside';
+  if(L.start){const I=INTERIORS[L.start.loc];loc=L.start.loc;sx=I.ox+L.start.x;sz=I.oz+L.start.z;}
+  const pr=L.index>1?loadProgress():{};
   return {
     v:GAME_VERSION, level:levelId, clock:L.startMinute, startClock:L.startMinute,
-    player:{x:sx,z:sz,y:.15,vx:0,vz:0,vy:0,heading:Math.PI,anim:0,health:100,heat:100,stamina:100,lives:3,bonusLives:0,bonusEarned:0,weapon:'fists',weapons:[],ammo:{pistol:{mag:0,res:0},rifle:{mag:0,res:0}}},
-    checkpoint:{x:sx,z:sz,loc:'outside'}, money:START_MONEY, clues:[], tasks:{}, location:'outside',
+    player:{x:sx,z:sz,y:loc==='outside'?.15:0,vx:0,vz:0,vy:0,heading:Math.PI,anim:0,health:100,heat:100,stamina:100,lives:3,bonusLives:pr.bonusLives||0,bonusEarned:pr.bonusEarned||0,weapon:'fists',weapons:[],ammo:{pistol:{mag:0,res:0},rifle:{mag:0,res:0}}},
+    checkpoint:{x:sx,z:sz,loc}, money:pr.money??START_MONEY, clues:[], tasks:{}, location:loc,
     camYaw:0, flags:{}, weather:{period:-1,kind:'clear',rain:0,cloud:.1,temp:12,target:{rain:0,cloud:.1}},
     status:'playing'
   };
@@ -521,7 +541,7 @@ function stepPlayer(dt){
   p.stamina=clamp(p.stamina+(running?-14:9)*dt,0,100);
   // Cold & rain: the climate is an opponent (stronger in later provinces).
   const W=S.weather;
-  const exposure=INTERIORS[S.location]&&INTERIORS[S.location].indoor?0:W.rain*1.0+Math.max(0,(10-W.temp))/10;
+  const exposure=INTERIORS[S.location]&&INTERIORS[S.location].indoor?0:W.rain*(S.flags.raincoat?.3:1)+Math.max(0,(10-W.temp))/10;
   const warmth=running?.5:0;
   if(exposure-warmth>.15)p.heat-=(exposure-warmth)*.35*L.coldFactor*dt*Math.max(1,timeScale/4);
   else p.heat+=.6*dt;
@@ -1341,6 +1361,7 @@ let lastStage=-1;
 function checkObjective(){const o=objective(S);if(o.stage!==lastStage){if(lastStage>=0&&o.stage>lastStage){toast('Nouvel objectif : '+o.text);store.save(S);}lastStage=o.stage;}}
 function objectiveTarget(o){
   if(!o.target)return null;
+  if(S.level==='bc'){const bt=bcTarget(o);if(bt!==undefined)return bt;}
   if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
@@ -1355,7 +1376,7 @@ function enterInterior(id){
   applyLocation();camera.position.set(p.x-Math.sin(p.heading)*3,1.9,p.z-Math.cos(p.heading)*3);addMinutes(1);
 }
 function exitInterior(){
-  const I=INTERIORS[S.location],o=I.exitOut(),p=S.player;S.location='outside';p.x=o.x;p.z=o.z;p.y=.15;p.vx=p.vz=0;p.heading=0;camYaw=Math.PI;
+  const I=INTERIORS[S.location],o=I.exitOut(),p=S.player;S.location=I.exitLoc||'outside';p.x=o.x;p.z=o.z;p.y=S.location==='outside'?.15:0;p.vx=p.vz=0;p.heading=0;camYaw=Math.PI;
   applyLocation();camera.position.set(p.x,p.y+3,p.z-6);addMinutes(1);
 }
 function applyLocation(){
@@ -1365,13 +1386,14 @@ function applyLocation(){
   STORY_PROPS.cigar.visible=loc==='outside'&&!S.clues.includes('cigar');
   if(INTERIORS.house.note)INTERIORS.house.note.visible=!S.clues.includes('note');
   STORY_PROPS.bag.visible=loc==='outside'&&S.tasks.tip==='active';
-  if(PORTA.vestMesh)PORTA.vestMesh.visible=!S.flags.disguise;if(oscarMesh&&oscarMesh.vest)oscarMesh.vest.visible=!!S.flags.disguise;applyGate();siren(!!AR()&&AS().alarm&&!S.flags.bossDown);
+  if(PORTA.vestMesh)PORTA.vestMesh.visible=!S.flags.disguise;if(oscarMesh&&oscarMesh.vest)oscarMesh.vest.visible=!!S.flags.disguise;applyGate();siren(!!AR()&&AS().alarm&&!S.flags.bossDown);if(oscarMesh&&oscarMesh.rain)oscarMesh.rain.visible=!!S.flags.raincoat;
 }
 function updateInteriorLights(day,night){
   for(const d of dayMats){if(d.opacity)d.m.opacity=d.base+d.k*day;else d.m.emissiveIntensity=d.base+d.k*day;}
   for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.night?L.base*night:L.base*(.45+.75*night);
 }
 function syncStory(dt,t){
+  if(S.location==='forest'&&FOREST.fire){FOREST.fire.scale.y=.8+Math.sin(t*11)*.25;FOREST.fireLight.intensity=16+Math.sin(t*17)*5;}
   for(const n of interiorNPCs){if(!n.h.g.visible)continue;
     if(n.mode!=='sit'){const dx=S.player.x-n.x,dz=S.player.z-n.z,d=Math.hypot(dx,dz);
       const target=d<4?Math.atan2(dx,dz):n.a;n.h.g.rotation.y=angLerp(n.h.g.rotation.y,target,1-Math.exp(-dt*(d<4?2.5:1)));}
@@ -1711,6 +1733,7 @@ function syncCombat(dt,t){
   for(const k in enemyMeshes)if(!k.startsWith(S.location+':')){enemyMeshes[k].h.g.visible=false;enemyMeshes[k].bar.visible=false;}
   const inPort=!!AR();
   for(const e of (AS()?AS().enemies:[])){const m=enemyMeshes[S.location+':'+e.id];if(!m)continue;m.h.g.visible=inPort;m.bar.visible=inPort&&!e.down&&e.meter>2&&e.state!=='combat';if(!inPort)continue;
+    if(e.gone){m.h.g.visible=false;m.bar.visible=false;continue;}
     m.h.g.position.set(e.x,e.down&&!e.surrender?.12:0,e.z);
     if(e.down&&!e.surrender){m.h.g.rotation.set(-Math.PI/2+.05,e.heading,0);animRig(m.h,dt*.2,0,0,'walk',0,false);continue;}
     m.h.g.rotation.set(0,e.heading,0);
@@ -1740,14 +1763,259 @@ function buildCombatActors(){
   oscarMesh.guns={pistol:gunMesh('pistol'),rifle:gunMesh('rifle')};for(const k in oscarMesh.guns){oscarMesh.guns[k].visible=false;oscarMesh.armR.wr.add(oscarMesh.guns[k]);}
   oscarMesh.flash=new THREE.PointLight('#ffb35c',0,7,2);oscarMesh.flash.position.set(.3,1.45,.7);oscarMesh.g.add(oscarMesh.flash);
   const v=new THREE.Mesh(new THREE.CapsuleGeometry(.17,.3,4,10).scale(1.32,1,.8),new THREE.MeshStandardMaterial({color:'#ff7a00',emissive:'#ff7a00',emissiveIntensity:.12,roughness:.8}));v.position.y=.3;v.visible=false;oscarMesh.spine.add(v);oscarMesh.vest=v;
+  const rc=new THREE.Mesh(new THREE.CapsuleGeometry(.18,.42,4,10).scale(1.3,1,.85),new THREE.MeshStandardMaterial({color:'#2e3a33',roughness:.35,metalness:.05}));rc.position.y=.22;rc.visible=false;oscarMesh.spine.add(rc);oscarMesh.rain=rc;
+  const hood=new THREE.Mesh(new THREE.SphereGeometry(.15,12,8,0,Math.PI*2,0,Math.PI*.6),rc.material);hood.position.set(0,.06,-.02);hood.scale.set(1,1,1.15);rc.add(hood);hood.position.y=.5;
 }
 function levelComplete(){
   if(!['play','ui','pause'].includes(mode))return;show('pause',false);show('dialog',false);mode='win';siren(false);if(document.pointerLockElement)document.exitPointerLock();
   const used=S.clock-S.startClock,p=S.player;
-  $('winStats').innerHTML=`<div><b>${Math.floor(used/60)} h ${String(Math.floor(used%60)).padStart(2,'0')}</b><span>temps utilisé sur 72 h</span></div><div><b>${S.clues.length}</b><span>indices trouvés</span></div><div><b>${p.bonusLives}</b><span>vies bonus en réserve</span></div><div><b>${S.money} $</b><span>argent restant</span></div>`;
-  try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:['toronto'],bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money}))}catch(e){}
+  const L=LEVELS[S.level];$('winKicker').textContent=L.win.kicker;$('winTitle').textContent=L.win.title;$('winText').textContent=L.win.text;$('winNext').textContent=L.win.next;show('bNext',!!L.next);
+  $('winStats').innerHTML=`<div><b>${Math.floor(used/60)} h ${String(Math.floor(used%60)).padStart(2,'0')}</b><span>temps utilisé sur ${L.timeLimitMin/60} h</span></div><div><b>${S.clues.length}</b><span>indices trouvés</span></div><div><b>${p.bonusLives}</b><span>vies bonus en réserve</span></div><div><b>${S.money} $</b><span>argent restant</span></div>`;
+  const pr=loadProgress();const done=[...new Set([...(pr.levelsDone||[]),S.level])];try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:done,bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money}))}catch(e){}
   S.flags.levelDone=true;store.save(S);show('win',true);
 }
+
+/* --- 5e. NIVEAU 2 : COLOMBIE-BRITANNIQUE --- */
+const VANP={ox:2000,oz:0,hw:70,hd:56,indoor:false,label:'Terminal de Centerm',cols:[],group:null,lights:[]};
+const BAR={ox:2000,oz:220,hw:7,hd:5.5,indoor:true,label:'The Rusty Anchor',spawn:{x:0,z:4.3},exitLoc:'vanport',exitOut:()=>({x:VANP.ox+25,z:VANP.oz+46.5}),cols:[],group:null,lights:[]};
+const FOREST={ox:2000,oz:520,hw:80,hd:92,indoor:false,label:'Forêt de Squamish',cols:[],group:null,lights:[]};
+INTERIORS.vanport=VANP;INTERIORS.bar=BAR;INTERIORS.forest=FOREST;
+INTERIORS.house.label='Maison d’Oscar';INTERIORS.diner.label='Lina’s Diner';INTERIORS.port.label='Port de Harbourfront';
+const CHAPEL={x0:-10,x1:10,z0:-82,z1:-62};
+ARENAS.vanport={area:VANP,lvl:'bc',water:{z:-42,side:-1},ground:'#4b4f54',
+  defs:[{id:'v1',type:'pistol',route:[[-44,-12],[-12,-12],[-12,10],[-44,10]]},{id:'v2',type:'rifle',route:[[10,-32],[42,-32],[42,-6],[10,-6]]},
+    {id:'v3',type:'melee',post:[-20,-24,Math.PI/2]},{id:'v4',type:'pistol',route:[[-52,24],[52,24]]}],
+  elook:{melee:{jacket:'#26282e',pants:'#1b1b1f'},pistol:{jacket:'#2b2f36',pants:'#22223b'},rifle:{jacket:'#2f3524',pants:'#2a2b25'}}};
+ARENAS.forest={area:FOREST,lvl:'bc',room:CHAPEL,roomLabel:'Chapelle',ground:'#26331f',water:null,mapPaths:[[[0,86],[4,60],[-2,40],[0,26],[0,14],[2,-10],[0,-42],[0,-62]],[[0,40],[-44,30],[-45,20],[-44,8],[-20,-10]]],
+  defs:[{id:'f3',type:'pistol',post:[0,12.5,0]},{id:'f2',type:'melee',route:[[-4,4],[6,-22],[-8,-30],[-4,4]]},{id:'f4',type:'pistol',post:[0,-43,0]},
+    {id:'f1',type:'rifle',route:[[-38,-45],[36,-45],[36,-88],[-38,-88]]},{id:'f5',type:'rifle',route:[[-16,-58],[16,-58],[16,-86],[-16,-86]]},
+    {id:'josh',type:'melee',route:[[-34,-50],[-20,-50],[-20,-60],[-34,-60]]},
+    {id:'b1',type:'rifle',post:[-6,-70,0]},{id:'b2',type:'pistol',post:[6,-74,0]},{id:'boss',type:'boss',post:[0,-78.5,0]}],
+  elook:{melee:{jacket:'#3b4a3a',pants:'#2b2b25'},pistol:{jacket:'#4a4136',pants:'#2b2b25'},rifle:{jacket:'#34403a',pants:'#22221e'}},
+  lookById:{josh:{skin:'#e0ac69',jacket:'#6c757d',pants:'#3a3a3a',hair:'#a67b5b',height:.98,build:.88,beard:false,bald:false,slouch:.2}},
+  bossLook:{skin:'#f1c27d',hair:'#cfcfcf',beard:true,bald:false,height:1,build:1,jacket:'#121212',pants:'#121212'},
+  bossDeco(h){const coat=new THREE.Mesh(new THREE.CylinderGeometry(.27,.4,.85,14,1,true),new THREE.MeshStandardMaterial({color:'#0f0f10',roughness:.7,side:THREE.DoubleSide}));coat.position.y=-.35;h.hips.add(coat);
+    const col=new THREE.Mesh(new THREE.TorusGeometry(.055,.012,6,16),mat('#f4f4f0'));col.rotation.x=Math.PI/2;col.position.y=.6;h.spine.add(col);
+    const bible=new THREE.Mesh(new THREE.BoxGeometry(.16,.22,.05),mat('#5a1414',{roughness:.6}));bible.position.set(0,-.1,.04);h.armL.wr.add(bible);},
+  boss:{dlg:'pasteur',spot:'pasteurSpot',interro:'pasteurI',clue:'galante',name:'le Pasteur',cp:[0,-56],down:'Le Pasteur s’effondre sur les marches de l’autel. « Pitié… » Interroge-le (touche E).'},
+  onStep(p){if(!S.flags.forestIn){S.flags.forestIn=true;checkObjective();}}};
+ETYPE.melee.hp=ETYPE.melee.hp||100;
+/* --- builders --- */
+function buildVanport(){
+  const I=VANP;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const gtex=asphaltTex.clone();gtex.needsUpdate=true;gtex.repeat.set(34,26);
+  iplane(I,150,100,new THREE.MeshStandardMaterial({map:gtex,color:'#7d8287',roughness:.45}),0,0,-6);
+  iplane(I,150,22,M.sidewalk,0,.02,45);
+  const water=new THREE.Mesh(new THREE.PlaneGeometry(900,400),M.water);water.rotation.x=-Math.PI/2;water.position.set(0,-1.2,-42-200);I.group.add(water);
+  ibox(I,150,1.3,1,M.concrete,0,-.55,-42.5,0,false,false);I.cols.push({x0:I.ox-75,x1:I.ox+75,z0:I.oz-46,z1:I.oz-42});
+  I.cols.push({x0:I.ox-71,x1:I.ox-70,z0:I.oz-56,z1:I.oz+56},{x0:I.ox+70,x1:I.ox+71,z0:I.oz-56,z1:I.oz+56},{x0:I.ox-75,x1:I.ox+75,z0:I.oz+55,z1:I.oz+56});
+  // North Shore mountains with snow caps
+  const mr=mulberry32(77);for(let i=0;i<9;i++){const x=-300+i*75+(mr()-.5)*40,h=180+mr()*160,rr=150+mr()*80;
+    const m=new THREE.Mesh(new THREE.ConeGeometry(rr,h,7),mat('#2c3a38',{roughness:1,flatShading:true}));m.position.set(x,h/2-20,-420-mr()*120);I.group.add(m);
+    const cap=new THREE.Mesh(new THREE.ConeGeometry(rr*.32,h*.32,7),mat('#e8eef2',{roughness:.9,flatShading:true}));cap.position.set(x,h-20-h*.16,m.position.z);I.group.add(cap);}
+  // fence + truck gate, camera booth
+  const fenceM=new THREE.MeshStandardMaterial({color:'#9aa0a6',metalness:.6,roughness:.5,transparent:true,opacity:.5,side:THREE.DoubleSide});
+  for(const [a,b] of [[-70,-7],[7,70]]){iplane(I,b-a,2.8,fenceM,(a+b)/2,1.4,32,0);I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+31.75,z1:I.oz+32.25});}
+  ibox(I,2.2,2.6,2,mat('#e9e6df'),9.5,1.3,33.6,0,true);
+  // containers
+  const cm=['#b33a2a','#2c5d8a','#2f6b46','#c27d1e','#6b6f73','#d4a017','#1d3557'].map(c=>new THREE.MeshStandardMaterial({map:contTex,color:c,roughness:.5,metalness:.3}));
+  const cg=new THREE.BoxGeometry(12.2,2.6,2.45),r=mulberry32(909);
+  const cont=(x,z,rot,st,m)=>{for(let k=0;k<st;k++){const o=new THREE.Mesh(cg,m||pick(r,cm));o.position.set(x,1.3+k*2.6,z);o.rotation.y=rot;o.castShadow=o.receiveShadow=true;I.group.add(o);collidableMeshes.push(o);}
+    const w=rot?2.45:12.2,d=rot?12.2:2.45;I.cols.push({x0:I.ox+x-w/2,x1:I.ox+x+w/2,z0:I.oz+z-d/2,z1:I.oz+z+d/2});};
+  for(const [x,z,rot,st] of [[-50,-30,0,2],[-37,-30,0,3],[-50,-20,0,1],[-37,-20,0,2],[-6,-30,0,2],[-6,-27.4,0,1],[24,-20,0,3],[37,-20,0,1],[24,-17.4,0,2],
+    [-50,0,0,3],[-37,0,0,1],[-24,0,0,2],[8,2,0,2],[21,2,0,1],[34,2,0,3],[52,-10,Math.PI/2,2],[56,12,Math.PI/2,1],[-58,12,Math.PI/2,2],[-24,14,0,1],[21,14,0,2]])cont(x,z,rot,st);
+  cont(-24,-28,0,1,new THREE.MeshStandardMaterial({map:contTex,color:'#1f4e8c',roughness:.5,metalness:.3}));
+  const code=new THREE.Mesh(new THREE.PlaneGeometry(3.2,.8),new THREE.MeshStandardMaterial({map:signTex('MSKU 448127','#1f4e8c','#ffffff'),roughness:.7}));code.position.set(-30.15,1.9,-28);code.rotation.y=-Math.PI/2;I.group.add(code);
+  const doors=ibox(I,.08,2.4,2.3,mat('#183e70',{metalness:.4,roughness:.5}),-30.22,1.3,-28);VANP.contDoor=doors;
+  // red & white gantry cranes on the quay
+  const red=mat('#b8352a',{roughness:.6,metalness:.4}),white=mat('#e9e9e4',{roughness:.6,metalness:.3});
+  for(const cx of [-22,22]){for(const dx of [-6,6])for(const z of [-38,-30]){ibox(I,1,26,1,dx<0?red:white,cx+dx,13,z,0,true);I.cols.push({x0:I.ox+cx+dx-.55,x1:I.ox+cx+dx+.55,z0:I.oz+z-.55,z1:I.oz+z+.55});}
+    ibox(I,14,1.6,1.2,red,cx,25,-38);ibox(I,14,1.6,1.2,red,cx,25,-30);ibox(I,3,2.4,40,white,cx,27,-46);}
+  // street side: surplus stand, the Rusty Anchor
+  ibox(I,6,2.8,3,mat('#3e4a3a',{roughness:.7}),-30,1.4,49,0,true);ibox(I,6.4,.2,3.6,mat('#c27d1e'),-30,2.9,47.8);
+  const ss=new THREE.Mesh(new THREE.PlaneGeometry(4.6,.9),new THREE.MeshStandardMaterial({map:signTex('ARMY SURPLUS','#2b3424','#f0e6c8'),roughness:.8}));ss.position.set(-30,3.4,47.4);ss.rotation.y=Math.PI;I.group.add(ss);ss.rotation.y=0;ss.position.z=47.45;
+  const barB=ibox(I,16,7,7,new THREE.MeshStandardMaterial({map:corrTex,color:'#6b4a3a',roughness:.8}),25,3.5,52,0,true);
+  const bs=new THREE.Mesh(new THREE.PlaneGeometry(7,1.4),regNight(new THREE.MeshStandardMaterial({map:signTex('THE RUSTY ANCHOR','#3a1a12','#ffcf8a'),emissiveMap:null,emissive:'#ffffff',emissiveIntensity:.3}),.3,.9));bs.material.emissiveMap=bs.material.map;bs.position.set(25,5.6,48.45);I.group.add(bs);
+  ibox(I,1.2,2.2,.1,mat('#2a1a12'),25,1.1,48.48,0,false,false);ibox(I,4,1.4,.06,new THREE.MeshStandardMaterial({color:'#1b2330',emissive:'#ffb86a',emissiveIntensity:.8}),20,2,48.47,0,false,false);
+  // pick-up truck (Earl) and a taxi stand
+  const pk=createCar('car','#7a2e1e');pk.scale.set(1.08,1.2,1.15);pk.position.set(10,0,43.5);pk.rotation.y=Math.PI/2;I.group.add(pk);I.pickup=pk;
+  const taxi=createCar('taxi');taxi.position.set(-10,0,43.5);taxi.rotation.y=-Math.PI/2;I.group.add(taxi);I.taxi=taxi;
+  // floodlights
+  const headM=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#fff4d8',emissiveIntensity:0}),0,4);
+  for(const [x,z] of [[-30,-10],[0,-20],[30,-10],[0,20],[-45,25],[45,25]]){icyl(I,.12,.16,10,M.pole,x,5,z,8);ibox(I,.8,.3,.5,headM,x,10.1,z);const pl=new THREE.Mesh(new THREE.PlaneGeometry(16,16),M.pools);pl.rotation.x=-Math.PI/2;pl.position.set(x,.03,z);I.group.add(pl);}
+  for(const [x,z] of [[0,-20],[0,20]]){const l=new THREE.PointLight('#fff1d8',60,30,2);l.position.set(x,9,z);I.group.add(l);I.lights.push({l,kind:'lamp',base:60,night:true});}
+  I.group.visible=false;
+}
+function buildBar(){
+  const I=BAR;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  const dark=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#5a3f2c',roughness:.6}),panel=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#4a3426',roughness:.75});
+  shell(I,dark,panel,3,0,[{x:-4,w:3,y0:1,y1:2.3},{x:4,w:3,y0:1,y1:2.3}]);
+  const top=mat('#2a1a10',{roughness:.3});
+  ibox(I,7,1.05,.7,dark,2,.52,-3.3,0,true);ibox(I,7.2,.07,.85,top,2,1.07,-3.28);
+  for(let i=0;i<5;i++){const x=-.6+i*1.25;icyl(I,.05,.07,.68,M.pole,x,.34,-2.45,8);icyl(I,.22,.22,.09,mat('#5a1a14'),x,.72,-2.45,16);}
+  ibox(I,7,.5,.35,panel,2,1.7,-5.3);const br=mulberry32(5);for(let i=0;i<20;i++)icyl(I,.045,.045,.3,new THREE.MeshStandardMaterial({color:pick(br,['#5a3a12','#2a4a1a','#d8d8e8','#7a1a1a']),emissive:'#ffb060',emissiveIntensity:.2,transparent:true,opacity:.85}),-1.2+i*.33,2.1,-5.3,8);
+  const neon=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.6),new THREE.MeshStandardMaterial({map:signTex('BIÈRE · BEER','#140808','#ff3d6a'),emissive:'#ffffff',emissiveIntensity:1.4}));neon.material.emissiveMap=neon.material.map;neon.position.set(-3.5,2.3,-5.38);I.group.add(neon);
+  const rink=texCanvas(61,256,144,(g,r,w,h)=>{g.fillStyle='#e9f1f4';g.fillRect(0,0,w,h);g.fillStyle='#c0262d';g.fillRect(w/2-2,0,4,h);g.fillStyle='#1d4f9c';g.fillRect(w*.3,0,3,h);g.fillRect(w*.7,0,3,h);for(let i=0;i<10;i++){g.fillStyle=i<5?'#1d4f9c':'#2a2a2a';g.beginPath();g.arc(30+r()*200,20+r()*100,4,0,7);g.fill();}});
+  const tv=new THREE.Mesh(new THREE.PlaneGeometry(1.4,.8),new THREE.MeshStandardMaterial({map:rink,emissive:'#ffffff',emissiveMap:rink,emissiveIntensity:.9}));tv.position.set(5.5,2.3,-5.36);I.group.add(tv);
+  // pool table, booths, nets
+  ibox(I,2.4,.75,1.3,mat('#1f5a3a',{roughness:.9}),-4,.75/2,0,0,true);ibox(I,2.6,.12,1.5,dark,-4,.78,0);I.cols.push({x0:I.ox-5.3,x1:I.ox-2.7,z0:I.oz-.75,z1:I.oz+.75});
+  for(const z of [-1,1.6]){ibox(I,1,.06,.8,top,5.6,.76,z,0,true);for(const s of [-.55,.55])ibox(I,.5,.45,.9,mat('#5a1a14',{roughness:.5}),5.6+s*1.4,.23,z,0,true);}
+  I.cols.push({x0:I.ox+4.3,x1:I.ox+7,z0:I.oz-1.6,z1:I.oz+2.2});
+  const net=new THREE.Mesh(new THREE.PlaneGeometry(3,1.6),new THREE.MeshStandardMaterial({color:'#8a7a5a',transparent:true,opacity:.5,side:THREE.DoubleSide,roughness:1}));net.position.set(-6.88,2,-1.5);net.rotation.y=Math.PI/2;I.group.add(net);
+  for(const [x,z] of [[-6.8,-.8],[-6.8,-2.2]]){const b=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8),mat('#e44',{roughness:.5}));b.position.set(x,1.6,z);I.group.add(b);}
+  lamp(I,-4,1.9,0,6,'#ffe2a8','#2f5d3a');lamp(I,2,2.2,-2.8,6,'#ffcf8a','#3a1a12');lamp(I,5.6,2.1,.3,4);
+  I.group.visible=false;
+}
+function buildForest(){
+  const I=FOREST;I.group=new THREE.Group();I.group.position.set(I.ox,0,I.oz);scene.add(I.group);
+  iplane(I,200,220,mat('#2b3a22',{roughness:1}),0,0,0);
+  const trail=new THREE.MeshStandardMaterial({color:'#4a3d2c',roughness:1});
+  const seg=(a,b,w)=>{const dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);const o=iplane(I,w,L,trail,(a[0]+b[0])/2,.02,(a[1]+b[1])/2,-Math.PI/2,0,0);o.rotation.set(-Math.PI/2,0,-Math.atan2(dx,dz));};
+  for(const path of ARENAS.forest.mapPaths)for(let i=1;i<path.length;i++)seg(path[i-1],path[i],3);
+  // river with a guarded bridge and a fallen log further west
+  const rv=new THREE.Mesh(new THREE.PlaneGeometry(200,8),new THREE.MeshStandardMaterial({color:'#2d4f52',roughness:.15,metalness:.2}));rv.rotation.x=-Math.PI/2;rv.position.set(0,-.25,20);I.group.add(rv);
+  for(const [a,b] of [[-100,-47],[-43,-3],[3,100]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+16.5,z1:I.oz+23.5});
+  const wood=mat('#6b4a2f',{roughness:.85});ibox(I,6,.3,9,wood,0,.15,20,0,false);for(const s of [-1,1])ibox(I,.15,1,9,wood,s*3,.65,20);
+  const log=new THREE.Mesh(new THREE.CylinderGeometry(.7,.85,12,12),mat('#5a4030',{roughness:1}));log.rotation.x=Math.PI/2;log.position.set(-45,.35,20);log.castShadow=true;I.group.add(log);
+  // giant cedars and firs, ferns, boulders
+  const r=mulberry32(4040),T=[];
+  for(let i=0;i<260;i++){const x=(r()-.5)*190,z=(r()-.5)*200;if(Math.abs(z-20)<6)continue;if(x>-16&&x<16&&z<-34&&z>-95)continue;
+    let onPath=false;for(const path of ARENAS.forest.mapPaths)for(let k=1;k<path.length;k++){const a=path[k-1],b=path[k],dx=b[0]-a[0],dz=b[1]-a[1],t=clamp(((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz),0,1);if(Math.hypot(a[0]+dx*t-x,a[1]+dz*t-z)<5)onPath=true;}
+    if(onPath)continue;if(Math.abs(x+30)<14&&Math.abs(z+62)<16)continue;if(Math.abs(x-30)<12&&Math.abs(z+66)<18)continue;T.push([x,z,.9+r()*1.1]);}
+  const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.6,1.1,1,9).translate(0,.5,0),mat('#3d2a1e',{roughness:1}),T.length);
+  const crown=new THREE.InstancedMesh(new THREE.ConeGeometry(4.5,1,8),new THREE.MeshStandardMaterial({flatShading:true,roughness:.95}),T.length*2),o=new THREE.Object3D(),gc=['#1e3a24','#24452a','#1a3220','#2c4a2a'].map(c=>new THREE.Color(c));
+  T.forEach((t,i)=>{const h=34*t[2];o.position.set(t[0],0,t[1]);o.rotation.set(0,r()*6,0);o.scale.set(t[2],h,t[2]);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);
+    for(let k=0;k<2;k++){o.position.set(t[0],h*(.55+k*.25),t[1]);o.scale.set(t[2]*(1.4-k*.4),h*(.45-k*.15),t[2]*(1.4-k*.4));o.updateMatrix();crown.setMatrixAt(i*2+k,o.matrix);crown.setColorAt(i*2+k,pick(r,gc));}
+    I.cols.push({x0:I.ox+t[0]-.8*t[2],x1:I.ox+t[0]+.8*t[2],z0:I.oz+t[1]-.8*t[2],z1:I.oz+t[1]+.8*t[2]});});
+  trunk.castShadow=crown.castShadow=true;trunk.receiveShadow=true;I.group.add(trunk,crown);
+  const ferns=new THREE.InstancedMesh(new THREE.ConeGeometry(.7,.9,6),mat('#3f6a35',{flatShading:true,roughness:1}),500);
+  for(let i=0;i<500;i++){o.position.set((r()-.5)*190,.35,(r()-.5)*200);o.rotation.set(Math.PI,r()*6,0);o.scale.setScalar(.6+r()*.9);o.updateMatrix();ferns.setMatrixAt(i,o.matrix);}I.group.add(ferns);
+  for(let i=0;i<30;i++){const x=(r()-.5)*180,z=(r()-.5)*190;if(Math.abs(z-20)<6||Math.abs(x)<6)continue;const b=new THREE.Mesh(new THREE.DodecahedronGeometry(1+r()*1.8),mat('#5f625c',{roughness:1,flatShading:true}));b.position.set(x,.4,z);b.castShadow=true;I.group.add(b);}
+  // the Stawamus Chief — granite wall above the camp
+  const chief=new THREE.Mesh(new THREE.BoxGeometry(260,180,40),mat('#8a8d88',{roughness:1}));chief.position.set(0,80,-210);chief.rotation.x=-.12;I.group.add(chief);
+  // the camp: chapel, cabins, fire barrel, generator
+  const pl=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#7a5a3e',roughness:.9});
+  const W=CHAPEL,H=6;const wallC=(x0,z0,x1,z1)=>{const w=Math.max(.3,Math.abs(x1-x0)),d=Math.max(.3,Math.abs(z1-z0));const m=ibox(I,w,H,d,pl,(x0+x1)/2,H/2,(z0+z1)/2,0,true);collidableMeshes.push(m);};
+  wallC(W.x0,W.z1,-1.6,W.z1);wallC(1.6,W.z1,W.x1,W.z1);ibox(I,3.2,H-2.6,.3,pl,0,2.6+(H-2.6)/2,W.z1);
+  wallC(W.x0,W.z0,W.x1,W.z0);wallC(W.x0,W.z0,W.x0,W.z1);wallC(W.x1,W.z0,W.x1,W.z1);
+  for(const s of [-1,1]){const rf=ibox(I,11.5,.25,21,mat('#3a2f28',{roughness:.8}),s*5.2,H+2.2,(W.z0+W.z1)/2);rf.rotation.z=-s*.55;collidableMeshes.push(rf);}
+  ibox(I,.3,3,.3,mat('#e9e6df'),0,H+5.3,W.z1+.5);ibox(I,1.8,.3,.3,mat('#e9e6df'),0,H+5.8,W.z1+.5);
+  for(let i=0;i<4;i++)for(const s of [-1,1]){ibox(I,4.5,.45,.6,wood,s*4.2,.45,-66-i*2.4,0,true);I.cols.push({x0:I.ox+s*4.2-2.25,x1:I.ox+s*4.2+2.25,z0:I.oz-66-i*2.4-.3,z1:I.oz-66-i*2.4+.3});}
+  ibox(I,3,1,1.2,mat('#d9d2c4'),0,.5,-79.5,0,true);I.cols.push({x0:I.ox-1.5,x1:I.ox+1.5,z0:I.oz-80.1,z1:I.oz-78.9});
+  const cross=new THREE.Group();cross.position.set(0,2.6,-81.7);I.group.add(cross);gb(cross,.15,2.4,.1,mat('#c9a227',{metalness:.7}),0,0,0);gb(cross,1.2,.15,.1,mat('#c9a227',{metalness:.7}),0,.5,0);
+  const suit=ibox(I,.6,.18,.42,mat('#3b2a1e',{roughness:.5}),.6,1.1,-79.5);FOREST.suitcase=suit;
+  for(const x of [-1.2,1.2]){icyl(I,.04,.04,.25,mat('#f1ede4'),x,1.13,-79.6,8);const cl=new THREE.PointLight('#ffb35c',3,6,2);cl.position.set(x,1.4,-79.6);I.group.add(cl);}
+  const chl=new THREE.PointLight('#ffcf8a',14,18,2);chl.position.set(0,4.5,-72);I.group.add(chl);I.lights.push({l:chl,kind:'lamp',base:14});
+  for(const [x,z,w,d] of [[-30,-55,8,6],[28,-58,7,6],[30,-75,8,7],[-28,-74,7,6]]){ibox(I,w,3.2,d,pl,x,1.6,z,0,true);const rr=ibox(I,w+.6,.25,d+.6,mat('#3a2f28'),x,3.35,z);collidableMeshes.push(rr);}
+  const barrel=icyl(I,.35,.35,.9,mat('#3a3a3a',{metalness:.5}),-8,.45,-50,12);const fire=new THREE.Mesh(new THREE.ConeGeometry(.3,.8,8),new THREE.MeshBasicMaterial({color:'#ff8a2a',transparent:true,opacity:.85,blending:THREE.AdditiveBlending}));fire.position.set(-8,1.2,-50);I.group.add(fire);FOREST.fire=fire;
+  const fl=new THREE.PointLight('#ff8a3a',18,16,2);fl.position.set(-8,1.8,-50);I.group.add(fl);FOREST.fireLight=fl;I.cols.push({x0:I.ox-8.4,x1:I.ox-7.6,z0:I.oz-50.4,z1:I.oz-49.6});
+  // trailhead: Earl's pick-up, heater
+  const pk=createCar('car','#7a2e1e');pk.scale.set(1.08,1.2,1.15);pk.position.set(6,0,84);pk.rotation.y=.3;I.group.add(pk);FOREST.pickup=pk;
+  I.cols.push({x0:I.ox-90,x1:I.ox-80,z0:I.oz-100,z1:I.oz+100},{x0:I.ox+80,x1:I.ox+90,z0:I.oz-100,z1:I.oz+100},{x0:I.ox-90,x1:I.ox+90,z0:I.oz-100,z1:I.oz-92},{x0:I.ox-90,x1:I.ox+90,z0:I.oz+92,z1:I.oz+100});
+  I.group.visible=false;
+}
+/* --- NPCs of the bar & street --- */
+function buildBCActors(){
+  buildVanport();buildBar();buildForest();
+  const add=(id,look,lx,lz,a,md,loc,I)=>{const h=createHuman(look);h.g.position.set(I.ox+lx,0,I.oz+lz);h.g.rotation.y=a;scene.add(h.g);h.g.visible=false;
+    interiorNPCs.push({id,dlg:id,h,x:I.ox+lx,z:I.oz+lz,a,mode:md,loc,lvl:'bc'});if(md!=='sit')I.cols.push({x0:I.ox+lx-.28,x1:I.ox+lx+.28,z0:I.oz+lz-.28,z1:I.oz+lz+.28});return h};
+  const base={prop:'none',rolled:0,collarTilt:0,swingL:1,swingR:1,breath:1.5,shAsym:0,browAsym:.1,headTilt:0,bald:false,long:false,beard:false};
+  add('maggie',{...base,skin:'#f1c27d',jacket:'#5b2a3a',pants:'#22223b',hair:'#8a8a8a',long:true,height:.95,build:1.05,slouch:.1,shAsym:-.02,browAsym:.25},3.2,-4.4,0,'talk','bar',BAR);
+  add('earl',{...base,skin:'#ffdbac',jacket:'#c27d1e',pants:'#3d405b',hair:'#d9d9d9',beard:true,height:.98,build:1.1,slouch:.22,prop:'cup',headTilt:.05},-.6,-2.45,Math.PI*.1,'sit','bar',BAR);
+  add('bikers',{...base,skin:'#c68642',jacket:'#111111',pants:'#1b263b',hair:'#1a1a1a',bald:true,beard:true,build:1.2,slouch:.08},-4,1.6,Math.PI*.9,'walk','bar',BAR);
+  add('vendor',{...base,skin:'#8d5524',jacket:'#3a5a40',pants:'#2b2d42',hair:'#1a1a1a',build:1.05,prop:'cup'},-30,46.4,Math.PI,'walk','vanport',VANP);
+}
+/* --- level 2 story data --- */
+Object.assign(CLUES,{
+  container:{title:'Le conteneur MSKU 448127',text:'Des caisses de fusils, et une boîte de tracts : « Église de la Dernière Lumière — Squamish ». Un téléphone jetable : « Le Pasteur attend la livraison au camp. Ne parlez à personne en ville. »'},
+  camp:{title:'Le camp du Pasteur',text:'Au bout de la vieille route forestière après Squamish, au pied du Chief. Un pont gardé traverse la rivière ; un tronc d’arbre tombé, plus à l’ouest, permet de passer discrètement.'},
+  josh:{title:'Josh, le neveu d’Earl',text:'Libéré de l’emprise du Pasteur. Il a prévenu : une valise attend Oscar sur l’autel de la chapelle.'},
+  galante:{title:'La valise du Pasteur',text:'Les papiers d’Omer : le chalutier « Marie-Galante » part de St. John’s (Terre-Neuve) dans quatre jours. Et un dessin de Cédric, au crayon : une montagne avec une grande croix lumineuse au sommet.'},
+});
+Object.assign(DIALOGUES,{
+  vendor:{who:'Vendeur du surplus militaire',start:S=>S.flags.raincoat?'v9':'v0',nodes:{
+    v0:{text:'Imperméables, bottes, lampes. Ici, il pleut neuf mois par an, mon ami. Sans un bon manteau, tu attrapes la mort en forêt.',choices:[{t:'L’imperméable, s’il te plaît.',next:'v1',money:60,min:5},{t:'Rien, merci.',end:true}]},
+    v1:{text:'Bon choix. Capuche doublée, coutures étanches. (Il te tend le manteau.)',choices:[{t:'(L’enfiler)',end:true,fx:{flag:'raincoat',call:'coat'}}]},
+    v9:{text:'Il te va bien, ce manteau. Bonne route.',choices:[{t:'Merci.',end:true}]}}},
+  maggie:{who:'Maggie, barmaid du Rusty Anchor',start:()=>'m0',nodes:{
+    m0:{text:'Sale temps pour un touriste. Qu’est-ce que je te sers ?',choices:[{t:'Un café brûlant.',end:true,money:5,min:10,fx:{call:'warm'}},{t:'Je cherche des gens qui viennent de Squamish. Une « église ».',next:'m1',min:5},{t:'Rien, merci.',end:true}]},
+    m1:{text:'L’église du Pasteur… Ils descendent le vendredi, payent comptant, ne parlent à personne. Parle à Earl, au bout du comptoir. Son neveu est là-haut.',choices:[{t:'Merci, Maggie.',end:true,fx:{flag:'maggieHint'}}]}}},
+  earl:{who:'Earl, pêcheur',start:S=>S.flags.earlDeal?'eD':S.flags.earlAngry?'eA':'e0',nodes:{
+    e0:{text:'(Il fixe sa bière sans lever les yeux.) Qu’est-ce que tu veux ?',choices:[{t:'Le camp du Pasteur. Où est-il ?',next:'e1',min:5},{t:'Rien.',end:true}]},
+    e1:{text:'Pourquoi tu demandes ça ?',choices:[{t:'Ils ont enlevé ma femme et mon fils. Le Pasteur sait où ils sont.',next:'e2',min:10},{t:'Je paie bien. 50 $.',next:'e3',money:50},{t:'Parle, vieux, ou ça va mal finir.',next:'e4'}]},
+    e2:{text:'… Mon neveu Josh est là-haut depuis six mois. Le Pasteur lui a mangé la tête. Écoute : je t’emmène au camp avec mon pick-up. Mais tu me ramènes Josh. Vivant.',choices:[{t:'Marché conclu. Je te ramène Josh.',end:true,fx:{flag:['earlDeal','campKnown'],clue:'camp',task:['josh','active']}},{t:'Je ne peux rien promettre.',next:'e5'}]},
+    e3:{text:'Garde ton argent. Le camp est au bout de la vieille route forestière, après Squamish, sous le Chief. Prends un taxi : je ne conduis pas pour un inconnu.',choices:[{t:'Merci.',end:true,fx:{flag:'campKnown',clue:'camp'}}]},
+    e4:{text:'Va te faire voir. (Il se retourne vers sa bière.)',choices:[{t:'(Partir)',end:true,fx:{flag:'earlAngry'}}]},
+    e5:{text:'Alors débrouille-toi. Le camp est sous le Chief, au bout de la vieille route forestière.',choices:[{t:'D’accord.',end:true,fx:{flag:'campKnown',clue:'camp'}}]},
+    eD:{text:'Le pick-up est devant le bar. On y va quand tu veux.',choices:[{t:'J’arrive.',end:true}]},
+    eA:{text:'J’ai rien à te dire.',choices:[{t:'(Partir)',end:true}]}}},
+  bikers:{who:'Motard près du billard',start:S=>S.clues.includes('camp')?'b9':'b0',nodes:{
+    b0:{text:'T’as besoin de quoi, le pingouin ? T’es mouillé jusqu’aux os.',choices:[{t:'Je cherche le camp du Pasteur.',next:'b1',min:5},{t:'Rien.',end:true}]},
+    b1:{text:'Les illuminés de Squamish ? Ça se paie, ce genre d’info. 80 $.',choices:[{t:'Voilà 80 $.',next:'b2',money:80},{t:'Laisse tomber.',end:true}]},
+    b2:{text:'Vieille route forestière après Squamish, sous la grande falaise. Ils ont un pont gardé. Moi, je passerais par le tronc d’arbre, à l’ouest.',choices:[{t:'Merci.',end:true,fx:{flag:'campKnown',clue:'camp'}}]},
+    b9:{text:'Je t’ai déjà tout dit, le pingouin.',choices:[{t:'(Partir)',end:true}]}}},
+  josh:{who:'Josh, fidèle du Pasteur',start:()=>'j0',nodes:{
+    j0:{text:'Qui t’es ? Le Pasteur dit que les étrangers apportent les ténèbres…',choices:[{t:'Ton oncle Earl m’envoie. Il t’attend en bas, au pick-up.',next:'j1',min:3},{t:'(Le neutraliser)',end:true,fx:{call:'joshFight'}}]},
+    j1:{text:'Earl ? Il… il est venu ? Il a dit que j’étais mort pour lui…',choices:[{t:'Il n’a jamais arrêté de te chercher. Pars maintenant, par le sentier.',next:'j2',min:2}]},
+    j2:{text:'(Il hésite, puis jette son bâton dans les fougères.) Le Pasteur garde quelque chose pour toi, sur l’autel. Une valise. Fais attention à toi.',choices:[{t:'Va. Vite.',end:true,fx:{call:'joshFree',clue:'josh',task:['josh','done'],bonus:1}}]}}},
+  pasteur:{who:'Le Pasteur',start:()=>'p0',nodes:{
+    p0:{text:'(Il referme sa bible.) L’ennemi d’Omer… Assieds-toi, mon fils. Tout homme mérite une dernière confession.',choices:[{t:'Où sont Eva et Cédric ?',next:'p1',min:1},{t:'Rends-toi, et tes fidèles rentrent chez eux sains et saufs.',next:'p2',min:1},{t:'(Attaquer)',end:true,fx:{call:'bossFight'}}]},
+    p1:{text:'Là où Omer les garde : dans l’obscurité, en attendant que tu tombes. Moi, je garde le chemin.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]},
+    p2:{text:'Mes fidèles ? Ils mourront pour moi. C’est ce que fait la foi.',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  pasteurSpot:{who:'Le Pasteur',start:()=>'s0',nodes:{s0:{text:'Les ténèbres sont entrées ! Frères, défendez la lumière !',choices:[{t:'(Se battre)',end:true,fx:{call:'bossFight'}}]}}},
+  pasteurI:{who:'Le Pasteur, à genoux',start:()=>'i0',nodes:{
+    i0:{text:'(Il saigne, agrippé à l’autel.) Tue-moi, et tu ne sauras rien.',choices:[{t:'Je ne suis pas comme toi. Parle, et tu vivras.',next:'i1',min:5},{t:'Tu vas parler. Maintenant.',next:'i2',min:3}]},
+    i1:{text:'… La valise, sur l’autel. Les papiers d’Omer. Le « Marie-Galante », un chalutier, part de St. John’s dans quatre jours. Et ton fils… il dessine. Omer a voulu que tu voies son dessin.',choices:[{t:'Continue.',next:'i3'}]},
+    i2:{text:'D’accord… La valise, sur l’autel. Le « Marie-Galante », St. John’s, dans quatre jours. Il y a aussi un dessin de ton fils.',choices:[{t:'Continue.',next:'i3'}]},
+    i3:{text:'C’est tout ce que je sais. Que Dieu te pardonne, soldat.',choices:[{t:'(Ouvrir la valise)',end:true,fx:{clue:'galante',flag:'galante',call:'levelComplete'}}]}}},
+});
+Object.assign(CALLS,{
+  warm:()=>{S.player.heat=100;toast('Le café brûlant te réchauffe. Chaleur corporelle au maximum.');},
+  coat:()=>{applyLocation();toast('Imperméable enfilé : la pluie te refroidit beaucoup moins.');},
+  joshFight:()=>{const j=AS()&&AS().enemies.find(e=>e.id==='josh');if(j){j.state='combat';j.meter=100;j.lx=S.player.x;j.lz=S.player.z;S.tasks.josh='failed';}},
+  joshFree:()=>{const j=AS()&&AS().enemies.find(e=>e.id==='josh');if(j){j.down=true;j.gone=true;j.looted=true;}checkObjective();},
+});
+function objectiveBC(S){
+  if(!S.flags.containerOpened)return{stage:0,text:'Trouve le conteneur MSKU 448127 dans le terminal de Centerm, sans te faire repérer par les hommes d’Omer.',target:'container'};
+  if(!S.clues.includes('camp'))return{stage:1,text:'Les tracts parlent d’une église à Squamish. Renseigne-toi au bar The Rusty Anchor, en face du terminal. (Le surplus militaire vend des imperméables.)',target:'bar'};
+  if(S.location!=='forest')return{stage:2,text:'Rends-toi au camp du Pasteur près de Squamish : avec Earl, en taxi (120 $) ou en stop (plus long).',target:'travel'};
+  if(!S.flags.bossMet)return{stage:3,text:'Approche de la chapelle du camp. Le pont est gardé ; un tronc tombé permet de traverser la rivière plus à l’ouest.'+(S.tasks.josh==='active'?' Retrouve Josh (près des cabanes, à l’ouest) et convaincs-le de partir.':''),target:'chapel'};
+  if(!S.flags.bossDown)return{stage:4,text:'Affronte le Pasteur et ses fidèles.',target:'boss'};
+  if(!S.clues.includes('galante'))return{stage:5,text:'Interroge le Pasteur (touche E).',target:'boss'};
+  return{stage:6,text:'Niveau 2 terminé. La piste mène à St. John’s, Terre-Neuve (en construction).',target:null};
+}
+function bcTarget(o){
+  const t=o.target;
+  if(t==='container')return S.location==='vanport'?{x:VANP.ox-31.3,z:VANP.oz-28}:null;
+  if(t==='bar')return S.location==='vanport'?{x:VANP.ox+25,z:VANP.oz+47.8}:null;
+  if(t==='travel')return S.location==='vanport'?{x:VANP.ox,z:VANP.oz+43}:null;
+  if(t==='chapel')return S.location==='forest'?{x:FOREST.ox,z:FOREST.oz-60}:null;
+  return undefined;
+}
+function travelTo(loc,minutes,lx,lz,msg){addMinutes(minutes);const I=INTERIORS[loc],p=S.player;S.location=loc;p.x=I.ox+lx;p.z=I.oz+lz;p.y=0;p.vx=p.vz=0;p.heading=Math.PI;camYaw=0;
+  S.checkpoint={x:p.x,z:p.z,loc};applyLocation();camera.position.set(p.x,2.5,p.z+5);checkObjective();store.save(S);if(msg)toast(msg);}
+function bcZones(){
+  const V=VANP,F=FOREST,Z=[];const z=o=>{Z.push({lvl:'bc',...o});};
+  z({loc:'vanport',x:V.ox-31.3,z:V.oz-28,r:1.6,label:()=>S.flags.containerOpened?'Conteneur MSKU 448127 (déjà fouillé)':'Ouvrir le conteneur MSKU 448127',act:()=>{if(!S.flags.containerOpened){S.flags.containerOpened=true;V.contDoor.rotation.y=-1.2;V.contDoor.position.x-=.6;addMinutes(10);}findClueOnce('container');}});
+  z({loc:'vanport',x:V.ox+25,z:V.oz+47.6,r:1.8,label:()=>'Entrer au Rusty Anchor',act:()=>enterInterior('bar')});
+  z({loc:'vanport',x:V.ox+10,z:V.oz+42,r:2.4,cond:()=>S.flags.earlDeal,label:()=>'Monter dans le pick-up d’Earl (2 h de route)',act:()=>travelTo('forest',120,4,80,'Earl coupe le moteur. « Je t’attends ici. Ramène-le. » La pluie tambourine sur les fougères.')});
+  z({loc:'vanport',x:V.ox-10,z:V.oz+42,r:2.4,cond:()=>S.flags.campKnown&&!S.flags.earlDeal,label:()=>'Prendre un taxi pour Squamish (120 $, 2 h)',act:()=>{if(S.money<120){toast('Pas assez d’argent pour le taxi (120 $). Tu peux faire du stop au bout de la rue.');return;}S.money-=120;travelTo('forest',120,4,80,'Le taxi repart aussitôt. Au bout de la piste : le camp du Pasteur.');}});
+  z({loc:'vanport',x:V.ox+55,z:V.oz+45,r:2.6,cond:()=>S.flags.campKnown&&!S.flags.earlDeal,label:()=>'Faire du stop sur la route 99 (gratuit, environ 5 h)',act:()=>travelTo('forest',300,4,80,'Un camionneur te dépose au début de la vieille route forestière, trempé jusqu’aux os.')});
+  z({loc:'forest',x:F.ox+6,z:F.oz+81,r:3,label:()=>'Se réchauffer dans le pick-up (15 min)',cond:()=>S.flags.earlDeal,act:()=>{addMinutes(15);S.player.heat=100;toast(S.tasks.josh==='done'?'Josh est là, emmitouflé dans une couverture. Earl ne dit rien, mais ses yeux brillent.':'Le chauffage ronronne. Earl fixe la forêt sans parler.');}});
+  z({loc:'forest',get x(){const j=AS()&&AS().enemies.find(e=>e.id==='josh');return j?j.x:-1e5},get z(){const j=AS()&&AS().enemies.find(e=>e.id==='josh');return j?j.z:-1e5},r:2.2,
+    cond:()=>{const j=AS().enemies.find(e=>e.id==='josh');return S.tasks.josh==='active'&&j&&!j.down&&j.state!=='combat'&&!AS().alarm},label:()=>'Parler à Josh',act:()=>openDialogue('josh')});
+  for(const n of interiorNPCs)if(n.lvl==='bc'){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.id==='maggie'?n.x:n.id==='earl'?n.x+.2:n.x,z:n.id==='maggie'?n.z+2.2:n.id==='earl'?n.z+.9:n.z+(n.id==='vendor'?-1.2:0),r:1.6,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
+  z({loc:'bar',x:BAR.ox,z:BAR.oz+BAR.hd-.7,r:1.2,label:()=>'Sortir du bar',act:()=>exitInterior()});
+  return Z;
+}
+function findClueOnce(id){if(!S.clues.includes(id)){S.clues.push(id);checkObjective();}showReading(CLUES[id].title,CLUES[id].text,'Indice ajouté au carnet');}
+
+function CINES_bcIntro(){const V=VANP;return[
+  {set:'vanport',d:7,clock:6*60+10,rain:1,cloud:.95,center:{x:V.ox,z:V.oz},title:'Vancouver, Colombie-Britannique — 6 h 10. Il pleut depuis trois jours.',
+    cam:[[V.ox-46,15,V.oz-74],[V.ox-24,10,V.oz-62],[V.ox,9,V.oz],[V.ox+6,5,V.oz+12]]},
+  {set:'vanport',d:8,clock:6*60+12,rain:1,cloud:.95,center:{x:V.ox,z:V.oz+30},cam:[[V.ox+3.4,1.8,V.oz+50.5],[V.ox+2.4,1.75,V.oz+49.6],[V.ox,1.6,V.oz+46],[V.ox-2,3,V.oz+30]],
+    sub:[[.5,'Oscar','Conteneur MSKU 448127. Si Tiago a dit vrai, le Pasteur n’est pas loin.'],[4.6,'Oscar','Eva… Cédric… Tenez bon.']],
+    upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(V.ox,0,V.oz+46);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.3,true);}}];}
 
 /* --- 5d. CINÉMATIQUES (bloc 4) ---
    Moteur de plans : décor, acteurs, caméra (mouvement + caméra à l'épaule), sous-titres, titres, bandes noires.
@@ -1894,7 +2162,7 @@ function csnd(kind){if(!actx)return;try{const t=actx.currentTime,g=actx.createGa
 }catch(e){}}
 /* --- the scripts --- */
 const H=()=>INTERIORS.house,hx=x=>H().ox+x,hz=z=>H().oz+z,bx=x=>BX+x,bz=z=>BZ+z,lx=x=>LX+x,lz=z=>LZ+z,qx=x=>QX+x,qz=z=>QZ+z;
-function showSet(set){for(const k in CSET)CSET[k].visible=k===set;world.visible=set==='city';for(const k in INTERIORS)INTERIORS[k].group.visible=set==='house'&&k==='house';}
+function showSet(set){for(const k in CSET)CSET[k].visible=k===set;world.visible=set==='city';for(const k in INTERIORS)INTERIORS[k].group.visible=k===set;}
 function hideAll(){
   world.visible=false;for(const k in INTERIORS)INTERIORS[k].group.visible=false;for(const k in CSET)CSET[k].visible=false;
   for(const h of pedMeshes)h.g.visible=false;for(const m of vehMeshes)m.g.visible=false;for(const m of tramMeshes)m.visible=false;for(const h of idlerMeshes)h.g.visible=false;
@@ -2032,7 +2300,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
-  const shots=name==='intro'?CINES_intro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
+  const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
@@ -2073,7 +2341,8 @@ function updateHUD(){
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
   const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
   $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
-  $('hMoney').textContent=S.money+' $';$('hLoc').textContent={outside:'Dehors',house:'Maison d’Oscar',diner:'Lina’s Diner'}[S.location];
+  $('hMoney').textContent=S.money+' $';$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
+  $('hLvlK').textContent='Niveau '+L.index+' · '+L.region+' · '+L.season;$('hLvlN').textContent=L.name;
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
   let st='';if(AR()){const E=AS().enemies;st=AS().alarm&&!S.flags.bossDown?'Alerte':E.some(e=>!e.down&&e.meter>=40)?'Suspect':E.some(e=>!e.down&&e.meter>2)?'Observé':'Discret';}
@@ -2098,7 +2367,7 @@ function drawMap(){
   mg.drawImage(mapBg,0,0);const p=S.player;
   const tg=objectiveTarget(objective(S));if(tg){mg.strokeStyle='#ff4b3e';mg.lineWidth=3;mg.beginPath();mg.arc(mx(tg.x),mz(tg.z),7+Math.sin(performance.now()/250)*2,0,7);mg.stroke();}
   if(AR()){drawPortMap();return;}
-  if(S.location!=='outside'){mg.fillStyle='rgba(8,12,18,.72)';mg.fillRect(0,0,360,360);mg.fillStyle='#fff';mg.font='700 30px "Barlow Condensed"';mg.textAlign='center';mg.fillText('Intérieur',180,175);mg.font='500 22px "Barlow Condensed"';mg.fillText({house:'Maison d’Oscar',diner:'Lina’s Diner'}[S.location],180,205);mg.textAlign='left';return;}
+  if(S.location!=='outside'){mg.fillStyle='rgba(8,12,18,.72)';mg.fillRect(0,0,360,360);mg.fillStyle='#fff';mg.font='700 30px "Barlow Condensed"';mg.textAlign='center';mg.fillText('Intérieur',180,175);mg.font='500 22px "Barlow Condensed"';mg.fillText(INTERIORS[S.location].label||'',180,205);mg.textAlign='left';return;}
   mg.fillStyle='rgba(255,220,120,.8)';for(const v of vehicles)if(v.visible&&v.kind!=='bike')mg.fillRect(mx(v.x)-1.5,mz(v.z)-1.5,3,3);
   mg.save();mg.translate(mx(p.x),mz(p.z));mg.rotate(-p.heading+Math.PI);mg.fillStyle='#fff';mg.strokeStyle='#000';mg.lineWidth=1.5;
   mg.beginPath();mg.moveTo(0,-9);mg.lineTo(6,7);mg.lineTo(0,3);mg.lineTo(-6,7);mg.closePath();mg.fill();mg.stroke();mg.restore();
@@ -2161,8 +2430,8 @@ function interact(){if(activeZone&&activeZone.act)activeZone.act();}
 
 /* --- game flow --- */
 function show(id,on){$(id).classList.toggle('hidden',!on)}
-function startLevel(fromSave){
-  S=fromSave||createState('toronto');S.status='playing';
+function startLevel(fromSave,levelId){
+  S=fromSave||createState(levelId||'toronto');S.status='playing';
   camYaw=S.camYaw||0;timeScale=1;
   S.location=S.location||'outside';S.money??=START_MONEY;S.clues??=[];S.tasks??={};
   S.arenas??={};for(const aid in ARENAS)if(ARENAS[aid].lvl===S.level)S.arenas[aid]??=newArenaState(aid);S.player.weapons??=[];S.player.weapon??='fists';S.player.ammo??={pistol:{mag:0,res:0},rifle:{mag:0,res:0}};S.checkpoint.loc??='outside';
@@ -2172,23 +2441,26 @@ function startLevel(fromSave){
   oscarMesh.g.visible=true;const p0=S.player;camera.position.set(p0.x+Math.sin(camYaw)*7,p0.y+4,p0.z+Math.cos(camYaw)*7);
   mode='play';show('title',false);show('fail',false);show('pause',false);show('hud',true);
   lockPointer();updateHUD();
-  if(!fromSave)toast('Toronto, 7 h 30. Tu rentres du Brésil. La porte est entrouverte, la maison silencieuse. Entre et cherche des indices.');
+  if(!fromSave)toast(LEVELS[S.level].startToast);
 }
-function pause(){if(mode!=='play')return;CB.firing=false;CB.aim=false;mode='pause';const di=dayInfo(S.clock);$('pauseInfo').textContent='Niveau 1 · Toronto · Jour '+di.day+', '+fmtClock(di.min)+'.';show('pause',true);store.save(S);if(document.pointerLockElement)document.exitPointerLock();}
+function pause(){if(mode!=='play')return;CB.firing=false;CB.aim=false;mode='pause';const di=dayInfo(S.clock);$('pauseInfo').textContent='Niveau '+LEVELS[S.level].index+' · '+LEVELS[S.level].name+' · Jour '+di.day+', '+fmtClock(di.min)+'.';show('pause',true);store.save(S);if(document.pointerLockElement)document.exitPointerLock();}
 function resume(){if(mode!=='pause')return;mode='play';show('pause',false);lockPointer();}
 bus.on('fail',reason=>{if(S.status!=='playing')return;siren(false);S.status='failed';$('failReason').textContent=reason;store.clear();show('dialog',false);show('notebook',false);if(document.pointerLockElement)document.exitPointerLock();
   playCine('fail',()=>{mode='fail';show('fail',true);});});
-$('bStart').onclick=()=>{store.clear();audioInit();show('title',false);playCine('intro',()=>{houseAfter();show('ready',true);mode='ready';});};
-$('bReady').onclick=()=>{show('ready',false);startLevel(null);};
+$('bStart').onclick=()=>{store.clear();audioInit();show('title',false);playCine('intro',()=>{houseAfter();showReady('toronto');});};
+$('bReady').onclick=()=>{show('ready',false);startLevel(null,readyLevel);};
 $('bIntro').onclick=()=>{audioInit();show('title',false);playCine('intro',()=>{houseAfter();world.visible=true;show('title',true);mode='title';});};
 $('cineSkip').onclick=()=>{if(mode==='cine')endCine();};
 $('bContinue').onclick=()=>{const s=store.load();if(s)startLevel(s);};
 $('bResume').onclick=resume;
 $('nbClose').onclick=closeUI;
 $('bExplore').onclick=()=>{show('win',false);mode='play';lockPointer();};
-$('bReplay').onclick=()=>{store.clear();startLevel(null)};
-$('bRestart').onclick=()=>{store.clear();startLevel(null)};
-$('bRetry').onclick=()=>{store.clear();startLevel(null)};
+$('bReplay').onclick=()=>{const l=S.level;store.clear();startLevel(null,l)};
+$('bRestart').onclick=()=>{const l=S.level;store.clear();startLevel(null,l)};
+$('bRetry').onclick=()=>{const l=S.level;store.clear();startLevel(null,l)};
+let readyLevel='toronto';
+function showReady(l){readyLevel=l;const R2=LEVELS[l].ready;$('readyKicker').textContent=R2.kicker;$('readyTitle').textContent=R2.title;$('readyText').textContent=R2.text;show('ready',true);mode='ready';}
+$('bNext').onclick=()=>{const nx=LEVELS[S.level].next;if(!nx)return;show('win',false);store.clear();S=null;show('hud',false);playCine(nx+'Intro',()=>showReady(nx));};
 $('bQuality').onclick=()=>{quality=quality==='high'?'low':'high';sun.castShadow=quality==='high';renderer.setPixelRatio(quality==='high'?Math.min(devicePixelRatio,1.5):.75);$('bQuality').textContent='Qualité : '+(quality==='high'?'haute':'basse');resize();};
 
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
@@ -2201,11 +2473,11 @@ function frame(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;
   if(mode==='play'){
     readInput();acc+=dt;let n=0;
-    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);stepAgents(STEP);stepCombat(STEP);stepMission();acc-=STEP;n++;}
+    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto')stepAgents(STEP);stepCombat(STEP);stepMission();acc-=STEP;n++;}
     if(n===6)acc=0;
     updateCamera(dt);syncView(dt,t);
     activeZone=null;let best=1e9;
-    for(const z of ZONES){if(z.loc!==S.location||(z.cond&&!z.cond()))continue;const d=Math.hypot(S.player.x-z.x,S.player.z-z.z);if(d>=z.r)continue;
+    for(const z of ZONES){if((z.lvl||'toronto')!==S.level||z.loc!==S.location||(z.cond&&!z.cond()))continue;const d=Math.hypot(S.player.x-z.x,S.player.z-z.z);if(d>=z.r)continue;
       if(z.auto){z.act();continue;}if(d<best){best=d;activeZone=z;}}
     const pr=$('prompt');if(activeZone&&mode==='play'){pr.innerHTML='<kbd>E</kbd>'+activeZone.label();pr.classList.remove('hidden');}else pr.classList.add('hidden');
     hudT-=dt;if(hudT<=0){hudT=.1;updateHUD();}
@@ -2242,7 +2514,7 @@ window.__oscar={playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones();drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildCineSets();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';
   requestAnimationFrame(t=>{last=t;frame(t);});

@@ -38,6 +38,25 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
   o.choose(0);o.choose(0);ok(o.S.arenas.port.alarm,'combat déclenché');
   const boss=o.S.arenas.port.enemies.find(e=>e.id==='boss');o.damage(boss,400);ok(o.S.flags.bossDown,'Tiago vaincu');
   o.openDialogue('tiagoI');o.choose(1);o.choose(0);o.choose(0);ok(o.S.clues.includes('manifest'),'manifeste');
+  const zone=(txt)=>o.zones.find(z=>(z.lvl||'toronto')===o.S.level&&z.loc===o.S.location&&(!z.cond||z.cond())&&z.label().includes(txt));
+  const winOk=()=>new Promise(res=>setTimeout(()=>res(o.mode==='win'),700));
+  return winOk().then(w1=>{ok(w1,'écran de fin de niveau 1');
+    o.startLevel(null,'bc');ok(o.S.level==='bc'&&o.S.location==='vanport','niveau 2 : arrivée au terminal de Vancouver');
+    ok(o.S.player.bonusEarned===1,'vie bonus du niveau 1 conservée');
+    const c=zone('MSKU');c.act();o.closeUI();ok(o.S.flags.containerOpened&&o.S.clues.includes('container'),'conteneur MSKU 448127 ouvert');
+    zone('Rusty').act();ok(o.S.location==='bar','entrer au bar');
+    o.openDialogue('vendor');o.closeUI();
+    o.openDialogue('earl');o.choose(0);o.choose(0);o.choose(0);ok(o.S.flags.earlDeal&&o.S.clues.includes('camp'),'marché avec Earl');
+    o.openDialogue('maggie');o.choose(0);ok(o.S.player.heat===100,'café chaud');
+    zone('Sortir').act();ok(o.S.location==='vanport','ressortir du bar');
+    zone('pick-up').act();ok(o.S.location==='forest','trajet vers la forêt de Squamish');
+    const j=o.S.arenas.forest.enemies.find(e=>e.id==='josh');o.S.player.x=j.x+1;o.S.player.z=j.z;const jz=zone('Josh');ok(!!jz,'Josh trouvé');jz.act();o.choose(0);o.choose(0);o.choose(0);
+    ok(j.gone&&o.S.player.bonusEarned===2,'Josh libéré : 2e vie bonus');
+    o.S.arenas.forest.alarm=false;for(const e of o.S.arenas.forest.enemies){if(!e.down){e.state='patrol';e.meter=0;}}
+    o.S.player.x=2000;o.S.player.z=520-70;o.tick(.05);ok(o.S.flags.bossMet&&o.mode==='ui','le Pasteur : négociation');o.choose(0);o.choose(0);
+    const boss=o.S.arenas.forest.enemies.find(e=>e.id==='boss');o.damage(boss,400);ok(o.S.flags.bossDown,'Pasteur vaincu');
+    o.openDialogue('pasteurI');o.choose(0);o.choose(0);o.choose(0);ok(o.S.clues.includes('galante'),'valise : piste de Terre-Neuve');
+    return winOk().then(w2=>{ok(w2,'écran de fin de niveau 2');return r;});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
 async def main():
     tmp=tempfile.mkdtemp();build(tmp)

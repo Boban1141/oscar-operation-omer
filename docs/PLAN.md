@@ -150,6 +150,16 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - **Messages vidéo d'Omer** : 3 au maximum dans le niveau 1 (après 14 h, 34 h et 54 h de jeu). Le premier contient un indice pour la fin du jeu : une corne de navire et un métro qui passe (Montréal).
 - **Échec** : courte scène d'Omer dans le sous-sol, puis l'écran « Mission échouée ».
 
+## 10e. Niveau 2 — Colombie-Britannique (bloc 6)
+> Contenu **proposé par Claude**, à valider.
+- **Vancouver, 6 h 10, pluie** : le conteneur MSKU 448127 au terminal de Centerm, surveillé par 4 hommes d'Omer. Dedans : des fusils, des tracts « Église de la Dernière Lumière — Squamish » et un téléphone jetable.
+- **The Rusty Anchor**, bar en face du terminal : Maggie (barmaid), **Earl** (pêcheur dont le neveu Josh est dans la secte), un motard qui vend l'information 80 $. Le **surplus militaire** vend un imperméable (60 $).
+- **Aller à Squamish** : Earl conduit si Oscar promet de ramener Josh ; sinon taxi (120 $, 2 h) ou stop (gratuit, 5 h).
+- **Le camp du Pasteur** dans la forêt pluviale, sous la falaise du Chief. Pont gardé, ou passage discret par un tronc tombé à l'ouest.
+- **Josh** : on peut le convaincre de partir (vie bonus) ou le combattre.
+- **Le Pasteur**, chef de secte au service d'Omer : négociation, combat, interrogatoire. **Piste du niveau 3** : le chalutier « Marie-Galante » part de **St. John's** dans quatre jours. Dans la valise, **un dessin de Cédric** : une montagne avec une grande croix lumineuse (le mont Royal, Montréal).
+- Climat : 4 à 11 °C, pluie presque constante. L'imperméable divise l'effet de la pluie ; café chaud et chauffage du pick-up rendent la chaleur.
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 

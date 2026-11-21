@@ -3,9 +3,9 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.5.0)
-- **Niveau 1 (Toronto) complet, avec ses cinématiques** : blocs 1, 1b, 2, 3 et 4 terminés.
-- **Prochaine étape proposée** : bloc 6 (niveau 2, Colombie-Britannique).
+## État au 2026-11-20 (v0.6.0)
+- **Niveaux 1 (Toronto) et 2 (Colombie-Britannique) jouables**, avec passage d'un niveau à l'autre : blocs 1 à 4 et 6 terminés.
+- **Prochaine étape proposée** : bloc 7 (niveau 3, Terre-Neuve).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
 - **Dépôt GitHub** (`Boban1141/DUXIA`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
 
@@ -75,8 +75,21 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [ ] Négociations à enjeux (otages, échanges, mensonges détectés)
 - [ ] Gardes qui communiquent par radio, alarme qui se calme si Oscar se cache longtemps
 
-## Blocs 6 à 11 — Provinces `[ ]`
-- [ ] 6 Colombie-Britannique · [ ] 7 Terre-Neuve · [ ] 8 Alberta · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
+## Bloc 6 — Niveau 2 : Colombie-Britannique `[x]` (v0.6.0)
+- [x] Moteur multi-niveaux : arènes de combat génériques, zones et objectifs par niveau, passage au niveau suivant (vies bonus et argent conservés), écrans de fin et de départ propres à chaque niveau
+- [x] Terminal de Centerm à Vancouver (pluie, grues rouges et blanches, montagnes de la rive nord), 4 hommes d'Omer, conteneur MSKU 448127
+- [x] Bar The Rusty Anchor : Maggie (café chaud qui réchauffe), Earl le pêcheur, un motard ; surplus militaire (imperméable)
+- [x] Climat : pluie constante et froid humide (4 à 11 °C) ; l'imperméable réduit l'effet de la pluie ; se réchauffer au bar ou dans le pick-up
+- [x] Trois façons d'aller à Squamish : le pick-up d'Earl (en échange de sa promesse), le taxi (120 $), le stop (gratuit, 5 h)
+- [x] Forêt pluviale de Squamish : cèdres géants, fougères, rivière avec pont gardé et tronc tombé, falaise du Chief, camp de l'Église de la Dernière Lumière
+- [x] Tâche secondaire : convaincre Josh, le neveu d'Earl, de quitter la secte → vie bonus (la 2e et dernière du jeu)
+- [x] Le Pasteur : négociation, combat, interrogatoire → piste du « Marie-Galante » à St. John's + dessin de Cédric (croix sur la montagne = Montréal)
+- [x] Cinématique d'arrivée à Vancouver
+- [x] Tests : 36 vérifications (niveaux 1 et 2)
+- [ ] Test visuel et réglage par un humain
+
+## Blocs 7 à 11 — Provinces `[ ]`
+- [x] 6 Colombie-Britannique (v0.6.0, voir plus haut) · [ ] 7 Terre-Neuve · [ ] 8 Alberta · [ ] 9 Nouvelle-Écosse · [ ] 10 Manitoba · [ ] 11 Montréal (final)
 - Systèmes d'hiver : neige, verglas, blizzard, équipement d'hiver
 
 ## Bloc 12 — Multijoueur `[ ]`

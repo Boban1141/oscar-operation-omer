@@ -3,6 +3,7 @@
 Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ## Questions ouvertes
+- **À valider** : tout le niveau 2 (Earl, Josh, Maggie, le Pasteur, l'Église de la Dernière Lumière, le « Marie-Galante », le dessin de Cédric) — `docs/PLAN.md` §10e.
 - **À valider** : Tiago « Faca » Moreira, le port, « le Pasteur » et la piste de Vancouver (`docs/PLAN.md` §10c).
 - **À régler après test humain** : difficulté (vitesse de repérage, précision des gardes), durée du chronomètre du niveau 1 (72 h de jeu = 72 minutes réelles).
 - **À valider** : le contenu de l'enquête du niveau 1 (personnages Henderson, Lina, Marcus, Jayden, Kowalski ; indices ; piste de l'entrepôt 7) a été proposé par Claude — voir `docs/PLAN.md` §10b.
@@ -13,6 +14,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Durée exacte du chronomètre de chaque niveau (provisoire niveau 1 : 72 h de jeu ; 1 seconde réelle = 1 minute de jeu).
 
 ---
+
+## 2026-11-20 — Claude — Niveau 2 : Colombie-Britannique (v0.6.0)
+- Fait : moteur rendu multi-niveaux (arènes génériques, zones/objectifs par niveau, passage de niveau, progression conservée). Niveau 2 complet : terminal de Vancouver, bar, surplus, trajet vers Squamish (3 options), forêt pluviale et camp du Pasteur, tâche de Josh (2e vie bonus), boss, interrogatoire, piste de Terre-Neuve ; imperméable et café chaud ; cinématique d'arrivée.
+- Fichiers : `game/index.html` (0.6.0), `docs/*`, `tests/run_logic_tests.py`.
+- Testé : 36/36 vérifications automatiques (niveaux 1 et 2), passage réel niveau 1 → cinématique → niveau 2 sans erreur, IA de la forêt rapide (18 ms pour 5 s simulées). **Rendu visuel non vu par un humain.**
+- Reste à faire : niveau 3 (Terre-Neuve).
 
 ## 2026-11-20 — Claude — Bloc 4 : cinématiques (v0.5.0)
 - Fait : moteur de cinématiques ; introduction complète en 20 plans (Brésil, appel anonyme, enlèvement à Toronto, repaire d'Omer, sous-sol, retour d'Oscar) ; messages vidéo d'Omer pendant le jeu (+ indice « métro et corne de navire ») ; cinématique d'échec ; écran « Prendre le contrôle d'Oscar » ; bouton « Revoir l'introduction » ; sons (hélicoptère, explosion, sonnerie, basses de la fête).
