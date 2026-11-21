@@ -1,8 +1,8 @@
 # Oscar — Opération Omer
 
-![Tests](https://github.com/Boban1141/DUXIA/actions/workflows/ci.yml/badge.svg)
+![Tests](https://github.com/Boban1141/oscar-operation-omer/actions/workflows/ci.yml/badge.svg)
 
-Jouer en ligne (après activation de GitHub Pages) : https://boban1141.github.io/DUXIA/
+Jouer en ligne (après activation de GitHub Pages) : https://boban1141.github.io/oscar-operation-omer/
 
 Jeu d'action-aventure 3D : Oscar, soldat d'élite canadien, traverse sept provinces pour libérer sa femme Eva et son fils Cédric, enlevés par le chef criminel Omer.
 
