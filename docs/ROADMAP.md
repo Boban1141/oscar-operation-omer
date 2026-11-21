@@ -3,9 +3,9 @@
 Statuts : `[ ]` à faire · `[~]` en cours · `[x]` terminé.
 Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
-## État au 2026-11-20 (v0.4.0)
-- **Niveau 1 (Toronto) jouable de bout en bout** : blocs 1, 1b, 2 et 3 terminés.
-- **Prochaine étape proposée** : bloc 4 (cinématiques d'ouverture), puis bloc 6 (niveau 2, Colombie-Britannique).
+## État au 2026-11-20 (v0.5.0)
+- **Niveau 1 (Toronto) complet, avec ses cinématiques** : blocs 1, 1b, 2, 3 et 4 terminés.
+- **Prochaine étape proposée** : bloc 6 (niveau 2, Colombie-Britannique).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
 - **Dépôt GitHub** (`Boban1141/DUXIA`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
 
@@ -56,12 +56,18 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Test automatique étendu : 19 vérifications
 - [ ] Test visuel et réglage de la difficulté par un humain
 
-## Bloc 4 — Cinématiques `[ ]`
-- [ ] Assaut au Brésil
-- [ ] Appel anonyme
-- [ ] Enlèvement à Toronto (modèle d'Omer)
-- [ ] Repaire d'Omer à Montréal
-- [ ] Vidéos d'Omer pendant le jeu ; cinématique d'échec
+## Bloc 4 — Cinématiques `[x]` (v0.5.0)
+- [x] Moteur de cinématiques : plans, caméra en mouvement et « à l'épaule », sous-titres, titres de lieu, bandes noires, bouton Passer (Espace)
+- [x] Assaut au Brésil (nuit, pluie, hélicoptère, fusillade, explosion du labo, arrestations)
+- [x] Appel anonyme (voix déformée)
+- [x] Enlèvement à Toronto : Eva cuisine, Cédric fait ses devoirs, appel vidéo coupé, VUS noirs, Omer entre (cicatrice, chaîne en or, manteau de cuir, cigare), le mot posé sur la table
+- [x] Repaire d'Omer à Montréal (fête, gardes, fumée, « Maintenant, le soldat va comprendre. ») et le sous-sol
+- [x] Retour d'Oscar trois jours plus tard → début du jeu
+- [x] Messages vidéo d'Omer pendant le niveau (à 14 h, 34 h et 54 h de jeu), avec un indice caché (corne de navire + métro)
+- [x] Cinématique d'échec (Omer dans le sous-sol)
+- [x] Tests : 22 vérifications automatiques, dont l'intro complète (20 plans)
+- [ ] Voix parlées (doublage) : à décider
+- [ ] Test visuel par un humain
 
 ## Bloc 5 — Infiltration et négociation avancées `[~]`
 - [x] Bases faites au bloc 3 : vision des gardes, déguisement, neutralisation silencieuse, négociation avec le garde et le lieutenant

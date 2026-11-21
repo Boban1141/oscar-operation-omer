@@ -15,6 +15,9 @@ def build(tmp):
     html=re.sub(r'"three":"[^"]+"','"three":"./three.js"',html).replace('<link href="https://fonts.googleapis.com','<link data-x href="data:,')
     open(os.path.join(tmp,'index.html'),'w',encoding='utf-8').write(html)
 SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'FAIL ')+m);
+  let introDone=false;o.playCine('intro',()=>{introDone=true});const nShots=o.cine.shots.length;let guard=0;while(o.cine.shots&&guard<5000){o.stepCine(.1,guard*.1);guard++;}
+  ok(introDone&&nShots>=18,'introduction jouée en entier ('+nShots+' plans)');
+  let failDone=false;o.playCine('fail',()=>{failDone=true});while(o.cine.shots){o.stepCine(.1,1);}ok(failDone,'cinématique d’échec');
   window.__oscarGod=true;o.startLevel(null);ok(o.objective(o.S).stage===0,'objectif 0 au départ');
   o.enterInterior('house');ok(o.S.location==='house','entrer dans la maison');
   o.readNote();o.closeUI();o.findClue('phone',10);o.closeUI();ok(o.objective(o.S).stage===1,'2 indices -> objectif voisin');
@@ -23,6 +26,8 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
   o.S.tasks.tip='found';o.openDialogue('lina');o.choose(0);o.choose(0);ok(o.S.flags.leadPort&&o.S.player.bonusEarned===1,'reçu + vie bonus');
   o.openDialogue('marcus');o.choose(0);o.choose(0);o.choose(0);ok(o.S.money===220,'payer Marcus 20 $');
   ok(o.objective(o.S).stage===3,'objectif port');
+  o.S.clock=o.S.startClock+14*60+1;let msgDone=false;o.playCine('msg1',()=>{msgDone=true;o.S.clues.push('video')});while(o.cine.shots){o.stepCine(.1,1);}ok(msgDone,'message vidéo d’Omer');
+  o.closeUI&&0;
   o.exitInterior&&0;o.S.location='outside';o.S.player.x=60;o.S.player.z=154;const pz=o.zones.find(z=>z.loc==='outside'&&z.label().includes('portuaire'));pz.act();
   ok(o.S.location==='port'&&o.objective(o.S).stage===4,'entrer au port');
   o.openDialogue('gate');o.choose(0);o.choose(0);ok(o.S.flags.gateOpen,'mentir au garde (reçu du diner)');

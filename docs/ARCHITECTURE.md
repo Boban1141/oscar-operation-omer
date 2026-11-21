@@ -1,6 +1,6 @@
 # Architecture technique
 
-## État actuel (v0.4.0)
+## État actuel (v0.5.0)
 - Jeu navigateur, un seul fichier : `game/index.html`.
 - **Three.js 0.160.0** chargé depuis `cdn.jsdelivr.net` (import map). Aucune étape de build.
 - Lancer en local : servir le dossier `game/` (`python3 -m http.server -d game 8000`) puis ouvrir `http://localhost:8000`.
@@ -28,6 +28,11 @@
 - **Combat** : objet `CB` (cadences, visée, blocage, accroupi, recharge) ; `playerAttack`, `tryFire` (rayon depuis la caméra, tête ×2,2), `takedownOrLoot`, `hurtPlayer`, `damageEnemy`, `alarm`. Armes dans `WEAPONS`.
 - **Appels de dialogue** : un choix peut déclencher une action du jeu avec `fx.call` → `CALLS` (`openGate`, `gateFight`, `bossFight`, `levelComplete`).
 - **Mode test** : `window.__oscarGod = true` rend Oscar invincible ; `__oscar.tick(sec)` fait avancer l'IA.
+
+## Système du bloc 4 (cinématiques)
+- Section « 5d » : décors `CSET` (brazil, lair, basement) placés loin de la ville ; acteurs `A.*` créés avec `createHuman` (mêmes règles de réalisme) ; poses dans `pose.*`.
+- Un script = liste de plans `{set, d, clock, rain, cloud, indoor, center, title, cam:[départ, arrivée, regard départ, regard arrivée], sub:[[t, qui, texte]], enter(), upd(t,k,dt,T)}`. Scripts : `CINES_intro`, `CINES_msg(n)`, `CINES_fail`.
+- `playCine(nom, fin)` passe en mode `cine` ; `endCine()` rend la main.
 
 ## Principes à respecter
 1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.

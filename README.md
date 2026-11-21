@@ -16,7 +16,7 @@ Commandes : ZQSD/WASD se déplacer · Maj courir · Espace sauter · E interagir
 - `docs/JOURNAL.md` — journal de travail et questions ouvertes
 - `AGENTS.md` — règles pour Codex, Claude et tout contributeur
 
-Version actuelle : **0.4.0** — niveau 1 (Toronto) jouable de bout en bout : enquête, port, infiltration, combat, lieutenant d'Omer.
+Version actuelle : **0.5.0** — niveau 1 (Toronto) complet avec ses cinématiques : Brésil, enlèvement, repaire d'Omer, enquête, port, infiltration, combat.
 
 Test logique : `python3 tests/run_logic_tests.py`. Commandes complètes : voir `docs/PLAN.md` (section Commandes).
 

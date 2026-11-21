@@ -14,6 +14,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-20 — Claude — Bloc 4 : cinématiques (v0.5.0)
+- Fait : moteur de cinématiques ; introduction complète en 20 plans (Brésil, appel anonyme, enlèvement à Toronto, repaire d'Omer, sous-sol, retour d'Oscar) ; messages vidéo d'Omer pendant le jeu (+ indice « métro et corne de navire ») ; cinématique d'échec ; écran « Prendre le contrôle d'Oscar » ; bouton « Revoir l'introduction » ; sons (hélicoptère, explosion, sonnerie, basses de la fête).
+- Fichiers : `game/index.html` (0.5.0), `docs/*`, `tests/run_logic_tests.py`.
+- Testé : 22/22 vérifications automatiques + parcours réel (Nouvelle partie → intro → Passer → jeu) sans erreur. **Rendu visuel des cinématiques non vu par un humain.**
+- Reste à faire : niveau 2 (Colombie-Britannique) ; décider s'il faut des voix parlées.
+
 ## 2026-11-20 — Claude — Bloc 3 : port, infiltration, combat (v0.4.0) — niveau 1 complet
 - Fait : zone portuaire (conteneurs, grue, cargo, entrepôt 7), 4 façons d'entrer, discrétion (vision des gardes, jauge, accroupi, déguisement, corps découverts), neutralisation silencieuse, fouille, combat mains nues (poing, pied, blocage), pistolet et fusil (visée, recharge, tête), IA ennemie, lieutenant Tiago (négociation, combat, interrogatoire), écran de fin de niveau, sons synthétisés, minicarte du port avec gardes.
 - Fichiers : `game/index.html` (0.4.0, anciennes sauvegardes ignorées), `docs/*`, `tests/run_logic_tests.py`.

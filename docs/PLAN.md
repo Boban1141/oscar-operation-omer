@@ -145,6 +145,11 @@ Exemple pour la maison d'Oscar (bloc 2) : veste d'Eva sur une chaise, devoirs de
 - **Tiago « Faca » Moreira**, lieutenant d'Omer à Toronto (crâne rasé, bouc, chaîne en or), avec 2 gardes du corps. **Négociation** possible avant le combat (il refuse), combat, puis **interrogatoire** : il révèle le manifeste.
 - **Piste du niveau 2** : conteneur MSKU 448127 parti pour le **port de Vancouver**, où attend un homme d'Omer surnommé **« le Pasteur »**. Eva et Cédric n'étaient pas à Toronto.
 
+## 10d. Cinématiques (bloc 4)
+- L'ouverture suit le §4 à la lettre. Détails ajoutés par Claude (à valider) : Eva prépare le souper et Cédric demande « Papa appelle quand ? » ; Omer dit à Eva « Ton mari a détruit ce que j'ai bâti. Maintenant, c'est son tour. » ; dans le sous-sol, Cédric demande si papa va venir.
+- **Messages vidéo d'Omer** : 3 au maximum dans le niveau 1 (après 14 h, 34 h et 54 h de jeu). Le premier contient un indice pour la fin du jeu : une corne de navire et un métro qui passe (Montréal).
+- **Échec** : courte scène d'Omer dans le sous-sol, puis l'écran « Mission échouée ».
+
 ## Commandes (v0.4)
 ZQSD/WASD bouger · Maj courir · Espace sauter · X s'accroupir · E interagir · F neutraliser par derrière / fouiller · clic gauche (ou J) frapper/tirer · clic droit (ou K) coup de pied/viser · V bloquer · 1 2 3 armes · R recharger · C carnet · T accélérer le temps · Échap pause.
 
