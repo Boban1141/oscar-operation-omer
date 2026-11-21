@@ -303,7 +303,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.1.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.1.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -369,6 +369,7 @@ const LEVELS = {
     startToast:'Halifax, 21 h. Pluie verglaçante sur le front de mer. Le cabinet Doucet & Associés est éclairé au deuxième étage.'
   },
   mb: {
+    firstWeather:'snow',
     id:'mb', index:6, name:'Manitoba', region:'Winnipeg', season:'Plein hiver', seed:1870,
     startMinute: 16*60+15, timeLimitMin: 36*60,
     temp:{min:-42, max:-33}, coldFactor:0.3,
@@ -382,6 +383,7 @@ const LEVELS = {
     startToast:'Winnipeg, 16 h 15, −38 °C. Le soleil se couche. Le Café de la Cathédrale est juste devant ; l’abribus est chauffé.'
   },
   mtl: {
+    firstWeather:'rain',
     id:'mtl', index:7, name:'Montréal', region:'Westmount', season:'Cœur de l’hiver', seed:1642,
     startMinute: 22*60+30, timeLimitMin: 9*60,
     temp:{min:-9, max:-4}, coldFactor:0.35,
@@ -629,9 +631,11 @@ function stepWeather(dt){
   if(period!==W.period){
     W.period=period;const rr=mulberry32(L.seed*31+period*7919)();
     W.kind=rr<L.weather.clear?'clear':rr<L.weather.clear+L.weather.cloudy?'cloudy':(L.weather.snow?'snow':'rain');
+    const first=W.period0===undefined;if(first)W.period0=period;if(L.firstWeather&&period===W.period0)W.kind=L.firstWeather;
     W.target={rain:W.kind==='rain'?1:0,snow:W.kind==='snow'?1:0,cloud:W.kind==='clear'?.1:W.kind==='cloudy'?.65:.9};
   }
   const k=1-Math.exp(-dt*.25*Math.max(1,timeScale/4));
+  if(W.period===W.period0&&!W.settled){W.settled=true;W.rain=W.target.rain;W.cloud=W.target.cloud;W.snow=W.target.snow||0;}
   W.rain=lerp(W.rain,W.target.rain,k);W.cloud=lerp(W.cloud,W.target.cloud,k);W.snow=lerp(W.snow||0,W.target.snow||0,k);
   const h=dayInfo(S.clock).hour;
   W.temp=lerp(L.temp.min,L.temp.max,.5+.5*Math.sin((h/24-.375)*Math.PI*2))-W.rain*2;
@@ -1213,7 +1217,9 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
     rainGeo.attributes.position.needsUpdate=true;rain.position.set(center.x,0,center.z);}
   if(SNOWAMT>0){scene.fog.near=lerp(scene.fog.near,30,SNOWAMT*.6);scene.fog.far=lerp(scene.fog.far,200,SNOWAMT*.7);const wo=SNOWAMT*clamp((WIND.str-.45)*2.2,0,1);scene.fog.near=lerp(scene.fog.near,4,wo);scene.fog.far=lerp(scene.fog.far,46,wo);}
   updateInteriorLights(day*(1-cloud*.5),smooth(.25,.75,nightF));
-  if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=.18+.22*day;hemi.color.set('#f3e6d2');
+  if(mode==='cine')hemi.intensity=Math.max(hemi.intensity,.55);
+  {const I=S&&INTERIORS[S.location];if(I&&I.nightFill&&!indoor)hemi.intensity=Math.max(hemi.intensity,I.nightFill);}
+  if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=Math.max(.18+.22*day,S&&S.location==='manoir'?.5:0);hemi.color.set('#f3e6d2');
     rain.visible=false;stars.material.opacity=0;sunDisc.material.opacity=0;moon.material.opacity=0;}
 }
 
@@ -1249,6 +1255,7 @@ function updateCamera(dt){
   const hit=ray.intersectObjects(collidableMeshes,false)[0];if(hit)d=Math.max(1.2,hit.distance-.35);
   if(CB.aim){d=Math.min(d,2.3);}
   tv.copy(head).addScaledVector(dir,d);if(tv.y<.4)tv.y=.4;
+  {const I=INTERIORS[S.location];if(I&&I.indoor&&I.hw&&I.hw<30){tv.x=clamp(tv.x,I.ox-I.hw+.4,I.ox+I.hw-.4);tv.z=clamp(tv.z,I.oz-I.hd+.4,I.oz+I.hd-.4);}}
   const sh=CB.aim?.55:0,rx=Math.cos(camYaw)*sh,rz=-Math.sin(camYaw)*sh;tv.x+=rx;tv.z+=rz;
   camera.position.lerp(tv,1-Math.exp(-dt*18));
   if(CB.shake>0){camera.position.x+=(Math.random()-.5)*.06;camera.position.y+=(Math.random()-.5)*.06;}
@@ -2906,9 +2913,9 @@ function CINES_mbIntro(){const Wp=WPG;return[
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(Wp.ox,0,Wp.oz+8);oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.7,true);}}];}
 
 /* --- 5j. NIVEAU 7 : MONTRÉAL — LE FINAL (tempête de verglas, Westmount, maison d'Omer) --- */
-const WMT={ox:7000,oz:0,hw:70,hd:50,indoor:false,label:'Westmount, Montréal',cols:[],group:null,lights:[],ice:true};
+const WMT={ox:7000,oz:0,hw:70,hd:50,indoor:false,label:'Westmount, Montréal',cols:[],group:null,lights:[],ice:true,nightFill:.95};
 const REFUGE={ox:7000,oz:200,hw:8,hd:5.5,indoor:true,label:'Salle paroissiale (refuge)',spawn:{x:0,z:4.3},exitLoc:'westmount',exitOut:()=>({x:WMT.ox-30,z:WMT.oz+12.4}),cols:[],group:null,lights:[]};
-const MANOIR={ox:7000,oz:400,hw:60,hd:50,indoor:false,label:'Résidence d’Omer',cols:[],group:null,lights:[],ice:true,doors:{}};
+const MANOIR={ox:7000,oz:400,hw:60,hd:50,indoor:false,label:'Résidence d’Omer',cols:[],group:null,lights:[],ice:true,doors:{},nightFill:.85};
 const SOUSSOL={ox:7000,oz:600,hw:5,hd:4,indoor:true,label:'Sous-sol',spawn:{x:0,z:3},exitLoc:'manoir',exitOut:()=>({x:MANOIR.ox+19,z:MANOIR.oz-26.5}),cols:[],group:null,lights:[]};
 INTERIORS.westmount=WMT;INTERIORS.refuge=REFUGE;INTERIORS.manoir=MANOIR;INTERIORS.soussol=SOUSSOL;
 const SALON={x0:6,x1:22,z0:-30,z1:-8};
@@ -3053,7 +3060,7 @@ function buildManoir(){
     g.g.position.set(x,0,z);g.g.rotation.y=a;I.group.add(g.g);MANOIR.girls.push(g.g);}
   ibox(I,1.4,2.3,.12,mat('#555b60',{metalness:.7,roughness:.3}),20.4,1.15,-29.8,0,false,false);const kp=new THREE.Mesh(new THREE.BoxGeometry(.18,.26,.04),new THREE.MeshStandardMaterial({color:'#113',emissive:'#2aff6a',emissiveIntensity:1.6}));kp.position.set(19.4,1.35,-29.75);I.group.add(kp);MANOIR.keypad=kp;
   // interior lights (die when the generator is sabotaged)
-  for(const [x,z,c] of [[0,-6,'#ffe2b0'],[-14,-8,'#fff1d8'],[-10,-22,'#ffd9a3'],[14,-4,'#ffd9a3'],[14,-19,'#ffcf7a'],[18,-26,'#ff2aa0']]){const l=new THREE.PointLight(c,10,13,2);l.position.set(x,3.1,z);I.group.add(l);I.lights.push({l,kind:'office',base:10});}
+  for(const [x,z,c] of [[0,-6,'#ffe2b0'],[-14,-8,'#fff1d8'],[-10,-22,'#ffd9a3'],[14,-4,'#ffd9a3'],[14,-19,'#ffcf7a'],[18,-26,'#ff2aa0']]){const l=new THREE.PointLight(c,45,16,2);l.position.set(x,3.1,z);I.group.add(l);I.lights.push({l,kind:'office',base:45});}
   // garage and its diesel generator (east side)
   const hg=new THREE.MeshStandardMaterial({map:corrTex,color:'#5a5e63',roughness:.7});ibox(I,12,4,16,stone,32,2,-14,0,true);ibox(I,12.4,.3,16.4,mat('#2a2d33'),32,4.15,-14);
   ibox(I,1.6,1.1,1,mat('#c9a227',{roughness:.5}),32,.55,-4.2,0,true);ibox(I,.2,.6,.2,mat('#333'),31.4,1.4,-4.2);const gl=new THREE.PointLight('#fff1d8',3,6,2);gl.position.set(32,2,-3);I.group.add(gl);MANOIR.gen=gl;
@@ -3063,7 +3070,7 @@ function buildManoir(){
   const hedge=new THREE.MeshStandardMaterial({color:'#2a3a2a',roughness:.2,metalness:.1});for(const x of [-6,6])for(let z=8;z<44;z+=4)ibox(I,1,1.1,3.2,hedge,x,.55,z,0,false);
   for(const [x,z] of [[-12,30],[12,30],[-40,-40],[40,-40]])glazedTree(I,x,z,1.1);
   for(const [x,z,c] of [[-14,12,'#0b0b0c'],[14,12,'#0b0b0c']]){const car=createCar('car',c);car.position.set(x,0,z);car.scale.set(1.08,1.25,1.1);I.group.add(car);I.cols.push({x0:I.ox+x-1.1,x1:I.ox+x+1.1,z0:I.oz+z-2.6,z1:I.oz+z+2.6});}
-  for(const [x,z] of [[-3.5,8],[3.5,8],[-3.5,30],[3.5,30]]){icyl(I,.08,.12,4,M.pole,x,2,z,8);const l=new THREE.PointLight('#fff1d8',8,10,2);l.position.set(x,4,z);I.group.add(l);I.lights.push({l,kind:'office',base:8});}
+  for(const [x,z] of [[-3.5,8],[3.5,8],[-3.5,30],[3.5,30]]){icyl(I,.08,.12,4,M.pole,x,2,z,8);const l=new THREE.PointLight('#fff1d8',30,14,2);l.position.set(x,4,z);I.group.add(l);I.lights.push({l,kind:'office',base:30});}
   camMeshesFor(I,ARENAS.manoir.cams);branchMesh(I);
   I.group.visible=false;
 }
@@ -3493,7 +3500,7 @@ function CINES_fail(){return[
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
   const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='mbIntro'?CINES_mbIntro():name==='mtlIntro'?CINES_mtlIntro():name==='finale'?CINES_finale():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
-  Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';keys.clear();CB.firing=false;audioInit();
+  Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';show('hud',false);keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
 function startShot(){const s=CINE.shots[CINE.i];hideAll();showSet(s.set);FX.boomed=false;s.enter&&s.enter();$('cineTitle').textContent=s.title||'';$('cineSub').innerHTML='';
@@ -3513,7 +3520,7 @@ function stepCine(dt,T){
   if(t>=s.d){CINE.i++;CINE.t=0;if(CINE.i>=CINE.shots.length)endCine();else startShot();}
 }
 function endCine(){if(!CINE.shots)return;csnd('rotorOff');show('cine',false);hideAll();const f=CINE.onEnd;CINE.shots=null;
-  mode=S&&S.status==='playing'?'play':'title';if(mode==='play')applyLocation();else world.visible=true;oscarMesh.g.visible=mode==='play';f&&f();}
+  mode=S&&S.status==='playing'?'play':'title';if(mode==='play'){applyLocation();show('hud',true);}else world.visible=true;oscarMesh.g.visible=mode==='play';f&&f();}
 
 /* ---------------- 6. UI ---------------- */
 const $=id=>document.getElementById(id);

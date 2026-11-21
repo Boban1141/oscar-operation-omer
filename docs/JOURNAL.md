@@ -21,6 +21,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-20 — Claude — Premier test visuel réel (v1.1.1)
+- Testé dans le navigateur intégré, sur le PC de Boban (vrai rendu, Intel Iris Xe) : écran titre, Toronto, diner, intro, Manitoba, Montréal, salon d'Omer.
+- Corrigé : le HUD restait affiché par-dessus les cinématiques ; la caméra sortait des petites pièces (entrée du diner) ; Westmount et la maison d'Omer presque noirs (lumière d'appoint `nightFill`, lampes plus fortes) ; la météo promise (blizzard au Manitoba, verglas à Montréal) n'était pas garantie au début (`firstWeather`) ; cinématiques de nuit éclaircies.
+- Reste à voir : les humains sont encore faits de formes simples (point 2 du plan d'amélioration).
+
 ## 2026-11-20 — Claude — GitHub Actions
 - Fait : `.github/workflows/ci.yml` (tests à chaque push et PR ; publication de `game/` sur GitHub Pages si les tests passent sur main). Badge dans le README, règles dans AGENTS.md.
 - À faire par Boban : Settings → Pages → Source « GitHub Actions ».

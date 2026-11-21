@@ -158,6 +158,9 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Les sauvegardes restent valides d'une version 1.x à l'autre ; textes « en construction » retirés
 - [x] Tests : 123 vérifications ; essai réel menus + manette simulée sans erreur
 
+## Bloc 13 — Premier test visuel réel `[x]` (v1.1.1)
+- [x] HUD caché pendant les cinématiques ; caméra gardée dans les petites pièces ; Montréal jouable dans la panne ; météo du début de niveau garantie
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)
