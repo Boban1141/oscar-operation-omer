@@ -1,0 +1,61 @@
+# Tests du jeu à chaque push et pull request, puis publication du jeu sur GitHub Pages (branche main).
+name: Jeu Oscar — tests et publication
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests logiques (Chrome headless)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Installer Playwright
+        run: |
+          pip install playwright
+          if ! command -v google-chrome >/dev/null 2>&1; then python -m playwright install --with-deps chromium; fi
+
+      - name: Vérifier la syntaxe JavaScript du jeu
+        run: |
+          sed -n '/<script type="module">/,/<\/script>/p' game/index.html | sed '1d;$d' > "$RUNNER_TEMP/game.mjs"
+          node --check "$RUNNER_TEMP/game.mjs"
+
+      - name: Lancer les tests (7 niveaux, menus, trophées)
+        run: python tests/run_logic_tests.py
+
+  deploy:
+    name: Publier le jeu sur GitHub Pages
+    needs: tests
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: game
+      - id: deployment
+        uses: actions/deploy-pages@v4

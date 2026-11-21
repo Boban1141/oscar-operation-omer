@@ -39,3 +39,8 @@ Ce dépôt est développé à plusieurs : le propriétaire du projet, **Claude**
 - Pas de secrets (clés, mots de passe) dans le dépôt.
 - Ne pas réécrire l'historique de `main` (`push --force` interdit).
 - Ne pas supprimer de décision de `docs/PLAN.md` sans accord du propriétaire.
+
+## Intégration continue (GitHub Actions)
+- `.github/workflows/ci.yml` lance `tests/run_logic_tests.py` (et une vérification de syntaxe du JavaScript) à chaque push et pull request.
+- Si les tests passent sur `main`, le dossier `game/` est publié sur GitHub Pages.
+- Ne pousse jamais sur `main` un commit qui fait échouer le workflow : lance les tests en local d'abord.

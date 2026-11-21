@@ -21,6 +21,10 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-20 — Claude — GitHub Actions
+- Fait : `.github/workflows/ci.yml` (tests à chaque push et PR ; publication de `game/` sur GitHub Pages si les tests passent sur main). Badge dans le README, règles dans AGENTS.md.
+- À faire par Boban : Settings → Pages → Source « GitHub Actions ».
+
 ## 2026-11-20 — Claude — Confort de jeu (v1.1.0)
 - Fait : options, chapitres, trophées et records, musique adaptative et ambiances, indices du numéro masqué (I), manette, astuces, quitter vers le titre, F1, indicateur de sauvegarde, qualité graphique automatique.
 - Tests : 123/123 ; essai réel (menus, manette simulée, indices, quitter/continuer) sans erreur.
