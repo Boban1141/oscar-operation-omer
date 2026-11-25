@@ -198,6 +198,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <label for="oSubs">Taille des sous-titres et dialogues</label><select id="oSubs"><option value="normal">Normale</option><option value="large">Grande</option></select>
     <label for="oHints">Indices du numéro masqué</label><select id="oHints"><option value="auto">Automatiques (si tu bloques 5 min)</option><option value="ask">Sur demande seulement (touche I)</option><option value="off">Désactivés</option></select>
     <label for="oModel">Personnage d’Oscar</label><select id="oModel"><option value="new">Soldat 3D animé (Mixamo)</option><option value="classic">Classique (plus léger)</option></select>
+    <label for="oPeople">Passants et personnages</label><select id="oPeople"><option value="real">Vrais humains (Mixamo)</option><option value="classic">Simples (plus léger)</option></select>
     <label for="oReal">Matières photographiques (lieux réels)</label><input id="oReal" type="checkbox">
     <label for="oPost">Effets de cinéma (halo, grain, vignettage)</label><input id="oPost" type="checkbox">
     <label for="oTips">Astuces à l’écran</label><input id="oTips" type="checkbox">
@@ -307,7 +308,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.7.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.8.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1245,13 +1246,13 @@ function createHuman(look,extra={}){
   if(extra.umbrella){umb=new THREE.Group();const c=new THREE.Mesh(HG.umb,clothMat(pick(Math.random,['#111','#1d3557','#7a1d1d','#2f4f2f']),.6));c.material.side=THREE.DoubleSide;c.position.y=.62;
     const s=new THREE.Mesh(HG.stick,M.pole);s.position.y=.2;umb.add(c,s);umb.position.set(0,-.1,.05);umb.visible=false;armR.wr.add(umb);}
   if(extra.backpack){const b=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.22,4,10).scale(1.15,1,.6),clothMat('#3b3a2a'));b.position.set(0,.32,-.17);b.castShadow=true;spine.add(b);}
-  return{g,hips,spine,chest,head,eyes,irises,legL,legR,armL,armR,umb,prop,details,look:L,
-    st:{phase:Math.random()*6,blink:1+Math.random()*4,blinkOn:0,look:0,lookT:0,lookYaw:0,lookPitch:0,tYaw:0,tPitch:0,shift:0,shiftT:2+Math.random()*4,shiftTarget:1,gest:8+Math.random()*10,gestOn:0,sip:5+Math.random()*8,sipOn:0}};
+  const H={g,hips,spine,chest,head,eyes,irises,legL,legR,armL,armR,umb,prop,details,look:L,
+    st:{phase:Math.random()*6,blink:1+Math.random()*4,blinkOn:0,look:0,lookT:0,lookYaw:0,lookPitch:0,tYaw:0,tPitch:0,shift:0,shiftT:2+Math.random()*4,shiftTarget:1,gest:8+Math.random()*10,gestOn:0,sip:5+Math.random()*8,sipOn:0}};HUMANS.push(H);return H;
 }
 // mode: 'walk' (default), 'talk', 'bike'. speed in m/s. effort 0..1 (Oscar breathing when tired)
 function animRig(h,dt,t,speed,mode='walk',effort=0,detailsOn=true){
-  const st=h.st,L=h.look;
-  if(h.detailsOn!==detailsOn){h.detailsOn=detailsOn;for(const d of h.details)d.visible=detailsOn;
+  const st=h.st,L=h.look;(h.rs||(h.rs={})).speed=speed;h.rs.mode=mode;h.rs.f=RFRAME;
+  if(h.detailsOn!==detailsOn&&!h.real){h.detailsOn=detailsOn;for(const d of h.details)d.visible=detailsOn;
     if(L.prop==='pocket'){h.armL.fin.visible=false;h.armL.th.visible=false;}}
   const a=clamp(speed/1.4,0,1),run=clamp((speed-3.4)/3,0,1),idle=1-a;
   st.phase+=speed*dt*2.2/L.height;const ph=st.phase,s=Math.sin(ph),c=Math.cos(ph);
@@ -2152,7 +2153,7 @@ function buildEnemies(){
   const r=mulberry32(1500);
   for(const aid in S.arenas){const AD=ARENAS[aid];for(const e of S.arenas[aid].enemies){
     const base=mkLook(r),L=(AD.elook&&AD.elook[e.type])||ELOOK[e.type];const look={...base,...L,prop:'none',rolled:0,slouch:.05,...(e.type==='boss'?AD.bossLook||{height:1.04,build:1.15,bald:true,beard:true}:{}),...((AD.lookById||{})[e.id]||{})};
-    const h=createHuman(look);scene.add(h.g);h.g.rotation.order='YXZ';h.g.visible=false;
+    const h=createHuman(look);h.role='omer';scene.add(h.g);h.g.rotation.order='YXZ';h.g.visible=false;
     if(e.type==='pistol'||e.type==='boss'){h.gun=gunMesh('pistol');h.armR.wr.add(h.gun);}
     if(e.type==='rifle'){h.gun=gunMesh('rifle');h.armR.wr.add(h.gun);}
     if(e.type==='boss'&&AD.bossDeco)AD.bossDeco(h);
@@ -4141,7 +4142,7 @@ function frame(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;stepComfort(dt,t);
   if(mode==='play'){
     readInput();acc+=dt;let n=0;
-    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto')stepAgents(STEP);stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);stepMission();acc-=STEP;n++;}
+    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto'||S.location==='outside')stepAgents(STEP);stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);stepMission();acc-=STEP;n++;}
     if(n===6)acc=0;
     updateCamera(dt);syncView(dt,t);
     activeZone=null;let best=1e9;
@@ -4170,7 +4171,7 @@ function frame(now){
     if(mode==='ui'){hudT-=dt;if(hudT<=0){hudT=.2;updateHUD();}}
   }
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classList.remove('on');}
-  updateOscarModel(dt);
+  updateOscarModel(dt);updateRealHumans(dt);
   updateRainOverlay(dt,S?S.weather.rain:0);
   if(composer&&SET.postfx!==false&&COMF.q==='high')composer.render();else renderer.render(scene,camera);
 }
@@ -4224,7 +4225,7 @@ async function loadOscarModel(){
     const [charObj,soldier]=await Promise.all([firstOk(OSCAR_CHAR,u=>fbx.loadAsync(u)),firstOk(OSCAR_GLB,u=>glb.loadAsync(u))]);
     const loco=(soldier&&soldier.animations||[]).filter(a=>['Idle','Walk','Run'].includes(a.name));
     if(charObj&&charObj.getObjectByName){
-      const clips=soldier?reorientClips(loco,soldier.scene,charObj):[];
+      const clips=soldier?reorientClips(loco,soldier.scene,charObj):[];OM.loco=clips.slice();
       await Promise.all(Object.entries(OSCAR_CLIPS).map(async([name,path])=>{
         const o=await firstOk(['assets/'+path,'../assets/'+path],u=>fbx.loadAsync(u));
         if(o&&o.animations&&o.animations[0]){const c=inPlace(o.animations[0]);c.name=name;clips.push(c);}}));
@@ -4295,6 +4296,108 @@ function updateOscarModel(dt){
   if(OM.gunAnchor&&OM.hand){oscarMesh.g.updateMatrixWorld(true);OM.hand.getWorldPosition(_ga);OM.fore.getWorldPosition(_gb);
     _gd.subVectors(_ga,_gb);oscarMesh.g.getWorldQuaternion(_gq).invert();_gd.applyQuaternion(_gq).normalize();
     OM.gunAnchor.position.copy(oscarMesh.g.worldToLocal(_ga.clone()));OM.gunAnchor.quaternion.setFromUnitVectors(_gy,_gd);}
+}
+
+/* ---------------- 11. VRAIS HUMAINS POUR TOUT LE MONDE ----------------
+   Passants, gens assis, cyclistes, hommes d'Omer, personnages des lieux et des cinématiques : les plus proches de la caméra
+   reçoivent un vrai personnage Mixamo (assets/characters/pnj, textures réduites par tools/fbx_shrink.py) avec de vraies
+   animations capturées (assets/animations/pnj). Le squelette simple continue de tourner en coulisse : il donne la position,
+   la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
+const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
+const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige'],
+  omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
+const PNJ_CLIPS={walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle'};
+const HUMANS=[];let RFRAME=0;
+const RH={ready:false,loading:false,clips:{},base:{},pending:{},free:{},bound:new Set(),selT:0,fbx:null,SU:null,pruneT:0};
+const rhNorm=n=>n.replace(/^mixamorig\d+/,'mixamorig');
+function rhMax(){return SET.people==='classic'?0:COMF.q==='low'?5:COMF.q==='medium'?10:16;}
+function rhRole(h){if(h.role)return h.role;const L=h.look||{};if((L.height||1)<.8)return 'enfant';return L.type==='woman'||L.long&&!L.beard?'femme':'homme';}
+function rhHash(L){const s=JSON.stringify([L.skin,L.jacket,L.pants,L.hair,L.height]);let x=0;for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))|0;return Math.abs(x);}
+function rhChar(h){if(!h.rchar){const list=PNJ_CHARS[rhRole(h)]||PNJ_CHARS.homme;h.rchar=list[rhHash(h.look||{})%list.length];}return h.rchar;}
+async function rhInit(){
+  if(RH.loading||RH.ready||rhMax()===0)return;RH.loading=true;
+  try{const [{FBXLoader},SU]=await Promise.all([import('three/addons/loaders/FBXLoader.js'),import('three/addons/utils/SkeletonUtils.js')]);
+    RH.fbx=new FBXLoader();RH.SU=SU;
+    await Promise.all(Object.entries(PNJ_CLIPS).map(async([k,f])=>{const o=await firstOk([PNJ_ANIM+f+'.fbx','../'+PNJ_ANIM+f+'.fbx'],u=>RH.fbx.loadAsync(u));
+      if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);
+        if(/walk|Walk/.test(k))inPlace(c);c.name=k;RH.clips[k]=c;}}));
+    if(OM.loco)for(const c of OM.loco)if(c.name==='Run')RH.clips.run=c;
+    RH.ready=!!(RH.clips.idle&&(RH.clips.walkM||RH.clips.walkF));
+  }catch(e){console.warn('Vrais humains indisponibles, personnages simples conservés.',e);}
+}
+function rhLoadChar(name){
+  if(RH.base[name]||RH.pending[name])return;RH.pending[name]=true;
+  firstOk([PNJ_DIR+name+'.fbx','../'+PNJ_DIR+name+'.fbx'],u=>RH.fbx.loadAsync(u)).then(o=>{
+    if(!o){RH.base[name]='none';return;}
+    o.traverse(x=>{x.name=rhNorm(x.name);if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;
+      for(const m of [].concat(x.material)){if(m&&m.shininess!==undefined)m.shininess=Math.min(m.shininess,12);if(m&&m.specular)m.specular.setScalar(.06);}}});
+    o.scale.setScalar(.01);o.updateMatrixWorld(true);
+    const hips=o.getObjectByName('mixamorigHips'),head=o.getObjectByName('mixamorigHead');if(!hips||!head){RH.base[name]='none';return;}
+    const v=new THREE.Vector3();const headY=head.getWorldPosition(v).y,hipsY=hips.position.y;
+    // the clips were captured on another body: scale the hip keys to this body
+    const clips={};for(const [k,c] of Object.entries(RH.clips)){const cc=c.clone();const tr=cc.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
+      if(tr&&k!=='run'){const ref=(RH.clips.idle.tracks.find(t=>/Hips\.position$/.test(t.name))||{values:[0,hipsY,0]}).values[1]||hipsY,r=hipsY/ref;for(let i=0;i<tr.values.length;i++)tr.values[i]*=r;}
+      clips[k]=cc;}
+    RH.base[name]={obj:o,headY,clips};}).catch(()=>{RH.base[name]='none';});
+}
+function rhInstance(name){
+  const B=RH.base[name];if(!B||B==='none')return null;
+  const f=(RH.free[name]||(RH.free[name]=[]));if(f.length)return f.pop();
+  const model=RH.SU.clone(B.obj),root=new THREE.Group();root.add(model);
+  const mixer=new THREE.AnimationMixer(model),acts={};
+  for(const [k,c] of Object.entries(B.clips)){const a=mixer.clipAction(c);a.play();a.setEffectiveWeight(0);acts[k]=a;}
+  const bn=n=>model.getObjectByName('mixamorig'+n);
+  return {name,root,model,mixer,acts,w:{},cur:null,s:1.7/B.headY,bn,
+    arms:null,legs:null,hips:bn('Hips')};
+}
+function rhVisible(o){for(let x=o,d=0;x&&d<40;x=x.parent,d++){if(!x.visible)return false;if(x===scene)return true;}return false;}
+function rhBind(h,I){
+  const keep=new Set([I.root]);for(const o of [h.gun,h.umb]){if(o)o.traverse(x=>keep.add(x));}
+  h.rhide=[];h.g.traverse(o=>{if(o.isMesh&&!keep.has(o)&&!isIn(o,I.root)&&!(h.gun&&isIn(o,h.gun))&&!(h.umb&&isIn(o,h.umb))){h.rhide.push([o,o.visible]);o.visible=false;}});
+  h.g.add(I.root);I.root.scale.setScalar(I.s);I.root.position.set(0,0,0);I.cur=null;for(const k in I.acts){I.w[k]=0;I.acts[k].setEffectiveWeight(0);}
+  const R=h.armR,Lf=h.armL;
+  I.arms=[[I.bn('RightArm'),I.bn('RightForeArm'),wp(R.sh),wp(R.el)],[I.bn('RightForeArm'),I.bn('RightHand'),wp(R.el),wp(R.wr)],
+          [I.bn('LeftArm'),I.bn('LeftForeArm'),wp(Lf.sh),wp(Lf.el)],[I.bn('LeftForeArm'),I.bn('LeftHand'),wp(Lf.el),wp(Lf.wr)]];
+  I.legs=[[I.bn('RightUpLeg'),I.bn('RightLeg'),wp(h.legR.th),wp(h.legR.kn)],[I.bn('RightLeg'),I.bn('RightFoot'),wp(h.legR.kn),shinEnd(h.legR.kn)],
+          [I.bn('LeftUpLeg'),I.bn('LeftLeg'),wp(h.legL.th),wp(h.legL.kn)],[I.bn('LeftLeg'),I.bn('LeftFoot'),wp(h.legL.kn),shinEnd(h.legL.kn)],
+          [I.bn('Spine'),I.bn('Neck'),wp(h.spine),wp(h.head)]];
+  h.real=I;RH.bound.add(h);
+}
+function rhUnbind(h){const I=h.real;if(!I)return;if(I.root.parent)I.root.parent.remove(I.root);
+  for(const [o,v] of h.rhide||[])o.visible=v;h.rhide=null;h.real=null;RH.bound.delete(h);(RH.free[I.name]||(RH.free[I.name]=[])).push(I);}
+function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0;
+  if(r.mode==='sit')return (rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
+  if(r.mode==='bike')return 'sit';
+  if(r.mode==='talk')return L.prop==='phone'&&I.acts.phone?'phone':'talk';
+  if(sp>3.4&&I.acts.run)return 'run';
+  if(sp>.3){if(L.prop==='phone'&&I.acts.textWalk)return 'textWalk';return rhRole(h)==='femme'&&I.acts.walkF?'walkF':(I.acts.walkM?'walkM':'walkF');}
+  if(L.prop==='phone'&&I.acts.text)return 'text';return 'idle';}
+const _rv=new THREE.Vector3(),_rv2=new THREE.Vector3();
+function updateRealHumans(dt){
+  RFRAME++;const N=rhMax();
+  if(N===0||!RH.ready){if(RH.bound.size)for(const h of [...RH.bound])rhUnbind(h);if(N>0&&!RH.loading&&OM.ready!==undefined)rhInit();return;}
+  RH.pruneT-=dt;if(RH.pruneT<=0){RH.pruneT=3;for(let i=HUMANS.length-1;i>=0;i--){const h=HUMANS[i];let x=h.g,d=0;for(;x&&d<40&&x!==scene;x=x.parent,d++);if(x!==scene){rhUnbind(h);HUMANS.splice(i,1);}}}
+  RH.selT-=dt;
+  if(RH.selT<=0){RH.selT=.3;const cp=camera.position,R=COMF.q==='low'?26:40,c=[];
+    for(const h of HUMANS){if(h===oscarMesh||!h.rs||RFRAME-h.rs.f>3||!rhVisible(h.g))continue;h.g.getWorldPosition(_rv);const d=_rv.distanceTo(cp);if(d<R)c.push([d,h]);}
+    c.sort((a,b)=>a[0]-b[0]);const want=new Set();
+    for(const [,h] of c){if(want.size>=N)break;const nm=rhChar(h);const B=RH.base[nm];if(!B){rhLoadChar(nm);continue;}if(B==='none')continue;want.add(h);}
+    for(const h of [...RH.bound])if(!want.has(h))rhUnbind(h);
+    for(const h of want)if(!h.real){const I=rhInstance(rhChar(h));if(I)rhBind(h,I);}}
+  const cine=mode==='cine';
+  for(const h of RH.bound){const I=h.real,cur=rhClip(h,I),k=1-Math.exp(-dt*8);
+    if(cur!==I.cur){const a=I.acts[cur];if(a&&!(I.w[cur]>.05)){a.reset();a.time=Math.random()*a.getClip().duration;}I.cur=cur;}
+    for(const n in I.acts){I.w[n]=lerp(I.w[n]||0,n===cur?1:0,k);I.acts[n].setEffectiveWeight(I.w[n]);}
+    const sp=(h.rs&&h.rs.speed)||0;
+    if(I.acts.walkM)I.acts.walkM.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.walkF)I.acts.walkF.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.textWalk)I.acts.textWalk.timeScale=clamp(sp/1.1,.6,1.6);
+    I.mixer.update(dt);
+    // poses the clips do not have: cinematics (everything), weapons and umbrellas (arms)
+    const full=cine||(h.g.rotation.x<-.5),arms=full||!!h.gun||!!(h.umb&&h.umb.visible);
+    if(arms||full){h.g.updateMatrixWorld(true);if(full)for(const t of I.legs)retarget(...t,1);for(const t of I.arms)retarget(...t,1);}
+    // seated (bench, bike): put the real hips where the simple rig's hips are
+    const m=h.rs&&h.rs.mode;if(m==='sit'||m==='bike'||full){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
+      I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
+    else I.root.position.y=lerp(I.root.position.y,0,k);}
 }
 
 /* ---------------- 9. LIEUX RÉALISTES : matières photographiées (Poly Haven, licence CC0) ----------------
@@ -4437,7 +4540,7 @@ function cityZones(){const Z=[];
   return Z;}
 
 /* ---------------- 7. CONFORT DE JEU (v1.1) : options, chapitres, trophées, musique, indices, manette ---------------- */
-const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',realTex:true,postfx:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
+const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',people:'real',realTex:true,postfx:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
 function saveSettings(){try{localStorage.setItem('oscar.settings',JSON.stringify(SET))}catch(e){}}
 const DIFF={decouverte:{det:.6,dmg:.6,txt:'Découverte : les gardes mettent plus de temps à te repérer et frappent moins fort.'},normal:{det:1,dmg:1,txt:'Normale : l’expérience prévue.'},expert:{det:1.35,dmg:1.3,txt:'Expert : les gardes te repèrent vite et frappent fort.'}};
 function DIFFK(){return DIFF[SET.diff]||DIFF.normal}
@@ -4544,7 +4647,7 @@ function padPoll(dt){const gps=navigator.getGamepads?[...navigator.getGamepads()
   else padMenu();
   PAD.prev=PAD.g.buttons.map((b,i)=>padDown(i));}
 /* --- menus: options, chapters, trophies, quit --- */
-const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oModel','oscarModel','select'],['oReal','realTex','check'],['oPost','postfx','check'],['oTips','tips','check'],['oFps','fps','check']];
+const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oModel','oscarModel','select'],['oPeople','people','select'],['oReal','realTex','check'],['oPost','postfx','check'],['oTips','tips','check'],['oFps','fps','check']];
 function fillOptions(){for(const [id,k,t] of OPT){const el=$(id);if(t==='check')el.checked=!!SET[k];else el.value=SET[k];}$('oDiffTxt').textContent=DIFF[SET.diff].txt;}
 for(const [id,k,t] of OPT){const el=$(id);el.addEventListener(t==='range'?'input':'change',()=>{SET[k]=t==='check'?el.checked:t==='range'?+el.value:el.value;saveSettings();applySettings();fillOptions();});}
 let optFrom=null;
@@ -4601,7 +4704,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

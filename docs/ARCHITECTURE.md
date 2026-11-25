@@ -91,3 +91,8 @@ Le jeu est solo et scénarisé ; le multijoueur se fera par **sessions** (coopé
 - **Services** : comptes/authentification, sauvegardes en base (PostgreSQL), matchmaking/invitations, Redis pour la présence.
 - **Mises à jour** : versions de client/serveur vérifiées à la connexion ; migrations du format de sauvegarde.
 - Coût d'hébergement à la charge du propriétaire du projet.
+
+## Vrais humains (section 11)
+- `createHuman` inscrit chaque personnage dans `HUMANS` ; `animRig` note sa vitesse et son mode dans `h.rs`.
+- `updateRealHumans(dt)` (chaque image) choisit les N plus proches de la caméra (`rhMax()` selon la qualité), charge à la demande leur personnage (`assets/characters/pnj`), les habille d'un clone `SkeletonUtils` animé (`assets/animations/pnj`) et cache le corps simple. Les clones sont réutilisés (`RH.free`).
+- Rôle : `h.role='omer'` pour les ennemis, sinon femme / homme / enfant selon le `look`.

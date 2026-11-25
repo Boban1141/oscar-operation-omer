@@ -188,6 +188,12 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Porte « Explorer la ville » / « Retour » dans chaque niveau 2 à 7 ; Toronto intacte
 - [ ] Vérification visuelle sur le PC de Boban après envoi
 
+## Bloc 18 — Vrais humains pour tout le monde `[~]` (v1.8.0)
+- [x] 13 personnages Mixamo (hommes, femmes, hommes d'Omer, enfant) et 9 animations du quotidien
+- [x] Remplacement automatique des personnages proches (passants, assis, cyclistes, ennemis, lieux, cinématiques)
+- [ ] Vérification visuelle sur le PC de Boban après envoi
+- [ ] Plus tard : animation de vélo, combat et chute propres aux ennemis
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)

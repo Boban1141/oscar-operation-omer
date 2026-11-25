@@ -21,6 +21,23 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Tout le monde devient humain (v1.8.0)
+- Demande de Boban : « rend tout le monde en humain », sans exception.
+- Boban a téléchargé sur Mixamo 11 personnages réalistes et 9 animations. Les deux personnages de style dessin animé (« Breathing Idle (1) » et « (2) ») sont écartés.
+- `assets/characters/pnj/` : 13 personnages, textures réduites à 512 px par `tools/fbx_shrink.py` (≈3 Mo chacun).
+  - 4 hommes : t-shirt blanc, sweat blanc, chemise en jean, capuche.
+  - 4 femmes : veste brune, haut à fleurs, t-shirt rayé, pull beige.
+  - 4 hommes d'Omer : noir 1, noir 2, pull rouge tatoué, tactique (SWAT).
+  - 1 enfant.
+- `assets/animations/pnj/` : marche homme et femme, repos, assis, assis qui parle, téléphone, texto, marche en textant, discussion. La course vient du soldat d'Oscar.
+- Système unique (section 11) : chaque personnage créé par `createHuman` est inscrit dans `HUMANS`. Les plus proches de la caméra reçoivent un vrai humain : 16 en qualité haute, 10 en moyenne, 5 en basse, jusqu'à 40 m.
+  - Concernés : passants, gens assis, cyclistes, hommes d'Omer, personnages des lieux et des cinématiques.
+  - L'ancien squelette donne toujours la position, la vitesse et le mode. En cinématique, au sol, arme au poing ou parapluie ouvert, sa pose est recopiée sur le vrai corps.
+  - Les noms d'os Mixamo numérotés (`mixamorig12:`) sont normalisés.
+- Les passants des villes de province marchent maintenant, avant ils restaient figés hors de Toronto.
+- Option ajoutée : « Passants et personnages » : vrais humains ou simples (plus léger).
+- Tests : 144/144.
+
 ## 2026-11-24 — Claude — Villes ouvertes des provinces, complètes comme Toronto (v1.7.0)
 - Demande de Boban : remettre les villes que Kimi voulait créer, mais complètes comme Toronto.
 - Un seul générateur pour toutes les villes : `generateCity(seed, CITY_PROFILES[id])`. Chaque profil fixe les quartiers, les commerces, les couleurs des maisons et des toits, la hauteur des tours, les arbres, l'hiver, l'eau, le tram et le monument.
