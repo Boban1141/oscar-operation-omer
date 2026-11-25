@@ -323,7 +323,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.25.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.26.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3731,7 +3731,9 @@ function buildSoussol(){
     for(let i=0;i<4;i++){const x=60+i*110,y=40;g.beginPath();g.arc(x,y,10,0,7);g.moveTo(x,y+10);g.lineTo(x,y+50);g.moveTo(x-18,y+25);g.lineTo(x+18,y+25);g.moveTo(x,y+50);g.lineTo(x-12,y+78);g.moveTo(x,y+50);g.lineTo(x+12,y+78);g.stroke();}
     g.font='bold 26px sans-serif';g.fillStyle='#1a1a1a';g.fillText('PAPA',420,110);});
   iplane(I,10,2.6,conc,0,1.3,4,0,Math.PI);const back=iplane(I,10,2.6,new THREE.MeshStandardMaterial({map:draw,roughness:1}),0,1.3,-4,0,0);iplane(I,8,2.6,conc,-5,1.3,0,0,Math.PI/2);iplane(I,8,2.6,conc,5,1.3,0,0,-Math.PI/2);iplane(I,10,8,conc,0,2.6,0,Math.PI/2);
-  ibox(I,1.9,.18,1,clothMat('#8a8070'),-2.6,.09,-3.2);ibox(I,.9,.25,.6,clothMat('#5a5048'),-3.2,.22,-3.4);icyl(I,.15,.13,.3,mat('#3a3a3a'),3.6,.15,-3.5);
+  // vieux lit de camp en métal contre le mur, le matelas taché dessus (Eva et Cédric y sont assis)
+  ibox(I,1.9,.14,.9,clothMat('#8a8070'),-2.6,.38,-3.25);ibox(I,.7,.16,.45,clothMat('#5a5048'),-3.25,.52,-3.5);
+  {const fm=mat('#3d3f42',{metalness:.8,roughness:.45});ibox(I,1.95,.04,.95,fm,-2.6,.29,-3.25,0,false,false);for(const [x,z] of [[-3.52,-3.68],[-1.68,-3.68],[-3.52,-2.82],[-1.68,-2.82]])ibox(I,.04,.29,.04,fm,x,.145,z,0,false,false);}icyl(I,.15,.13,.3,mat('#3a3a3a'),3.6,.15,-3.5);
   for(let i=0;i<3;i++){const p=icyl(I,.06,.06,10,mat('#6a5a4a',{metalness:.6,roughness:.5}),0,2.35-i*.14,-3.6+i*.15,8);p.rotation.z=Math.PI/2;}
   const bm=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshStandardMaterial({color:'#fff2c8',emissive:'#ffcf7a',emissiveIntensity:3}));bm.position.set(-.5,2.05,-1);I.group.add(bm);const bl=new THREE.PointLight('#ffcf8a',22,12,1.8);bl.position.set(-.5,2,-1);I.group.add(bl);
   ibox(I,1.4,2.3,.12,mat('#555b60',{metalness:.7}),0,1.15,3.94,0,false,false);
@@ -3755,7 +3757,7 @@ function buildMTLActors(){
   add('marierose',{...base,skin:'#5c3a21',jacket:'#3d3a5c',pants:'#22223b',hair:'#1a1a1a',long:false,height:.96,build:1.1,slouch:.22,browAsym:.3,breath:2,prop:'cup'},1.5,.75,Math.PI,'sit','refuge',REFUGE);
   add('rejean',{...base,skin:'#ffdbac',jacket:'#1d4f91',pants:'#2b2d42',hair:'#6f4e37',beard:true,height:1.02,build:1.15,slouch:.12,prop:'cup'},4,1.05,Math.PI,'sit','refuge',REFUGE);
   add('eva',{...base,skin:'#e0ac69',jacket:'#d9c5a0',pants:'#3d405b',hair:'#3b2a1e',long:true,height:.97,build:.92,browAsym:.15,breath:1.9,slouch:.25},-2.9,-3,.2,'captive','soussol',SOUSSOL);
-  add('cedric',{...base,skin:'#d4a373',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.15,breath:2.2},-2.45,-2.85,-.3,'captive','soussol',SOUSSOL);
+  add('cedric',{...base,skin:'#6b4226',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.15,breath:2.2},-2.45,-2.85,-.3,'captive','soussol',SOUSSOL);
 }
 Object.assign(CLUES,{
   rose:{title:'Marie-Rose, la cuisinière d’Omer',text:'Eva et Cédric sont vivants, au sous-sol. À minuit, pendant la relève, Marie-Rose laisse la porte de la cuisine ouverte dix minutes (ruelle de service). Mot de passe du portail ce soir : « La neige tombe sur Rio ».'},
@@ -3856,17 +3858,23 @@ function CINES_finale(){const s=SOUSSOL,sx=x=>s.ox+x,sz=z=>s.oz+z,Wm=WMT,wx=x=>W
   {set:'soussol',indoor:true,d:7,clock:3*60+20,center:{x:sx(0),z:sz(0)},cam:[[sx(1.6),1.6,sz(2.6)],[sx(1.2),1.5,sz(2.2)],[sx(-1.6),.8,sz(-2.4)],[sx(-.6),1,sz(0)]],
     sub:[[.6,'Cédric','… Papa ?'],[2.6,'Oscar','Je suis là. Je suis là, mon grand.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(sx(0),0,lerp(sz(3.2),sz(.6),ease(clamp(k*1.6,0,1))));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,k<.6?1:0,'walk',.4,true);
-      place(A.eva,sx(-2.9),sz(-3),0,'walk',T,dt,0,.18);pose.floorSit(A.eva);pose.protect(A.eva);
-      if(t<2.2){place(A.cedric,sx(-2.1),sz(-3.1),-.3,'walk',T,dt,0,.18);pose.floorSit(A.cedric);}else walkTo(A.cedric,[sx(-2.1),sz(-3)],[sx(-.1),sz(.1)],clamp((t-2.2)/2.4,0,1),2.4,T,dt);}},
+      // Cédric reconnaît son père : il bondit de joie, puis court vers lui ; Eva se lève en pleurant et court à son tour
+      const C=A.cedric,E=A.eva;
+      if(t<1.3){C.forceClip=null;place(C,sx(-2.42),sz(-2.98),-.15,'sit',T,dt);C.head.rotation.x=.4;}
+      else if(t<2.1){C.forceClip='excited';place(C,sx(-2.42),sz(-2.55),.6,'walk',T,dt);}
+      else{const q=clamp((t-2.1)/1.9,0,1);C.forceClip=q<1?'run':'excited';walkTo(C,[sx(-2.42),sz(-2.55)],[sx(-.15),sz(.15)],q,1.9,T,dt);}
+      if(t<2.0){E.forceClip=null;place(E,sx(-3.0),sz(-2.98),0,'sit',T,dt);pose.protect(E);}
+      else if(t<2.7){E.forceClip='cry';place(E,sx(-3.0),sz(-2.6),.5,'walk',T,dt);}
+      else{const q=clamp((t-2.7)/2.1,0,1);E.forceClip=q<1?'run':'cry';walkTo(E,[sx(-3.0),sz(-2.6)],[sx(-.75),sz(-.25)],q,2.1,T,dt);}}},
   {set:'soussol',indoor:true,d:8,clock:3*60+21,center:{x:sx(0),z:sz(0)},cam:[[sx(1.3),1.3,sz(1.2)],[sx(1.1),1.25,sz(1)],[sx(0),1,sz(0)],[sx(0),1.05,sz(0)]],
     sub:[[.4,'Eva','Je savais que tu viendrais. Je le lui disais tous les soirs.'],[4.4,'Oscar','On rentre à la maison.']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(sx(0),0,sz(.5));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,0,'walk',.4,true);pose.kneel(oc);pose.hug(oc);
-      place(A.cedric,sx(0),sz(-.1),0,'walk',T,dt);pose.hug(A.cedric);walkTo(A.eva,[sx(-1.8),sz(-1.6)],[sx(-.5),sz(-.2)],clamp(k*1.8,0,1),3,T,dt);if(k>.55)pose.hug(A.eva);}},
+      A.cedric.forceClip=null;A.eva.forceClip=null;place(A.cedric,sx(0),sz(-.1),0,'walk',T,dt);pose.hug(A.cedric);walkTo(A.eva,[sx(-1.8),sz(-1.6)],[sx(-.5),sz(-.2)],clamp(k*1.8,0,1),3,T,dt);if(k>.55)pose.hug(A.eva);}},
   {set:'westmount',d:8,clock:3*60+40,rain:.6,cloud:.95,wind:.3,center:{x:wx(36),z:wz(4)},cam:[[wx(26),3.2,wz(12)],[wx(28),2.6,wz(10)],[wx(38),1.4,wz(3)],[wx(37),1.4,wz(5)]],
     sub:[[.5,'','(Les gyrophares de la police de Montréal colorent le verglas en rouge et bleu.)'],[3.6,'Omer','(Il crache par terre.) Ce n’est pas fini, soldat.'],[6,'Oscar','Pour toi, si.']],
     upd(t,k,dt,T){pol(T);syncWire();walkTo(A.omer,[wx(40),wz(-2)],[wx(37.2),wz(4.6)],k,8,T,dt);cuffed(A.omer);walkTo(A.cop1,[wx(40.7),wz(-2.4)],[wx(37.9),wz(4.2)],k,8,T,dt);walkTo(A.cop2,[wx(39.2),wz(-2.6)],[wx(36.4),wz(4)],k,8,T,dt);
       const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(wx(31),0,wz(3.2));oc.g.rotation.set(0,1.2,0);animRig(oc,dt,T,0,'walk',.4,true);
-      place(A.eva,wx(30.2),wz(2.6),1.1,'walk',T,dt);pose.hug(A.eva);place(A.cedric,wx(30.6),wz(3.6),1.3,'walk',T,dt);}},
+      A.eva.forceClip=null;place(A.eva,wx(30.2),wz(2.6),1.1,'walk',T,dt);pose.hug(A.eva);A.cedric.forceClip=t>4.2?'wave':null;place(A.cedric,wx(30.6),wz(3.6),1.3,'walk',T,dt);}},
   {set:'westmount',d:9,clock:3*60+44,rain:.6,cloud:.95,wind:.3,center:{x:wx(30),z:wz(8)},cam:[[wx(32.5),1.8,wz(1.8)],[wx(32.2),1.75,wz(2.2)],[wx(26),1.6,wz(14)],[wx(25),1.6,wz(15)]],
     enter(){setTimeout(()=>csnd('ring'),300);},
     sub:[[.4,'','(Le téléphone d’Oscar vibre. Numéro masqué.)'],[2.2,'Voix déformée','Bien joué, Oscar. Rentre chez toi. Cette fois, pour de bon.'],[5.2,'Oscar','Qui êtes-vous ?'],[6.6,'Voix déformée','Quelqu’un qui devait quelque chose à Omer. On se reparlera.']],
@@ -3921,15 +3929,15 @@ const pose={
    Eva serre Cédric contre elle, une cheville enchaînée au tuyau du mur ; Cédric recroquevillé contre sa mère, tête basse.
    Leur vrai corps (scanné pour Eva) recopie cette pose (h.posed). */
 const CAPT={chain:null,ring:null,tmp:new THREE.Vector3(),tmp2:new THREE.Vector3()};
-// pose réglable (crochet __oscar.capt) : dos au mur, genoux remontés, Eva entoure Cédric de son bras gauche
-const CAPT_P={eva:{x:-2.95,z:-3.45,a:0,y:.18,th:[-1.1,-1.25],kn:[1.55,1.25],sp:[-.08,0,0],shL:[-.45,0,-1.05],elL:-.9,shR:[-.85,0,.35],elR:-1.35,hd:[.3,.35,0]},
-  cedric:{x:-2.42,z:-3.35,a:-.25,y:.18,th:[-1.05,-1.0],kn:[1.95,1.9],sp:[.35,0,-.22],shL:[-1.1,0,-.15],elL:-.6,shR:[-1.1,0,.15],elR:-.6,hd:[.35,-.45,0]}};
-function captivePose(n,t,dt){const h=n.h,P=CAPT_P[n.id]||CAPT_P.eva;h.posed=true;n.x=SOUSSOL.ox+P.x;n.z=SOUSSOL.oz+P.z;n.a=P.a;
-  h.g.position.set(n.x,P.y,n.z);h.g.rotation.set(0,P.a,0);animRig(h,dt,t+n.x,0,'sit',0,true);
-  h.hips.position.y=.18;h.legL.th.rotation.x=P.th[0];h.legR.th.rotation.x=P.th[1];h.legL.kn.rotation.x=P.kn[0];h.legR.kn.rotation.x=P.kn[1];
-  h.spine.rotation.set(P.sp[0]+Math.sin(t*(n.id==='eva'?.35:1.1))*(n.id==='eva'?.015:.04),P.sp[1],P.sp[2]);
-  h.armL.sh.rotation.set(...P.shL);h.armL.el.rotation.x=P.elL;h.armR.sh.rotation.set(...P.shR);h.armR.el.rotation.x=P.elR;
-  h.head.rotation.set(P.hd[0]+Math.sin(t*.6)*.03,P.hd[1],P.hd[2]);
+// Assis au bord du lit de camp avec la vraie animation « assis » (la même que les clients du diner) ; par-dessus, sur le vrai corps :
+// tête basse, Cédric penché contre sa mère. Quand Oscar approche, ils relèvent la tête vers lui (regard).
+const CAPT_P={eva:{x:-3.0,z:-2.98,a:0,bow:.5,lean:0},cedric:{x:-2.42,z:-2.98,a:-.15,bow:.55,lean:.28}};
+function captivePose(n,t,dt){const h=n.h,P=CAPT_P[n.id]||CAPT_P.eva;h.posed=false;h.noTalk=true;n.x=SOUSSOL.ox+P.x;n.z=SOUSSOL.oz+P.z;n.a=P.a;
+  h.g.position.set(n.x,0,n.z);h.g.rotation.set(0,P.a,0);animRig(h,dt,t+n.x,0,'sit',0,true);
+  if(!h.extraPose)h.extraPose=(I)=>{const near=S&&Math.hypot(S.player.x-n.x,S.player.z-n.z)<3;const k=near?.25:1,tt=performance.now()/1000;
+    const hd=I.bn('Head'),nk=I.bn('Neck'),sp=I.bn('Spine2')||I.bn('Spine1');
+    if(nk)nk.rotateX(P.bow*.45*k);if(hd)hd.rotateX(P.bow*.55*k+Math.sin(tt*.6)*.02);
+    if(sp&&P.lean)sp.rotateZ(-P.lean+Math.sin(tt*1.1)*.03);};
   if(n.id==='eva'){
     // chaîne : de la cheville gauche au tuyau près du mur
     const I=SOUSSOL;if(!CAPT.chain&&I.group){const m=mat('#4a4a4a',{metalness:.85,roughness:.35});CAPT.chain=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1,6),m);CAPT.chain.castShadow=true;scene.add(CAPT.chain);
@@ -4045,7 +4053,7 @@ function buildCineSets(){
   A.n1=cactor({skin:'#8d5524',jacket:'#e9e6df',pants:'#3d405b',hair:'#1a1a1a'});A.n2=cactor({skin:'#c68642',jacket:'#7f5539',pants:'#2b2d42',hair:'#2b1d14',beard:true});A.n3=cactor({skin:'#a46a3c',jacket:'#264653',pants:'#3a3a3a',hair:'#1a1a1a'});
   A.eva=cactor({skin:'#e0ac69',jacket:'#d9c5a0',pants:'#3d405b',hair:'#3b2a1e',long:true,height:.97,build:.92,browAsym:.15,breath:1.7});A.eva.rchar='rp:sophia';A.eva.role='femme';A.eva.named=true;
   const ph=new THREE.Mesh(new THREE.BoxGeometry(.07,.13,.01),mat('#111418',{metalness:.5,roughness:.2}));ph.position.set(0,-.08,.035);A.eva.armR.wr.add(ph);A.eva.phone=ph;ph.visible=false;
-  A.cedric=cactor({skin:'#d4a373',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.12,breath:2});
+  A.cedric=cactor({skin:'#6b4226',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.12,breath:2});
   A.omer=makeOmer();
   A.t1=cactor({skin:'#d4a373',jacket:'#1b1b1f',pants:'#141414',hair:'#1a1a1a',build:1.1,beard:true});A.t2=cactor({skin:'#8d5524',jacket:'#22252a',pants:'#141414',hair:'#1a1a1a',bald:true,build:1.15});
   A.hench=cactor({skin:'#c68642',jacket:'#2a2a2e',pants:'#141414',hair:'#1a1a1a',build:1.05});
@@ -4214,7 +4222,7 @@ function playCine(name,onEnd){
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';show('hud',false);keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
 }
-function startShot(){const s=CINE.shots[CINE.i];hideAll();showSet(s.set);FX.boomed=false;s.enter&&s.enter();$('cineTitle').textContent=s.title||'';$('cineSub').innerHTML='';
+function startShot(){for(const k in A)if(A[k]&&A[k].g)A[k].forceClip=null;const s=CINE.shots[CINE.i];hideAll();showSet(s.set);FX.boomed=false;s.enter&&s.enter();$('cineTitle').textContent=s.title||'';$('cineSub').innerHTML='';
   $('cine').classList.toggle('video',!!s.video);camera.position.set(...s.cam[0]);}
 function stepCine(dt,T){
   if(!CINE.shots){mode=S&&S.status==='playing'?'play':'title';return;}
@@ -4521,7 +4529,11 @@ function setupOscarModel(gl){
   mixer.update(0);
   const rx=h.g.rotation.x,ry=h.g.rotation.y;h.g.rotation.set(0,0,0);h.g.updateMatrixWorld(true);
   const inv=new THREE.Matrix4().copy(h.g.matrixWorld).invert(),loc=o=>o.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
-  if(loc(B('LeftToeBase')).z<loc(B('LeftFoot')).z)root.rotation.y=Math.PI;root.updateMatrixWorld(true);
+  if(loc(B('LeftToeBase')).z<loc(B('LeftFoot')).z)root.rotation.y=Math.PI;
+  // Le soldat KSK a des unités géantes (hanches à > 500) : le test des orteils se trompe et il marchait à reculons,
+  // visage et genouillères vers l'arrière (vu sur le PC de Boban). Vérifié à l'écran : un demi-tour le remet dans le sens de la marche.
+  if(String(OM.src).startsWith('soldat-ksk'))root.rotation.y=Math.PI;
+  root.updateMatrixWorld(true);
   const hy=loc(B('Head')).y,py=loc(h.head).y;if(hy>.2)root.scale.multiplyScalar(py/hy);root.updateMatrixWorld(true);
   const swap=Math.sign(loc(B('RightArm')).x)!==Math.sign(loc(h.armR.sh).x);
   h.g.rotation.set(rx,ry,0);
@@ -4620,11 +4632,11 @@ function updateOscarModel(dt){
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
 const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
-  omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
+  omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['rp:cedric']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
-  deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux'};
-const RH_ONCE=new Set(['deathB','deathF','kneelDown','punch','hit','hit2']),RH_WALK=/^(walkM|walkF|textWalk|oldWalk|jog|pistolWalk)$/;
+  deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux',run:'course_rapide',excited:'excite',cry:'pleure',wave:'salut'};
+const RH_ONCE=new Set(['deathB','deathF','kneelDown','punch','hit','hit2']),RH_WALK=/^(walkM|walkF|textWalk|oldWalk|jog|pistolWalk|run)$/;
 const HUMANS=[];let RFRAME=0;
 const RH={v0:{},ready:false,loading:false,clips:{},base:{},pending:{},free:{},bound:new Set(),selT:0,fbx:null,SU:null,pruneT:0};
 const rhNorm=n=>n.replace(/^mixamorig\d+/,'mixamorig');
@@ -4697,11 +4709,12 @@ function rhBind(h,I){
 function rhUnbind(h){const I=h.real;if(!I)return;if(I.root.parent)I.root.parent.remove(I.root);
   for(const [o,v] of h.rhide||[])o.visible=v;h.rhide=null;h.real=null;RH.bound.delete(h);(RH.free[I.name]||(RH.free[I.name]=[])).push(I);}
 function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.cs;
+  if(h.forceClip&&A[h.forceClip])return h.forceClip;
   if(cs){if(cs.down)return A[cs.deathKind]?cs.deathKind:'idle';if(cs.surrender)return A.kneel?'kneel':'idle';if(cs.swing&&A.punch)return 'punch';if(cs.hit&&A[cs.hitKind])return cs.hitKind;
     if(cs.aim){if(cs.rifle&&A.rifleIdle)return 'rifleIdle';if(A.pistolIdle)return sp>.3&&A.pistolWalk?'pistolWalk':'pistolIdle';}}
   if(L.type==='elder'&&r.mode==='walk'){if(sp>.3&&A.oldWalk)return 'oldWalk';if(sp<=.3&&A.oldIdle&&!L.prop)return 'oldIdle';}
   if(sp>2.2&&A.jog)return 'jog';
-  if(r.mode==='sit')return (rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
+  if(r.mode==='sit')return !h.noTalk&&(rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
   if(r.mode==='drive')return A.drive?'drive':'sit';
   if(r.mode==='bike')return 'sit';
   if(r.mode==='talk')return L.prop==='phone'&&I.acts.phone?'phone':'talk';
@@ -4824,16 +4837,17 @@ function updateRealHumans(dt){
     if(cur!==I.cur){const a=I.acts[cur];if(a&&(RH_ONCE.has(cur)||!(I.w[cur]>.05))){a.reset();a.time=RH_ONCE.has(cur)?0:Math.random()*a.getClip().duration;if(/^death/.test(cur)&&h.cs&&h.cs.downAt&&performance.now()-h.cs.downAt>2500)a.time=a.getClip().duration;}I.cur=cur;}
     for(const n in I.acts){I.w[n]=lerp(I.w[n]||0,n===cur?1:0,k);I.acts[n].setEffectiveWeight(I.w[n]);}
     const sp=(h.rs&&h.rs.speed)||0;
-    for(const [kk,d] of [['jog',2.8],['oldWalk',.9],['walkM',1.3],['walkF',1.3],['textWalk',1.1],['pistolWalk',1.2]])if(I.acts[kk]){const v0=RH.v0[kk]>.2?RH.v0[kk]:d;I.acts[kk].timeScale=clamp(sp/v0,.5,2.4);}
+    for(const [kk,d] of [['run',5.2],['jog',2.8],['oldWalk',.9],['walkM',1.3],['walkF',1.3],['textWalk',1.1],['pistolWalk',1.2]])if(I.acts[kk]){const v0=RH.v0[kk]>.2?RH.v0[kk]:d;I.acts[kk].timeScale=clamp(sp/v0,.5,2.4);}
     I.mixer.update(dt);
     // poses the clips do not have: cinematics (everything), weapons and umbrellas (arms)
-    const cs=h.cs,busy=cs&&(cs.down||cs.surrender||cs.swing||cs.hit),full=cine||!!h.posed||(h.g.rotation.x<-.5),arms=full||(!!h.gun&&!busy)||!!(h.umb&&h.umb.visible);
+    const cs=h.cs,busy=cs&&(cs.down||cs.surrender||cs.swing||cs.hit),full=(cine&&!h.forceClip)||!!h.posed||(h.g.rotation.x<-.5),arms=full||(!!h.gun&&!busy)||!!(h.umb&&h.umb.visible);
     if(arms||full){h.g.updateMatrixWorld(true);if(full)for(const t of I.legs)retarget(...t,1);for(const t of I.arms)retarget(...t,1);}
     // regard : on tourne la tête vers Oscar quand il passe tout près, puis on détourne les yeux au bout de 2-3 s (sauf si on a peur)
     if(!busy&&!cine&&oscarMesh){h.g.getWorldPosition(_rv);const ox=oscarMesh.g.position.x-_rv.x,oz=oscarMesh.g.position.z-_rv.z,dd=Math.hypot(ox,oz);
       h.gazeT=dd<4.5?(h.gazeT||0)+dt:0;h.g.getWorldQuaternion(_rq3);const yaw=2*Math.atan2(_rq3.y,_rq3.w);let df=Math.atan2(ox,oz)-yaw;df=((df+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
       const want=dd<4.5&&h.gazeT<2.6&&Math.abs(df)<2?clamp(df,-1.1,1.1):0;h.gazeY=lerp(h.gazeY||0,want,1-Math.exp(-dt*4));
       if(Math.abs(h.gazeY)>.01){const n=I.bn('Neck'),hd=I.bn('Head');if(n)n.rotateY(h.gazeY*.4);if(hd)hd.rotateY(h.gazeY*.6);}}
+    if(h.extraPose)h.extraPose(I,dt);
     // seated (bench, bike): put the real hips where the simple rig's hips are
     const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||m==='drive'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
@@ -4851,11 +4865,22 @@ const RP_PAIRS=[['spine_01','neck','Spine','Neck'],['neck','head','Neck','Head']
   ['upperarm_l','lowerarm_l','LeftArm','LeftForeArm'],['lowerarm_l','hand_l','LeftForeArm','LeftHand'],['upperarm_r','lowerarm_r','RightArm','RightForeArm'],['lowerarm_r','hand_r','RightForeArm','RightHand'],
   ['upperleg_l','lowerleg_l','LeftUpLeg','LeftLeg'],['lowerleg_l','foot_l','LeftLeg','LeftFoot'],['foot_l','ball_l','LeftFoot','LeftToeBase'],
   ['upperleg_r','lowerleg_r','RightUpLeg','RightLeg'],['lowerleg_r','foot_r','RightLeg','RightFoot'],['foot_r','ball_r','RightFoot','RightToeBase']];
-const rpBoneName=n=>{for(const b of RP_BONES)if(n===b||n.endsWith('_'+b))return b;return null;};
-function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(name)?'femme':'homme',pup=RP_PUPPET[gender];rhLoadChar(pup);
+// squelettes Unreal (UE4 : pelvis, thigh_l, calf_l, clavicle_l…) : mêmes os, autres noms (corps de Cédric)
+const RP_ALIAS={pelvis:'hip',thigh_l:'upperleg_l',thigh_r:'upperleg_r',calf_l:'lowerleg_l',calf_r:'lowerleg_r',clavicle_l:'shoulder_l',clavicle_r:'shoulder_r',neck_01:'neck'};
+const rpBoneName=n=>{if(RP_ALIAS[n])return RP_ALIAS[n];for(const b of RP_BONES)if(n===b||n.endsWith('_'+b))return b;return null;};
+// Cédric : garçon scanné (squelette Unreal) ; ses textures sont fournies à part (assets/characters/rp/cedric/), il est animé par le pantin enfant
+const RP_KIDS={'rp:cedric':{h:1.28,tex:{Body:'body',Eye:'body',Top:'top',Bottom:'bottom',Shoe:'shoes'}}};
+function rpKidTextures(name,o){const K=RP_KIDS[name];if(!K)return;const TL=new THREE.TextureLoader(),dir=RP_DIR+name.slice(3)+'/',cache={};
+  const tex=(f,srgb)=>cache[f]||(cache[f]=(()=>{const t=TL.load(dir+f+'.jpg',undefined,undefined,()=>TL.load('../'+dir+f+'.jpg',t2=>{t.image=t2.image;t.needsUpdate=true;}));if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t;})());
+  o.traverse(x=>{if(!x.isMesh)return;x.material=[].concat(x.material).map(m=>{const nm=(m&&m.name)||'';
+    if(/lash/i.test(nm))return new THREE.MeshStandardMaterial({color:'#140d0a',roughness:.9,transparent:true,opacity:.55,depthWrite:false});
+    const k=Object.keys(K.tex).find(k=>new RegExp(k,'i').test(nm));if(!k)return m;const f=K.tex[k];
+    return new THREE.MeshStandardMaterial({map:tex(f,true),normalMap:tex(f+'_n',false),roughness:/Eye/i.test(nm)?.15:.75,metalness:0,name:nm});});
+    if(x.material.length===1)x.material=x.material[0];});}
+function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(name)?'femme':'homme',pup=RP_KIDS[name]?'enfant':RP_PUPPET[gender];rhLoadChar(pup);
   firstOk([RP_DIR+file+'.fbx','../'+RP_DIR+file+'.fbx'],u=>RH.fbx.loadAsync(u)).then(o=>{
     if(!o){RH.base[name]='none';return;}
-    o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
+    rpKidTextures(name,o);o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
       if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=8;if(m.specular)m.specular.setScalar(.05);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;}}}});
     o.updateMatrixWorld(true);const head=o.getObjectByName('rp_head'),hip=o.getObjectByName('rp_hip');if(!head||!hip){RH.base[name]='none';return;}
     const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
@@ -4865,7 +4890,7 @@ function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(n
 function rpInstance(name){
   const B=RH.base[name],P=RH.base[B.pup];if(!P||P==='none')return null;
   const I=rhNewInstance(B.pup);I.name=name;I.model.traverse(x=>{if(x.isMesh)x.visible=false;});
-  const rp=RH.SU.clone(B.obj);rp.scale.setScalar(1.7/B.headY/I.s);if(B.back)rp.rotation.y=Math.PI;I.root.add(rp);
+  const rp=RH.SU.clone(B.obj);rp.scale.setScalar(((RP_KIDS[name]||{}).h||1.7)/B.headY/I.s);if(B.back)rp.rotation.y=Math.PI;I.root.add(rp);
   const bones={};rp.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))bones[x.name.slice(3)]=x;});
   I.rp={model:rp,bones,rest:B.rest};return I;}
 const _rpv=new THREE.Vector3(),_rpq=new THREE.Quaternion();

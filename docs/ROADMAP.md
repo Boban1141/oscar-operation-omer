@@ -212,7 +212,7 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Parler régional dans les dialogues principaux : 21 personnages accueillent Oscar dans le parler de leur province (v1.24.0)
 - [x] Nuit lisible (vrais lampadaires, adaptation de l'œil, v1.22.0) ; couverts sur les tables selon le lieu, personnages face à leur table (v1.23.x)
 - [x] Couleur de peau des corps accordée à chaque personnage ; Eva corps scanné réservé ; Eva et Cédric captifs au sous-sol (v1.25.0)
-- [ ] Cédric : vrai corps d'enfant scanné (à fournir)
+- [x] Cédric : vrai corps d'enfant scanné ; Eva et Cédric courent vers Oscar à la fin (v1.26.0) — crédits à confirmer
 
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres

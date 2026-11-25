@@ -21,3 +21,9 @@ Fichiers dans `assets/vehicles/`. Seules les textures ont été réduites (`tool
 | police.glb | Chevrolet Tahoe Police | Racing Carz U3D | https://sketchfab.com/3d-models/chevrolet-tahoe-police-1905b0a10836428ea58fdd19e44cf7f6 |
 | moto.glb | Honda CB 750 F Super Sport 1970 | Alex.Ka. | https://sketchfab.com/3d-models/honda-cb-750-f-super-sport-1970-f121301624174b179ca4d50158797b03 |
 | velo.glb | Classic Bicycle, LowPoly, Game ready | by__Rx | https://sketchfab.com/3d-models/classic-bicycle-lowpoly-game-ready-da6507928c0c4a5c8776008cdb9f747e |
+
+## Cédric — corps d'enfant scanné
+- `assets/characters/rp/cedric.fbx` et `assets/characters/rp/cedric/` : « Black Boy Rigged Ready for UE4 » (Sketchfab). Auteur et licence exacts à confirmer (lien de la page à fournir). Textures réduites à 1024 px en JPEG.
+
+## Animations Mixamo ajoutées (v1.26.0)
+- `course_rapide.fbx` (Fast Run), `excite.fbx` (Excited), `pleure.fbx` (Crying), `salut.fbx` (Waving) — Mixamo, Adobe.

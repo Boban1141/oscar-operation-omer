@@ -21,6 +21,23 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Cédric a un vrai corps d'enfant ; à la fin, ils courent vers Oscar (v1.26.0)
+**Demande** : Boban a téléchargé un garçon scanné et des animations de course : à la fin de la mission, la femme d'Oscar et son fils doivent courir vers lui.
+**Fichiers** (Téléchargements de Boban) : « black-boy-rigged-ready-for-ue4 » (squelette Unreal, textures PNG 2048 non liées dans le FBX) ; Mixamo Fast Run, Excited, Crying, Waving.
+**Intégration** :
+- `assets/characters/rp/cedric.fbx` + `assets/characters/rp/cedric/*.jpg` (diffuse et normales réduites à 1024). `rpKidTextures` assigne les textures par nom de matériau (Body/Eyes, Top, Bottom, Shoes ; cils sombres semi-transparents).
+- Le squelette Unreal passe par la même chaîne que les corps Renderpeople : alias de noms d'os (`RP_ALIAS` : pelvis, thigh, calf, clavicle, neck_01), pantin animé = l'enfant Mixamo, taille 1,28 m (`RP_KIDS`). Tous les enfants du jeu (`PNJ_CHARS.enfant`) prennent ce corps ; la peau de Cédric (rig simple et cinématiques) est assombrie en conséquence.
+- Animations : `run` (course rapide), `excited`, `cry`, `wave` ; `h.forceClip` permet à une cinématique de jouer une vraie animation au lieu de recopier la pose dessinée.
+- Fin (libération au sous-sol) : Cédric reconnaît son père, bondit de joie, court vers lui ; Eva se lève en pleurant et court à son tour, puis l'étreinte. Dernier plan devant la maison d'Omer : Cédric salue de la main.
+**À confirmer** : auteur et licence du garçon (CREDITS.md). **À vérifier à l'écran** : textures, taille et animations de Cédric, la course de la fin.
+
+## 2026-11-25 — Claude — Le soldat KSK marchait à reculons (v1.25.2)
+**Signalé par Boban (capture du sous-sol)** : le visage d'Oscar est vers l'arrière alors que son ventre et ses pieds regardent devant.
+**Diagnostic sur le PC** : la caméra est derrière Oscar, et pourtant on voit son visage. Portraits rendus devant et derrière : le visage et les genouillères étaient du côté « derrière ». Le squelette était cohérent : tout le modèle KSK était tourné d'un demi-tour par rapport à sa marche.
+**Cause** : `setupOscarModel` décide de retourner un modèle en comparant la position des orteils et du pied ; avec les unités géantes du KSK (hanches à plus de 500), ce test se trompe.
+**Aussi dans cette version — les captifs** : réglée en direct sur le PC, la pose « assis par terre » inventée à la main rendait mal sur le corps scanné (jambes qui pendent au bord du matelas, bras qui partent sur le côté). Nouvelle approche : le matelas est posé sur un vieux lit de camp en métal ; Eva et Cédric s'y assoient avec la vraie animation « assis » (comme les clients du diner, jamais en train de « discuter »), tête basse, Cédric penché contre sa mère (`extraPose` sur les vrais os) ; ils relèvent la tête quand Oscar approche. Chaîne cheville → tuyau conservée. Cinématique de la libération accordée au lit.
+**Correction** : pour le KSK (`OM.src` commence par `soldat-ksk`), demi-tour forcé. Vérifié en direct : vu de derrière, on voit la nuque, l'arrière du casque et le dos. Ne concerne que la tenue militaire d'Oscar (la tenue civile Nathan et les autres personnages étaient déjà dans le bon sens).
+
 ## 2026-11-25 — Claude — Sous-sol : pose des captifs réglable, plus de gouttes « sur l'objectif » sous un toit (v1.25.1)
 **Vu sur le PC (v1.25.0)** : Eva a bien son corps scanné (Sophia), Eva et Cédric sont assis ensemble sur le matelas, chaîne et tuyau en place. Mais les jambes pendaient au bord du matelas et une main d'Eva était près de son visage. Des traits de pluie restaient visibles au sous-sol.
 **Corrections** :
