@@ -204,7 +204,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <label for="oTips">Astuces à l’écran</label><input id="oTips" type="checkbox">
     <label for="oFps">Afficher les images par seconde</label><input id="oFps" type="checkbox">
   </div>
-  <p class="small" id="oDiffTxt"></p><p class="small">Le chronomètre de chaque niveau ne change jamais, quelle que soit la difficulté.</p><details class="small" style="margin-top:6px"><summary>Crédits des modèles 3D</summary>Personnages et animations : Mixamo (Adobe). Matières, écorce et bancs : Poly Haven (CC0).
+  <p class="small" id="oDiffTxt"></p><p class="small">Le chronomètre de chaque niveau ne change jamais, quelle que soit la difficulté.</p><details class="small" style="margin-top:6px"><summary>Crédits des modèles 3D</summary>Personnages et animations : Mixamo (Adobe). Personnages scannés : Renderpeople (Claudia, Carla, Eric, Sophia, Nathan, Manuel). Matières, écorce et bancs : Poly Haven (CC0).
 Véhicules, licence CC-BY 4.0 (Sketchfab) : Honda Civic EG6 1991 par rifdanzz · Toyota Corolla AE86 Trueno par Lexyc16 · Range Rover Evoque par minghauLoh · Crown Victoria Taxi 2001 par 8sianDude · Chevrolet Tahoe Police par Racing Carz U3D · Honda CB 750 F 1970 par Alex.Ka. · Classic Bicycle par by__Rx. Textures réduites pour le jeu.</details>
   <div class="keys">
     <div><kbd>Stick gauche</kbd> se déplacer</div><div><kbd>Stick droit</kbd> regarder</div><div><kbd>LB</kbd> courir</div><div><kbd>A</kbd> interagir / sauter</div>
@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.9.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.10.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4319,7 +4319,7 @@ function updateOscarModel(dt){
    animations capturées (assets/animations/pnj). Le squelette simple continue de tourner en coulisse : il donne la position,
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
-const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige'],
+const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:nathan','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
   omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
@@ -4344,11 +4344,13 @@ async function rhInit(){
   }catch(e){console.warn('Vrais humains indisponibles, personnages simples conservés.',e);}
 }
 function rhLoadChar(name){
-  if(RH.base[name]||RH.pending[name])return;RH.pending[name]=true;
+  if(RH.base[name]||RH.pending[name])return;RH.pending[name]=true;if(name.startsWith('rp:'))return rpLoad(name);
   firstOk([PNJ_DIR+name+'.fbx','../'+PNJ_DIR+name+'.fbx'],u=>RH.fbx.loadAsync(u)).then(o=>{
     if(!o){RH.base[name]='none';return;}
     o.traverse(x=>{x.name=rhNorm(x.name);if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;
-      for(const m of [].concat(x.material)){if(m&&m.shininess!==undefined)m.shininess=Math.min(m.shininess,12);if(m&&m.specular)m.specular.setScalar(.06);}}});
+      for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=Math.min(m.shininess,12);if(m.specular)m.specular.setScalar(.06);
+        // cheveux et cils Mixamo : la transparence est dans le canal alpha de la couleur, pas dans sa teinte (sinon des cheveux foncés deviennent invisibles)
+        if(m.alphaMap||/hair|eyelash|lash/i.test(m.name+x.name)){m.alphaMap=null;m.transparent=false;m.alphaTest=.42;m.side=THREE.DoubleSide;m.depthWrite=true;m.needsUpdate=true;}}}});
     o.scale.setScalar(.01);o.updateMatrixWorld(true);
     const hips=o.getObjectByName('mixamorigHips'),head=o.getObjectByName('mixamorigHead');if(!hips||!head){RH.base[name]='none';return;}
     const v=new THREE.Vector3();const headY=head.getWorldPosition(v).y,hipsY=hips.position.y;
@@ -4361,6 +4363,8 @@ function rhLoadChar(name){
 function rhInstance(name){
   const B=RH.base[name];if(!B||B==='none')return null;
   const f=(RH.free[name]||(RH.free[name]=[]));if(f.length)return f.pop();
+  return B.rp?rpInstance(name):rhNewInstance(name);}
+function rhNewInstance(name){const B=RH.base[name];
   const model=RH.SU.clone(B.obj),root=new THREE.Group();root.add(model);
   const mixer=new THREE.AnimationMixer(model),acts={};
   for(const [k,c] of Object.entries(B.clips)){const a=mixer.clipAction(c);if(RH_ONCE.has(k)){a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;}a.play();a.setEffectiveWeight(0);acts[k]=a;}
@@ -4404,7 +4408,7 @@ function updateRealHumans(dt){
   if(RH.selT<=0){RH.selT=.3;const cp=camera.position,R=45,c=[];
     for(const h of HUMANS){if(h===oscarMesh||!h.rs||RFRAME-h.rs.f>3||!rhVisible(h.g))continue;h.g.getWorldPosition(_rv);const d=_rv.distanceTo(cp);if(d<R)c.push([d,h]);}
     c.sort((a,b)=>a[0]-b[0]);const want=new Set();
-    for(const [,h] of c){if(want.size>=N)break;const nm=rhChar(h);const B=RH.base[nm];if(!B){rhLoadChar(nm);continue;}if(B==='none')continue;want.add(h);}
+    for(const [,h] of c){if(want.size>=N)break;const nm=rhChar(h);const B=RH.base[nm];if(!B){rhLoadChar(nm);continue;}if(B==='none')continue;if(B.rp){const P=RH.base[B.pup];if(!P){rhLoadChar(B.pup);continue;}if(P==='none')continue;}want.add(h);}
     for(const h of [...RH.bound])if(!want.has(h))rhUnbind(h);
     for(const h of want)if(!h.real){const I=rhInstance(rhChar(h));if(I)rhBind(h,I);}}
   const cine=mode==='cine';
@@ -4420,7 +4424,43 @@ function updateRealHumans(dt){
     // seated (bench, bike): put the real hips where the simple rig's hips are
     const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||m==='drive'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
-    else I.root.position.y=lerp(I.root.position.y,0,k);}
+    else I.root.position.y=lerp(I.root.position.y,0,k);
+    if(I.rp){I.root.updateMatrixWorld(true);rpDrive(I);}}
+}
+
+/* --- personnages scannés RenderPeople (assets/characters/rp) : leur squelette (hip, spine_01, upperarm_l…) suit, à chaque image,
+   un squelette Mixamo invisible qui joue les animations du jeu. --- */
+const RP_DIR='assets/characters/rp/',RP_PUPPET={femme:'femme_veste_brune',homme:'homme_tshirt_blanc'};
+const RP_BONES=['hip','spine_01','spine_02','spine_03','neck','head','shoulder_l','shoulder_r','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','hand_l','hand_r','upperleg_l','upperleg_r','lowerleg_l','lowerleg_r','foot_l','foot_r','ball_l','ball_r'];
+const RP_PAIRS=[['spine_01','neck','Spine','Neck'],['neck','head','Neck','Head'],['shoulder_l','upperarm_l','LeftShoulder','LeftArm'],['shoulder_r','upperarm_r','RightShoulder','RightArm'],
+  ['upperarm_l','lowerarm_l','LeftArm','LeftForeArm'],['lowerarm_l','hand_l','LeftForeArm','LeftHand'],['upperarm_r','lowerarm_r','RightArm','RightForeArm'],['lowerarm_r','hand_r','RightForeArm','RightHand'],
+  ['upperleg_l','lowerleg_l','LeftUpLeg','LeftLeg'],['lowerleg_l','foot_l','LeftLeg','LeftFoot'],['foot_l','ball_l','LeftFoot','LeftToeBase'],
+  ['upperleg_r','lowerleg_r','RightUpLeg','RightLeg'],['lowerleg_r','foot_r','RightLeg','RightFoot'],['foot_r','ball_r','RightFoot','RightToeBase']];
+const rpBoneName=n=>{for(const b of RP_BONES)if(n===b||n.endsWith('_'+b))return b;return null;};
+function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(name)?'femme':'homme',pup=RP_PUPPET[gender];rhLoadChar(pup);
+  firstOk([RP_DIR+file+'.fbx','../'+RP_DIR+file+'.fbx'],u=>RH.fbx.loadAsync(u)).then(o=>{
+    if(!o){RH.base[name]='none';return;}
+    o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
+      if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=8;if(m.specular)m.specular.setScalar(.05);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;}}}});
+    o.updateMatrixWorld(true);const head=o.getObjectByName('rp_head'),hip=o.getObjectByName('rp_hip');if(!head||!hip){RH.base[name]='none';return;}
+    const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
+    const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z;
+    const bb=new THREE.Box3().setFromObject(o);
+    RH.base[name]={rp:true,obj:o,pup,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}).catch(()=>{RH.base[name]='none';});}
+function rpInstance(name){
+  const B=RH.base[name],P=RH.base[B.pup];if(!P||P==='none')return null;
+  const I=rhNewInstance(B.pup);I.name=name;I.model.traverse(x=>{if(x.isMesh)x.visible=false;});
+  const rp=RH.SU.clone(B.obj);rp.scale.setScalar(1.7/B.headY/I.s);if(B.back)rp.rotation.y=Math.PI;I.root.add(rp);
+  const bones={};rp.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))bones[x.name.slice(3)]=x;});
+  I.rp={model:rp,bones,rest:B.rest};return I;}
+const _rpv=new THREE.Vector3(),_rpq=new THREE.Quaternion();
+function rpDrive(I){const R=I.rp,b=R.bones;
+  for(const k in b){const q=R.rest['rp_'+k];if(q)b[k].quaternion.copy(q);}
+  // bassin : même position que le bassin du squelette invisible, même direction vers le dos
+  const hip=b.hip,ph=I.bn('Hips');if(!hip||!ph)return;R.model.updateMatrixWorld(true);
+  ph.getWorldPosition(_rpv);hip.parent.worldToLocal(_rpv);hip.position.copy(_rpv);hip.updateMatrixWorld(true);
+  if(b.spine_01)retarget(hip,b.spine_01,wp(ph),wp(I.bn('Spine')),1);
+  for(const [a,c,pa,pc] of RP_PAIRS){const A=b[a],C=b[c],PA=I.bn(pa),PC=I.bn(pc);if(A&&C&&PA&&PC)retarget(A,C,wp(PA),wp(PC),1);}
 }
 
 /* ---------------- 12. VRAIS VÉHICULES ----------------
@@ -4774,7 +4814,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

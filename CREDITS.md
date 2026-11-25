@@ -3,6 +3,9 @@
 ## Personnages et animations
 - Mixamo (Adobe) : personnages et animations de `assets/characters/` et `assets/animations/`, utilisés selon les conditions de Mixamo.
 
+## Personnages scannés
+- Renderpeople (renderpeople.com), modèles gratuits : Claudia, Carla, Eric (rigged), Sophia, Nathan, Manuel (animated). Fichiers dans `assets/characters/rp/`, textures réduites à 1024 px. Utilisation en temps réel dans un jeu autorisée par leurs conditions (section 4.1). Attention : la section 4.3 interdit de rendre les fichiers 3D facilement téléchargeables ; choix assumé par Boban le 2026-11-25.
+
 ## Matières et objets
 - Poly Haven (CC0) : textures photographiques, écorce, banc en bois peint.
 

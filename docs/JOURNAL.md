@@ -21,6 +21,18 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Personnages scannés Renderpeople (v1.10.0)
+- Boban a choisi d'utiliser quand même les 6 personnages Renderpeople, malgré la clause 4.3 (fichiers facilement téléchargeables dans un dépôt public).
+- `assets/characters/rp/` : textures réduites à 1024 px par `fbx_shrink.py`. Claudia, Carla et Eric pèsent environ 1 Mo chacun, Sophia 3,6 Mo, Nathan 2,0 Mo, Manuel 7,1 Mo (il garde son animation de danse dans le fichier).
+- Leur squelette n'est pas celui de Mixamo (`hip`, `spine_01`, `upperarm_l`…). Chaque personnage scanné suit à chaque image un squelette Mixamo invisible qui joue les animations du jeu (`rpDrive`, segment par segment). Ils marchent, s'assoient, conduisent, se battent et tombent comme les autres.
+- Ajoutés aux listes : femmes (Claudia, Carla, Sophia) et hommes (Eric, Nathan, Manuel).
+- Crédits : `CREDITS.md` et Options.
+
+## 2026-11-25 — Claude — Cheveux visibles sur les personnages Mixamo (v1.9.2)
+- Vérifié sur le PC de Boban (commit 0696699) : bar et nuits nettement plus clairs, aucun message d'erreur.
+- Maggie avait bien un corps de femme, mais ses cheveux (comme ceux de toutes les femmes Mixamo) étaient invisibles. FBXLoader branche la texture des cheveux comme `alphaMap`. Three.js lit alors la teinte (cheveux foncés) comme de la transparence. Correction au chargement : transparence prise du canal alpha (`alphaTest` 0,42, deux faces). Contrôlé dans une vue de test : les 4 femmes ont leurs cheveux.
+- Personnages RenderPeople téléchargés par Boban (Manuel, Claudia, Sophia, Carla, Nathan, Eric) : non intégrés pour l'instant. Leurs conditions (section 4.3) interdisent de rendre les fichiers 3D facilement téléchargeables par des tiers, ce que ferait un dépôt GitHub public. Décision laissée à Boban.
+
 ## 2026-11-25 — Claude — Plus personne n'est assis dans le vide (v1.9.1)
 - Signalé par Boban : des gens assis sans table, chaise ni fauteuil.
 - Causes et corrections :
