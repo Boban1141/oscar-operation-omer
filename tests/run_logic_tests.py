@@ -170,6 +170,8 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             {o.startLevel(null,'mtl');o.S.weather.rain=1;o.tick(.2);const e=o.phys().elec;ok(e.length>0&&parseFloat(e[0].split(':')[1])>1.1,'sous la pluie, le fil tombé électrise l’eau autour ('+(e[0]||'aucun')+' m)');}
             {o.startLevel(null,'toronto');o.S.location='outside';o.S.clock=13*60;const a0=o.crowd(.1).afraid;o.S.player.weapons=['pistol'];o.S.player.weapon='pistol';o.S.flags.lastShot={c:o.S.clock,x:0,z:0};const a1=o.crowd(1).afraid;o.S.player.weapon='fists';o.S.flags.lastShot=null;
              ok(a0===0&&a1>0,'un coup de feu en ville fait fuir les passants ('+a1+' effrayés)');}
+            {o.startLevel(null,'toronto');o.S.rep=40;const w=o.wary('lina');o.openDialogue('lina');const txt=document.getElementById('dText').textContent;o.closeUI();
+             ok(w==='rep'&&/coups de feu/.test(txt),'réputation : les gens méfiants demandent à être rassurés avant de parler');o.S.rep=0;}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');

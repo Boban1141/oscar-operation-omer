@@ -204,7 +204,7 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 ## Bloc 20 — Réalisme total (liste de Boban, adaptée au Canada moderne) `[~]`
 - [x] Corps et blessures : blessures localisées, saignement, infection et fièvre, froid qui engourdit, trousses (v1.15.0)
 - [x] Physique du monde : élan selon l'équipement, sol mouillé et flaques glissants, eau + courant électrique, barils, feu qui se propage avec le vent, fumée (v1.16.0)
-- [~] Vie des passants (v1.17.0 : peur et fuite, regards, heures d'ouverture) — reste : emplois du temps (commerces qui ouvrent et ferment, retour à la maison), réputation qui circule entre villes, confiance et méfiance, regards et micro-réactions, refus et négociation
+- [~] Vie des passants (v1.17.0 : peur et fuite, regards, heures d'ouverture ; v1.18.0 : réputation qui circule, méfiance et négociation avant de parler, personne n'apparaît sous les yeux) — reste : emplois du temps détaillés (commerces qui ouvrent et ferment, retour à la maison), réputation qui circule entre villes, confiance et méfiance, regards et micro-réactions, refus et négociation
 - [ ] Économie : prix selon la province et les événements (route coupée, tempête), espèces et carte, objets volés reconnaissables
 - [ ] Hygiène et odeur : les gens s'écartent si Oscar sort des égouts ou ne s'est pas lavé depuis des jours, les chiens le flairent
 - [ ] Interface invisible : mode sans mini-carte ni boussole (panneaux, carte papier, téléphone), inventaire et lecture sans pause

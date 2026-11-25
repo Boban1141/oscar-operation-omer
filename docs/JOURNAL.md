@@ -21,6 +21,24 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Réputation, méfiance, personne ne disparaît sous les yeux (v1.18.0)
+- Vérifié sur le PC de Boban (commit ac0eded) : après un coup de feu à Toronto, 3 passants proches s'enfuient et le message « Les coups de feu font fuir les passants » s'affiche. Aucune erreur.
+- Suite du bloc 3 (vie des passants), pour tout le jeu :
+  - Réputation (`S.rep`, 0 à 100) :
+    - elle monte avec les coups de feu (4) et les explosions (12) dans les lieux civils, beaucoup moins dans les lieux de mission ;
+    - elle monte aussi quand on menace quelqu'un (8) ;
+    - dès 30, un message prévient qu'on parle d'Oscar ;
+    - la nouvelle le suit d'une province à l'autre : 60 % au niveau suivant, dans la progression sauvegardée.
+  - Méfiance avant de parler (`openDialogue`). Si Oscar a une arme à la main, porte la tenue militaire dans un lieu civil ou est connu (30 et plus), un personnage non hostile commence par une réplique méfiante adaptée. Pour qu'il parle, Oscar doit :
+    - le rassurer (6 min, ou 15 min si sa réputation est très mauvaise) ;
+    - payer 20 $ ;
+    - le menacer (rapide, mais la réputation monte) ;
+    - ou partir.
+    Une fois rassuré, il ne redemande plus. Les gens d'Omer et les gardes ne sont pas concernés.
+  - Personne n'apparaît ni ne disparaît sous les yeux d'Oscar. La foule se vide le soir et se remplit le matin, mais un passant ne rentre chez lui (ou ne sort) qu'à plus de 45 m d'Oscar, et une voiture à plus de 60 m.
+- Reste : emplois du temps détaillés (aller au travail, rentrer dans une maison précise).
+- Tests : 158/158.
+
 ## 2026-11-25 — Claude — Vie des passants : peur, regards, heures d'ouverture (v1.17.0)
 - Vérifié sur le PC de Boban (commit 8dfbab2) :
   - au port, un baril explose : alerte, message, 5 foyers et une vingtaine de nuages de fumée ;
