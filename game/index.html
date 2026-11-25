@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.27.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.27.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4866,7 +4866,7 @@ const RP_PAIRS=[['spine_01','neck','Spine','Neck'],['neck','head','Neck','Head']
 // squelettes Unreal (UE4 : pelvis, thigh_l, calf_l, clavicle_l…) : mêmes os, autres noms (corps de Cédric)
 const RP_ALIAS={pelvis:'hip',thigh_l:'upperleg_l',thigh_r:'upperleg_r',calf_l:'lowerleg_l',calf_r:'lowerleg_r',clavicle_l:'shoulder_l',clavicle_r:'shoulder_r',neck_01:'neck'};
 const rpBoneName=n=>{if(RP_ALIAS[n])return RP_ALIAS[n];for(const b of RP_BONES)if(n===b||n.endsWith('_'+b))return b;return null;};
-// Cédric : garçon scanné (squelette Unreal) ; ses textures sont fournies à part (assets/characters/rp/cedric/), il est animé par le pantin enfant.
+// Cédric : garçon scanné (squelette Unreal) ; ses textures sont fournies à part (assets/characters/rp/cedric/), il est animé par un pantin adulte (celui de l'enfant Mixamo, dessin animé, donnait des jambes tordues et des mains écartées) : même posture que sa mère, à sa taille d'enfant.
 // Même taille que le pantin (la taille d'enfant vient déjà de sa silhouette, 0,72) : le réduire une 2e fois le rendait minuscule et désarticulé.
 const RP_KIDS={'rp:cedric':{tex:{Body:'body',Eye:'body',Top:'top',Bottom:'bottom',Shoe:'shoes'}}};
 function rpKidTextures(name,o){const K=RP_KIDS[name];if(!K)return;const TL=new THREE.TextureLoader(),dir=RP_DIR+name.slice(3)+'/',cache={};
@@ -4876,7 +4876,7 @@ function rpKidTextures(name,o){const K=RP_KIDS[name];if(!K)return;const TL=new T
     const k=Object.keys(K.tex).find(k=>new RegExp(k,'i').test(nm));if(!k)return m;const f=K.tex[k];
     return new THREE.MeshStandardMaterial({map:tex(f,true),normalMap:tex(f+'_n',false),roughness:/Eye/i.test(nm)?.15:.75,metalness:0,name:nm});});
     if(x.material.length===1)x.material=x.material[0];});}
-function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(name)?'femme':'homme',pup=RP_KIDS[name]?'enfant':RP_PUPPET[gender];rhLoadChar(pup);
+function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(name)?'femme':'homme',pup=RP_KIDS[name]?RP_PUPPET.homme:RP_PUPPET[gender];rhLoadChar(pup);
   firstOk([RP_DIR+file+'.fbx','../'+RP_DIR+file+'.fbx'],u=>RH.fbx.loadAsync(u)).then(o=>{
     if(!o){RH.base[name]='none';return;}
     rpKidTextures(name,o);o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}

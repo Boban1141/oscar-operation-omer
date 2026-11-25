@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Cédric assis comme sa mère (v1.27.1)
+**Signalé par Boban** : les pieds de Cédric sont mal formés ; il doit être bien assis, les mains et les pieds comme ceux de sa mère.
+**Vu sur le PC (v1.27.0)** : Oscar est bien en vêtements normaux. Cédric a sa taille d'enfant mais une jambe remonte presque à l'épaule, l'autre part à l'horizontale.
+**Cause** : son corps scanné recopie la pose d'un pantin invisible ; c'était l'enfant Mixamo de dessin animé, dont la pose « assis » est mauvaise.
+**Correction** : Cédric est guidé par un pantin adulte, avec la même animation « assis » qu'Eva (mains sur les genoux, pieds au sol), ramené à sa taille d'enfant.
+
 ## 2026-11-25 — Claude — Oscar toujours en vêtements normaux (v1.27.0)
 **Demande** : « Oscar peut porter les vêtements normaux, retire celui de militaire. »
 **Pourquoi** : le soldat KSK rendait mal (vu en direct sur le PC : plat et flou avec la lueur ajoutée, plaques noires sans elle ; camouflage en basse résolution).
