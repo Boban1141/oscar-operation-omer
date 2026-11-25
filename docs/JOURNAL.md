@@ -21,6 +21,10 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Tenue civile dans les rues de toutes les villes (v1.13.3)
+- Vérifié sur le PC de Boban (commit f841c4d) : aucune erreur. Les 7 niveaux démarrent bien. Oscar était en tenue civile à Toronto, mais en militaire au point de départ des niveaux 2 à 7. Ces départs (Vanport, port de St. John's, cour de triage, Halifax, Winnipeg, Westmount) sont des zones de jeu ouvertes (`ARENAS`) pleines de passants.
+- La tenue militaire ne sert plus que dans les lieux de mission armée (`HOSTILE` : entrepôt du port, forêt et chapelle, chalutier, ranch, bureau du notaire, silos, manoir, sous-sol, cour de triage). Partout ailleurs, tenue civile ; la touche G reste disponible.
+
 ## 2026-11-25 — Claude — Passagers visibles (v1.13.2)
 - Vérifié sur le PC de Boban (commit ab47c3a) : en 10 s de jeu réel, aucun passant l'un dans l'autre, aucune voiture sur un piéton. La tenue militaire reste noire en jeu, alors que ses 4 parties sont visibles et ont leur texture chargée (`__oscar.skin()`). Ajout de `__oscar.dbg(f)` (accès de diagnostic à la scène) pour chercher la cause directement sur son PC.
 - Tenue militaire noire : cause trouvée sur le PC de Boban avec `__oscar.dbg`. Les textures, les normales et l'éclairage sont corrects. En blanc uni le soldat est bien éclairé, et avec sa texture sans éclairage il est visible. C'est le camouflage, très sombre, qui tombait au noir sous la lumière du jeu. Correction : la texture éclaire en partie d'elle-même (`emissiveMap`, intensité 0,45). Essayé en direct : le camouflage vert-brun est bien visible.

@@ -310,7 +310,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.13.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.13.3', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4343,7 +4343,9 @@ function setOutfit(o,silent){if(!OM.ready)return;OM.outfit=o;const civ=o==='civi
   OM.hand=civ?OM.handN:(OM.handK||OM.hand);OM.fore=civ?OM.foreN:(OM.foreK||OM.fore);
   if(!silent&&S)toast(civ?'Oscar enfile sa tenue civile : t-shirt, jean, rien qui inquiète les gens.':'Oscar enfile sa tenue militaire : casque, gilet, camouflage.');}
 function autoOutfit(){if(!OM.ready||!S)return;const loc=S.location;if(OM.outLoc===loc)return;OM.outLoc=loc;OM.manual=false;
-  const combat=!!(typeof ARENAS!=='undefined'&&ARENAS[loc]);setOutfit(combat?'militaire':'civil',true);}
+  setOutfit(HOSTILE.has(loc)?'militaire':'civil',true);}
+// lieux de mission armée : là, Oscar part équipé. Les rues des villes (Vanport, port de St. John's, Halifax, Winnipeg, Westmount…) restent en civil.
+const HOSTILE=new Set(['port','forest','trawler','ranch','office','silos','manoir','soussol','yard']);
 function toggleOutfit(){if(!OM.ready||!OM.rp)return;OM.manual=true;setOutfit(OM.outfit==='civil'?'militaire':'civil');}
 function isIn(o,root){for(let x=o;x;x=x.parent)if(x===root)return true;return false;}
 function applyOscarModel(){if(!OM.ready)return;const on=SET.oscarModel!=='classic';OM.root.visible=on;for(const m of OM.body)m.visible=!on;
