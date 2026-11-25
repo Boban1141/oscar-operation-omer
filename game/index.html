@@ -310,7 +310,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.13.4', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.14.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -2205,10 +2205,19 @@ function enemyCollide(e){const o={x:e.x,z:e.z};const I=AR().area;for(const c of 
 /* --- combat state on the player --- */
 const CB={fireCd:0,meleeCd:0,reloadT:0,lockT:0,flash:0,aim:false,block:false,crouch:false,firing:false,atk:null,tracers:[],shake:0};
 function playerWeapon(){return S.player.weapon||'fists'}
-function hurtPlayer(n,melee){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;n*=DIFFK().dmg;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
+// Tout coup reçu a un effet physique, quelle que soit sa source (règle pour tout le jeu) :
+//  coup au corps à corps → recul et vacillement ; balle → sursaut ; choc lourd (chute, branche, décharge, ≥ 20) → Oscar tombe à la renverse.
+function impactPlayer(n,melee,o={}){const p=S.player;const kind=o.kind||(melee?'blow':n>=20?'fall':'shot');
+  let dx=0,dz=0;if(o.from){dx=p.x-o.from.x;dz=p.z-o.from.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;}else{dx=-Math.sin(p.heading||0);dz=-Math.cos(p.heading||0);}
+  const push=kind==='fall'?(o.push??.9):kind==='blow'?(CB.block?.12:.4):.12;const q={x:p.x+dx*push,z:p.z+dz*push};collide(q,.3);p.x=q.x;p.z=q.z;
+  if(kind==='fall'){CB.lockT=Math.max(CB.lockT,1.6);CB.fall=1.4;CB.shake=Math.max(CB.shake||0,.7);sfx('down');}
+  else if(kind==='blow'){CB.lockT=Math.max(CB.lockT,CB.block?.1:.28);CB.shake=Math.max(CB.shake||0,.3);}
+  else CB.shake=Math.max(CB.shake||0,.22);}
+function hurtPlayer(n,melee,o){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;n*=DIFFK().dmg;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);impactPlayer(n,melee,o);CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
 function alarm(reason){const P2=AS();if(P2.alarm)return;S.flags.hadAlarm=true;P2.alarm=true;for(const e of P2.enemies)if(!e.down){e.friendly=false;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}siren(true);toast('Alerte ! '+reason);}
 function damageEnemy(e,n,how){
   if(e.down)return;e.hp-=n;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;const m=enemyMeshes[S.location+':'+e.id];if(m)m.hit=.25;
+  if(how!=='silent'){const dx=e.x-S.player.x,dz=e.z-S.player.z,d=Math.hypot(dx,dz)||1,k=how==='shot'?.15:.45;e.x+=dx/d*k;e.z+=dz/d*k;if(typeof enemyCollide==='function')enemyCollide(e);}
   if(e.type!=='boss'&&e.hp<=0){e.down=true;sfx('down');}
   if(e.type==='boss'&&e.hp<=0){e.hp=0;e.down=true;e.surrender=true;S.flags.bossDown=true;S.flags.bossMet=true;siren(false);
     for(const o of AS().enemies)if(!o.down){o.state='flee';}toast(AR().boss.down);checkObjective();store.save(S);}
@@ -2307,9 +2316,9 @@ function stepCombat(dt){
         let hp=T.acc*clamp(1.25-d/T.range,.25,1)*(CB.crouch?.75:1)*(p.speed>4?.55:1)*(night?.85:1);
         const hit=Math.random()<hp;sfx('eshot',d);const m=enemyMeshes[S.location+':'+e.id];if(m)m.flash.intensity=5;
         const from=new THREE.Vector3(e.x+Math.sin(e.heading)*.5,1.45,e.z+Math.cos(e.heading)*.5);const to=new THREE.Vector3(p.x+(hit?0:(Math.random()-.5)*2.5),p.y+1.2+(hit?0:(Math.random()-.5)*1.5),p.z+(hit?0:(Math.random()-.5)*2.5));
-        addTracer(from,to,'#ffb35c');if(hit)hurtPlayer(T.dmg,false);}
+        addTracer(from,to,'#ffb35c');if(hit)hurtPlayer(T.dmg,false,{kind:'shot',from:{x:e.x,z:e.z}});}
       if(!ranged&&d<1.6&&e.cool<=0){e.cool=1.1;e.atk=.45;const m=enemyMeshes[S.location+':'+e.id];if(m)m.swing=.45;
-        const L0=S.location;setTimeout(()=>{if(e.down||!S||S.location!==L0)return;const dd=Math.hypot(S.player.x-e.x,S.player.z-e.z);if(dd<1.9){hurtPlayer(e.type==='boss'?T.knife:T.dmg,true);}},380);}
+        const L0=S.location;setTimeout(()=>{if(e.down||!S||S.location!==L0)return;const dd=Math.hypot(S.player.x-e.x,S.player.z-e.z);if(dd<1.9){hurtPlayer(e.type==='boss'?T.knife:T.dmg,true,{from:{x:e.x,z:e.z}});}},380);}
     }
     if(spd>0){const mx=tx-e.x,mz=tz-e.z,ml=Math.hypot(mx,mz);if(ml>.05){const step=Math.min(ml,spd*dt);const ox=e.x,oz=e.z;e.x+=mx/ml*step;e.z+=mz/ml*step;enemyCollide(e);
       const moved=Math.hypot(e.x-ox,e.z-oz);if(moved<step*.3){e.stuck+=dt;if(e.stuck>.6){e.x+=(-mz/ml)*.8*(Math.random()<.5?1:-1);e.z+=(mx/ml)*.8;enemyCollide(e);e.stuck=0;if(e.state==='patrol')e.wp++;}}else e.stuck=0;
@@ -3201,7 +3210,7 @@ function nsZones(){
   z({loc:'mission',x:MISSION.box.x,z:MISSION.box.z+.5,r:1.4,cond:()=>S.flags.donations&&!S.flags.crampons,label:()=>'Prendre des crampons dans la boîte des dons',act:()=>{S.flags.crampons=true;addMinutes(3);toast('Crampons fixés sous tes bottes : tu ne glisseras plus sur le verglas.');}});
   z({loc:'halifax',x:H.ox+32.5,z:H.oz+10.6,r:1.6,label:()=>S.flags.keycard?'Badger avec la carte de Chloé (entrée de service)':serviceOpenByShift()?'Entrer : la porte de service est restée ouverte (relève)':'Porte de service (verrouillée)',
     act:()=>{if(S.flags.keycard||serviceOpenByShift()){S.flags.inOffice=true;travelTo('office',2,-23.5,-14,'Le couloir de service sent le produit d’entretien. Quelque part, un téléviseur de surveillance grésille.');}else toast(S.flags.shiftKnown?'Verrouillée. La relève est à 23 h.':'Verrouillée. Il faut une carte magnétique.');}});
-  z({loc:'halifax',x:H.ox+15.5,z:H.oz+10.8,r:1.6,label:()=>'Escalader l’escalier de secours glacé (risqué)',act:()=>{addMinutes(10);if(!S.flags.crampons&&Math.random()<.5){hurtPlayer(30,false);toast('Tu glisses sur une marche gelée et tu retombes lourdement !');return;}S.flags.inOffice=true;travelTo('office',0,-2,-14.5,'Tu forces la fenêtre du palier. L’alarme ne s’est pas déclenchée… cette fois.');}});
+  z({loc:'halifax',x:H.ox+15.5,z:H.oz+10.8,r:1.6,label:()=>'Escalader l’escalier de secours glacé (risqué)',act:()=>{addMinutes(10);if(!S.flags.crampons&&Math.random()<.5){hurtPlayer(30,false,{kind:'fall'});toast('Tu glisses sur une marche gelée et tu retombes lourdement !');return;}S.flags.inOffice=true;travelTo('office',0,-2,-14.5,'Tu forces la fenêtre du palier. L’alarme ne s’est pas déclenchée… cette fois.');}});
   z({loc:'office',x:O.fuse.x,z:O.fuse.z,r:1.5,cond:()=>!S.flags.powerCut,label:()=>'Couper le courant au tableau de fusibles',act:()=>{S.flags.powerCut=true;addMinutes(1);sfx('down');toast('Clac. L’étage plonge dans la pénombre : les caméras sont aveugles et les gardes y voient moins bien.');}});
   z({loc:'office',x:O.ox-24,z:O.oz-14,r:1.2,label:()=>'Ressortir par l’entrée de service',act:()=>{S.location='office';exitTo('halifax',H.ox+32.5,H.oz+12.4);}});
   for(const n of interiorNPCs)if(n.lvl==='ns'){const d=DIALOGUES[n.dlg];z({loc:n.loc,x:n.x,z:n.z+(n.id==='gisele'?1.3:.95),r:1.6,label:()=>'Parler à '+d.who.split(',')[0],act:()=>openDialogue(n.dlg)});}
@@ -3401,16 +3410,14 @@ const inHouse=p=>{const x=p.x-MANOIR.ox,z=p.z-MANOIR.oz;return x>-22&&x<22&&z>-3
 const kitchenWindow=()=>{const m=((S.clock%1440)+1440)%1440;return m<15;};
 // falling ice-laden branches (outdoors in the storm) and a downed live wire
 function stormHazards(p,I,inside){
-  if(I===WMT&&!S.flags.wireSafe){const d=Math.hypot(p.x-(WMT.ox+14),p.z-(WMT.oz+11));if(d<1.1&&!(CB.wireCd>0)){CB.wireCd=2;hurtPlayer(40,false);p.x-=1.5;CB.lockT=1.6;CB.fall=1.4;CB.shake=Math.max(CB.shake||0,.8);toast('Une décharge te projette en arrière : le fil tombé est encore sous tension !');}}
+  if(I===WMT&&!S.flags.wireSafe){const d=Math.hypot(p.x-(WMT.ox+14),p.z-(WMT.oz+11));if(d<1.1&&!(CB.wireCd>0)){CB.wireCd=2;hurtPlayer(40,false,{kind:'fall',from:{x:WMT.ox+14,z:WMT.oz+11},push:1.5});toast('Une décharge te projette en arrière : le fil tombé est encore sous tension !');}}
   CB.wireCd=Math.max(0,(CB.wireCd||0)-1/60);
   const br=I.branch;if(!br)return;
   if(inside){br.fall=0;return;}
   S.flags.brT=(S.flags.brT??40)-1/60;
   if(S.flags.brT<=0&&!br.fall){br.fall=1.5;br.x=p.x+(Math.random()-.5)*1.4;br.z=p.z+(Math.random()-.5)*1.4;toast('Un craquement sec au-dessus de toi… Bouge !');csnd('thump');}
   if(br.fall>0){br.fall-=1/60;const k=clamp(1-br.fall/.6,0,1);br.m.visible=true;br.m.position.set(br.x-I.ox,lerp(8,.15,k),br.z-I.oz);
-    if(br.fall<=0){br.fall=0;S.flags.brT=35+Math.random()*30;sfx('down');if(Math.hypot(p.x-br.x,p.z-br.z)<1.3){hurtPlayer(22,false);
-      // le choc renverse Oscar : il tombe à la renverse, repoussé loin de la branche, et met un moment à se relever
-      const dx=p.x-br.x,dz=p.z-br.z,d=Math.hypot(dx,dz)||1;p.x+=dx/d*.9;p.z+=dz/d*.9;CB.lockT=1.6;CB.fall=1.4;CB.shake=Math.max(CB.shake||0,.6);sfx('down');
+    if(br.fall<=0){br.fall=0;S.flags.brT=35+Math.random()*30;sfx('down');if(Math.hypot(p.x-br.x,p.z-br.z)<1.3){hurtPlayer(22,false,{kind:'fall',from:{x:br.x,z:br.z}});
       toast('Une branche chargée de glace s’écrase sur toi ! Tu tombes à la renverse.');}}}
 }
 ARENAS.westmount={area:WMT,lvl:'mtl',ground:'#2c333b',
@@ -3648,7 +3655,7 @@ function mtlZones(){
   z({loc:'refuge',x:REFUGE.ox,z:REFUGE.oz+REFUGE.hd-.7,r:1.2,label:()=>'Sortir sous le verglas',act:()=>exitInterior()});
   z({loc:'westmount',x:Wm.ox+40,z:Wm.oz-1.2,r:1.8,cond:()=>!S.arenas.westmount.alarm,label:()=>'Parler au garde du portail',act:()=>openDialogue('portier')});
   z({loc:'westmount',x:Wm.ox+58,z:Wm.oz-3,r:2.2,label:()=>'Prendre la ruelle de service (porte de la cuisine)',act:()=>{S.flags.inManor=true;travelTo('manoir',3,-30,-8,'La ruelle est une patinoire. Au bout, la porte de la cuisine d’Omer, sous une lampe.');}});
-  z({loc:'westmount',x:Wm.ox+30,z:Wm.oz-2.6,r:2,label:()=>'Escalader le mur du jardin couvert de glace (risqué)',act:()=>{addMinutes(8);if(!S.flags.crampons&&Math.random()<.5){hurtPlayer(25,false);toast('Tes mains glissent sur la pierre gelée : tu retombes lourdement sur le trottoir.');return;}S.flags.inManor=true;travelTo('manoir',0,-44,-44,'Tu bascules dans le jardin d’Omer. Des haies de glace, une terrasse, une caméra au-dessus de la porte-fenêtre.');}});
+  z({loc:'westmount',x:Wm.ox+30,z:Wm.oz-2.6,r:2,label:()=>'Escalader le mur du jardin couvert de glace (risqué)',act:()=>{addMinutes(8);if(!S.flags.crampons&&Math.random()<.5){hurtPlayer(25,false,{kind:'fall'});toast('Tes mains glissent sur la pierre gelée : tu retombes lourdement sur le trottoir.');return;}S.flags.inManor=true;travelTo('manoir',0,-44,-44,'Tu bascules dans le jardin d’Omer. Des haies de glace, une terrasse, une caméra au-dessus de la porte-fenêtre.');}});
   z({loc:'manoir',x:Mo.ox-23.4,z:Mo.oz-8,r:1.5,cond:()=>!S.flags.door_kitchen,label:()=>S.flags.kitchenPlan&&kitchenWindow()?'Entrer par la cuisine : Marie-Rose a laissé la porte ouverte':'Porte de la cuisine (verrouillée)',
     act:()=>{if(S.flags.kitchenPlan&&kitchenWindow()){S.flags.door_kitchen=true;toast('La poignée tourne. Ça sent le riz et les épices. Marie-Rose a tenu parole.');}else toast(S.flags.kitchenPlan?'Verrouillée. Marie-Rose l’ouvrira à minuit, pendant la relève.':'Verrouillée.');}});
   z({loc:'manoir',x:Mo.ox-10,z:Mo.oz-31.4,r:1.5,cond:()=>!S.flags.door_terrace,label:()=>'Forcer la porte-fenêtre de la terrasse (bruyant)',act:()=>{addMinutes(2);S.flags.door_terrace=true;sfx('down');const p=S.player;

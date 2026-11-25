@@ -21,6 +21,15 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Tout choc a un effet physique, dans tout le jeu (v1.14.0)
+- Demande de Boban : les corrections doivent toucher le jeu entier à partir de maintenant. Règle ajoutée dans `AGENTS.md` (« une correction vaut pour TOUT le jeu »).
+- Appliqué au choc signalé (la branche qui tombait sur Oscar sans qu'il bouge). Une seule règle, `impactPlayer`, est appelée par `hurtPlayer` pour chaque dégât, quelle que soit sa source :
+  - coup au corps à corps (hommes d'Omer, chefs au couteau) : recul de 40 cm loin de l'attaquant, vacillement de 0,3 s, secousse. Avec la garde : 12 cm seulement ;
+  - balle : sursaut, petit recul, secousse ;
+  - choc lourd (branche, fil électrique, chute de l'escalier glacé à Halifax, chute du mur glacé à Westmount, tout coup de 20 ou plus sans arme) : Oscar tombe à la renverse, loin de la source, et se relève après 1,6 s ;
+  - les glissades sur le verglas gardent leur chute.
+- Dans l'autre sens, les coups d'Oscar repoussent les hommes d'Omer (45 cm au poing ou au pied, 15 cm par balle), sans traverser les murs. La neutralisation silencieuse ne les repousse pas.
+
 ## 2026-11-25 — Claude — Oscar réagit quand une branche le frappe (v1.13.4)
 - Signalé par Boban : un objet est tombé sur Oscar et il n'a pas bougé. C'était une branche chargée de glace, pendant la tempête de verglas de Westmount. Elle retirait de la santé, sans aucune réaction physique.
 - Maintenant, la branche renverse Oscar : il tombe à la renverse, est repoussé d'environ 1 m, l'écran tremble, et il met un moment à se relever, sans pouvoir bouger pendant 1,6 s (`CB.fall`, `CB.lockT`).

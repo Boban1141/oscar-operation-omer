@@ -16,6 +16,16 @@ Ce dépôt est développé à plusieurs : le propriétaire du projet, **Claude**
 - Petites étapes, un commit par étape logique.
 - Ne pas casser une fonction existante ; vérifier au minimum la syntaxe du script (`node --check` sur le module extrait).
 
+## Règle de Boban : une correction vaut pour TOUT le jeu
+Depuis le 2026-11-25, toute correction ou amélioration s'applique au jeu entier, jamais à un seul endroit.
+- Corriger la cause commune (fonction partagée, règle générale), pas le cas signalé seul.
+- Chercher toutes les autres situations du même genre, dans les 7 niveaux, les villes, les lieux intérieurs et les cinématiques, et les corriger aussi.
+- Exemples :
+  - un objet tombe sur Oscar → tout choc a un effet physique (`impactPlayer`) ;
+  - des gens assis dans le vide → un siège pour tous les gens assis ;
+  - la tenue militaire dans les lieux publics → règle par type de lieu, pour toutes les villes.
+- Écrire dans le JOURNAL quelles situations ont été couvertes.
+
 ## À la fin de CHAQUE étape (obligatoire)
 1. Mettre à jour `docs/ROADMAP.md` (cases `[x]`, `[~]`).
 2. Ajouter une entrée **en haut** de `docs/JOURNAL.md` avec le modèle ci-dessous.
