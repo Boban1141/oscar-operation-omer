@@ -21,6 +21,14 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Passagers visibles (v1.13.2)
+- Vérifié sur le PC de Boban (commit ab47c3a) : en 10 s de jeu réel, aucun passant l'un dans l'autre, aucune voiture sur un piéton. La tenue militaire reste noire en jeu, alors que ses 4 parties sont visibles et ont leur texture chargée (`__oscar.skin()`). Ajout de `__oscar.dbg(f)` (accès de diagnostic à la scène) pour chercher la cause directement sur son PC.
+- Tenue militaire noire : cause trouvée sur le PC de Boban avec `__oscar.dbg`. Les textures, les normales et l'éclairage sont corrects. En blanc uni le soldat est bien éclairé, et avec sa texture sans éclairage il est visible. C'est le camouflage, très sombre, qui tombait au noir sous la lumière du jeu. Correction : la texture éclaire en partie d'elle-même (`emissiveMap`, intensité 0,45). Essayé en direct : le camouflage vert-brun est bien visible.
+- Demande de Boban : on doit voir la tête des passagers dans les bus et les trains. Le jeu n'a ni bus ni train, mais il a les tramways de Toronto, et leur bande de fenêtres était opaque.
+  - Vitres teintées transparentes, et un plancher intérieur.
+  - 7 passagers par tramway : 5 assis le long des vitres, 2 debout, certains au téléphone. Ce sont des personnages comme les autres, qui deviennent de vrais humains de près.
+  - Les taxis transportent un client assis à l'arrière, visible même quand le taxi est un vrai modèle 3D.
+
 ## 2026-11-25 — Claude — Plus personne ne se marche dessus (v1.13.1)
 - Signalé par Boban : les personnages se traversaient, entraient dans leur ami, et les voitures roulaient sur les humains.
 - Passants :

@@ -310,7 +310,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.13.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.13.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1576,7 +1576,8 @@ function createBike(look){
 function createTram(){
   const g=new THREE.Group(),red=mat('#c8102e',{roughness:.45,metalness:.2});
   addBox(2.6,2.7,15.5,red,0,1.85,0,g);
-  addBox(2.64,1,15.2,regNight(new THREE.MeshStandardMaterial({color:'#121821',emissive:'#ffe7c2',emissiveIntensity:.1,roughness:.1,metalness:.5}),.1,1.4),0,2.35,0,g,false);
+  addBox(2.64,1,15.2,regNight(new THREE.MeshStandardMaterial({color:'#1a2430',emissive:'#ffe7c2',emissiveIntensity:.1,roughness:.08,metalness:.3,transparent:true,opacity:.38,depthWrite:false}),.1,1.4),0,2.35,0,g,false);
+  addBox(2.5,.08,15,mat('#3a3a3a'),0,.95,0,g,false);   // plancher intérieur
   addBox(2.66,.18,15.6,mat('#f2f2f2'),0,1.2,0,g,false);addBox(2.4,.3,14.8,M.dark,0,.45,0,g,false);
   addBox(.15,.9,.15,M.pole,0,3.65,1,g);addBox(1.4,.06,.2,M.pole,0,4.1,1,g);
   for(const z of [7.78,-7.78]){addBox(.6,.2,.06,M.headlight,0,1.4,z,g,false);}
@@ -1679,9 +1680,11 @@ function syncView(dt,t){
     const k=1-Math.exp(-dt*12);m.g.position.x=lerp(m.g.position.x,v.x,k);m.g.position.z=lerp(m.g.position.z,v.z,k);m.g.rotation.y=angLerp(m.g.rotation.y,v.heading,1-Math.exp(-dt*6));
     if(m.h)animRig(m.h,dt,t,v.kind==='moto'?0:v.speed,'bike',0,Math.hypot(v.x-cx,v.z-cz)<22);
     if(m.drv){animRig(m.drv,dt,t,0,'sit',0,false);m.drv.rs.mode='drive';}
+    if(m.pax)animRig(m.pax,dt,t+1,0,'sit',0,false);
     // feux de freinage
     if(m.g.brakeLights){const braking=v.speed<.5||v.speed<(v.max*.3);for(const bl of m.g.brakeLights){bl.material.emissiveIntensity=braking?2.5:.4;}}});
-  trams.forEach((tr,i)=>{tramMeshes[i].position.set(tr.x,0,tr.z);tramMeshes[i].rotation.y=tr.dir>0?Math.PI/2:-Math.PI/2;});
+  trams.forEach((tr,i)=>{const g=tramMeshes[i];g.position.set(tr.x,0,tr.z);g.rotation.y=tr.dir>0?Math.PI/2:-Math.PI/2;
+    if(g.userData.pax&&Math.hypot(tr.x-cx,tr.z-cz)<80)for(const p of g.userData.pax)animRig(p.h,dt,t+p.h.g.position.z,0,p.sit?'sit':'walk',0,false);});
   idlers.forEach((d,i)=>{const h=idlerMeshes[i];const dd=Math.hypot(d.x-cx,d.z-cz);h.g.visible=dd<200;if(h.g.visible){
     const modes=['talk','talk','walk','talk'];
     const mode=d.mode||modes[i%modes.length];
@@ -4274,6 +4277,8 @@ async function loadOscarModel(){
         if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);const tr=c.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
           if(tr&&hipsRest>1&&tr.values[1]>1){const r=hipsRest/tr.values[1];for(let i=0;i<tr.values.length;i++)tr.values[i]*=r;}inPlace(c);c.name=name;clips.push(c);}}));
       // textures du KSK : fichiers Tex_*.jpg à côté du modèle, trouvés par FBXLoader lui-même (vérifié à l'écran)
+      // camouflage très sombre : sous l'éclairage du jeu le soldat devenait une silhouette noire (vu sur le PC de Boban). Une part de la texture éclaire d'elle-même.
+      if((charObj.getObjectByName('mixamorigHips')||{position:{y:0}}).position.y>500)charObj.traverse(x=>{if(x.isMesh)for(const m of [].concat(x.material)){if(!m||!m.map)continue;m.emissiveMap=m.map;if(m.emissive)m.emissive.set('#ffffff');m.emissiveIntensity=.45;m.needsUpdate=true;}});
       const root=new THREE.Group();charObj.scale.setScalar(.01);root.add(charObj);OM.src=charObj.getObjectByName('mixamorigHips')&&charObj.getObjectByName('mixamorigHips').position.y>500?'soldat-ksk':'soldat-camouflage';
       setupOscarModel({scene:root,animations:clips});
       if(OM.ready&&OSCAR_LOOK)await dressOscar(fbx);
@@ -4558,7 +4563,7 @@ async function rvInit(){
 function rvBind(c,name){
   const f=(RV.free[name]||(RV.free[name]=[]));const inst=f.length?f.pop():RV.tpl[name].clone();
   const keep=c.rider?c.rider.g:null;c.hide=[];
-  c.g.traverse(o=>{if(o.isMesh&&!(keep&&isIn(o,keep))&&!(c.drv&&isIn(o,c.drv.g))){c.hide.push([o,o.visible]);o.visible=false;}});
+  c.g.traverse(o=>{if(o.isMesh&&!(keep&&isIn(o,keep))&&!(c.drv&&isIn(o,c.drv.g))&&!(c.pax&&isIn(o,c.pax.g))){c.hide.push([o,o.visible]);o.visible=false;}});
   inst.scale.set(1/(c.g.scale.x||1),1/(c.g.scale.y||1),1/(c.g.scale.z||1));c.g.add(inst);c.real={name,inst};RV.bound.add(c);}
 function rvUnbind(c){if(!c.real)return;c.g.remove(c.real.inst);(RV.free[c.real.name]||(RV.free[c.real.name]=[])).push(c.real.inst);
   for(const [o,v] of c.hide||[])o.visible=v;c.hide=null;c.real=null;RV.bound.delete(c);}
@@ -4689,9 +4694,13 @@ const attached=o=>{let x=o;for(let d=0;x&&d<64;d++,x=x.parent)if(x===scene)retur
 function buildAgentMeshes(){
   for(const p of peds){const h=createHuman(p.look,{umbrella:p.umb});scene.add(h.g);pedMeshes.push(h);}
   for(const v of vehicles){let m;if(v.kind==='bike'||v.kind==='moto'){m=createBike(v.look);if(v.kind==='moto'){const c=CARS[CARS.length-1];c.kind='moto';m.h.g.position.set(0,-.05,-.05);}}
-    else{m={g:createCar(v.kind,v.color)};const dl=mkLook(mulberry32(CAR_ID*13+7));m.drv=createHuman({...dl,prop:'none',rolled:0});m.drv.g.position.set(.38,0,-.05);m.g.add(m.drv.g);CARS[CARS.length-1].drv=m.drv;}
+    else{m={g:createCar(v.kind,v.color)};const dl=mkLook(mulberry32(CAR_ID*13+7));m.drv=createHuman({...dl,prop:'none',rolled:0});m.drv.g.position.set(.38,0,-.05);m.g.add(m.drv.g);CARS[CARS.length-1].drv=m.drv;
+      if(v.kind==='taxi'){const pl=mkLook(mulberry32(CAR_ID*17+3));m.pax=createHuman({...pl,prop:'none',rolled:0});m.pax.g.position.set(-.38,0,-1.0);m.g.add(m.pax.g);CARS[CARS.length-1].pax=m.pax;}}
     m.g.position.set(v.x,0,v.z);scene.add(m.g);vehMeshes.push(m);}
-  for(const t of trams){const g=createTram();scene.add(g);tramMeshes.push(g);}
+  for(const t of trams){const g=createTram();scene.add(g);tramMeshes.push(g);g.userData.pax=[];
+    const pr=mulberry32(tramMeshes.length*31+5);
+    for(let k=0;k<7;k++){const L=mkLook(pr);const h=createHuman({...L,prop:pr()<.4?'phone':'none'});const sit=k<5,side=k%2?1:-1;
+      h.g.position.set(sit?side*.72:side*.3,sit?1.0:.99,-6+k*1.9+pr()*.4);h.g.rotation.y=sit?-side*Math.PI/2:(pr()<.5?0:Math.PI);g.add(h.g);g.userData.pax.push({h,sit});}}
   for(const i of idlers){const h=createHuman({...i.look,prop:i.look.prop==='phone'?'cup':i.look.prop});h.g.position.set(i.x,.15,i.z);h.g.rotation.y=i.a;scene.add(h.g);idlerMeshes.push(h);}
 }
 function ensureCity(id){
