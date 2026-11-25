@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.10.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.11.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1864,7 +1864,7 @@ function buildDinerInterior(){
   ibox(I,14,.9,.06,mat('#7a1d1d',{roughness:.6}),0,.45,-4.96,0,false,false);
   // counter + stools + back bar
   ibox(I,5.6,1.02,.7,mat('#d8cfc0',{roughness:.5}),3.8,.51,-2.7,0,true);ibox(I,5.7,.06,.82,mat('#e9e6df',{roughness:.2}),3.8,1.04,-2.68);ibox(I,5.6,.08,.04,chrome,3.8,.9,-2.33);
-  for(let i=0;i<5;i++){const x=1.6+i*1.05;icyl(I,.05,.07,.66,chrome,x,.33,-1.85,10);icyl(I,.22,.22,.09,red,x,.7,-1.85,18);}
+  for(let i=0;i<5;i++){const x=1.6+i*1.05;icyl(I,.05,.07,.66,chrome,x,.33,-1.85,10);icyl(I,.22,.22,.09,red,x,.7,-1.85,18);I.cols.push({x0:I.ox+x-.24,x1:I.ox+x+.24,z0:I.oz-2.09,z1:I.oz-1.61});}
   ibox(I,5.6,.9,.5,dark,3.8,.45,-4.7,0,true);ibox(I,5.6,.04,.52,mat('#5a5148'),3.8,.92,-4.7);
   ibox(I,.5,.55,.42,chrome,5.8,1.22,-4.7);icyl(I,.06,.05,.22,mat('#1b1b1b'),5.65,1.06,-4.55);icyl(I,.06,.05,.22,mat('#1b1b1b'),5.95,1.06,-4.55);
   const dome=new THREE.Mesh(new THREE.SphereGeometry(.28,16,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:'#ffffff',transparent:true,opacity:.25,roughness:.05}));dome.position.set(2.6,1.07,-2.6);I.group.add(dome);
@@ -1878,7 +1878,7 @@ function buildDinerInterior(){
   // center tables
   for(const [x,z] of [[-1.8,1.4],[1.2,2.6]]){icyl(I,.45,.45,.04,mat('#e9e6df',{roughness:.25}),x,.76,z,20);icyl(I,.05,.2,.74,chrome,x,.37,z,10);
     I.cols.push({x0:I.ox+x-.5,x1:I.ox+x+.5,z0:I.oz+z-.5,z1:I.oz+z+.5});
-    for(const a of [0,Math.PI]){const cx=x+Math.sin(a)*.75,cz=z+Math.cos(a)*.75;ibox(I,.42,.04,.42,red,cx,.46,cz);icyl(I,.03,.03,.45,chrome,cx,.23,cz,6);}}
+    for(const a of [0,Math.PI]){const cx=x+Math.sin(a)*.75,cz=z+Math.cos(a)*.75;ibox(I,.42,.04,.42,red,cx,.46,cz);icyl(I,.03,.03,.45,chrome,cx,.23,cz,6);I.cols.push({x0:I.ox+cx-.23,x1:I.ox+cx+.23,z0:I.oz+cz-.23,z1:I.oz+cz+.23});}}
   // jukebox
   ibox(I,.9,1.5,.55,mat('#5b2a1e',{roughness:.4}),-1.2,.75,-4.6,0,true);ibox(I,.7,.5,.05,new THREE.MeshStandardMaterial({color:'#ffb347',emissive:'#ff9a2a',emissiveIntensity:1.2}),-1.2,1.2,-4.32);
   for(let i=0;i<3;i++)lamp(I,2+i*1.8,2.2,-2.4,8,'#ffcf8a','#9e1b1b');
@@ -3735,6 +3735,7 @@ function fixSeats(){
     const box=(w,h,d,m,x,y,z)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=b.receiveShadow=true;g.add(b);};
     if(f.chair){box(.46,.05,.46,wood,0,.44,-.04);for(const [x,z] of [[-.2,-.24],[.2,-.24],[-.2,.16],[.2,.16]])box(.04,.44,.04,wood,x,.22,z);box(.46,.5,.04,wood,0,.71,-.27);}
     if(f.stool){const c=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.68,8),metal);c.position.y=.34;g.add(c);const t=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.09,16),red);t.position.y=.72;g.add(t);}
+    I.cols.push({x0:n.x-.26,x1:n.x+.26,z0:n.z-.26,z1:n.z+.26});
     if(f.y)n.h.g.position.y=f.y;n.sitY=f.y||0;}
 }
 function buildCineSets(){
@@ -4240,12 +4241,23 @@ async function loadOscarModel(){
     const [charObj,soldier]=await Promise.all([firstOk(OSCAR_CHAR,u=>fbx.loadAsync(u)),firstOk(OSCAR_GLB,u=>glb.loadAsync(u))]);
     const loco=(soldier&&soldier.animations||[]).filter(a=>['Idle','Walk','Run'].includes(a.name));
     if(charObj&&charObj.getObjectByName){
-      const clips=soldier?reorientClips(loco,soldier.scene,charObj):[];OM.loco=clips.slice();
+      let clips=soldier?reorientClips(loco,soldier.scene,charObj):[];OM.loco=clips.slice();
+      // marche, repos et course capturés (Mixamo) calés sur le corps d'Oscar : pieds au sol, foulée à la bonne vitesse
+      const hipsRest=(charObj.getObjectByName('mixamorigHips')||{position:{y:0}}).position.y,mine={};OM.v0={};
+      await Promise.all([['Idle','repos'],['Walk','marche_homme'],['Run','jogging']].map(async([nm,f])=>{
+        const o=await firstOk(['assets/animations/pnj/'+f+'.fbx','../assets/animations/pnj/'+f+'.fbx'],u=>fbx.loadAsync(u));
+        if(!(o&&o.animations&&o.animations[0]))return;const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);
+        const tr=c.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
+        if(tr){const v=tr.values,n=v.length;if(hipsRest>1){const r=hipsRest/v[1];for(let i=0;i<n;i++)v[i]*=r;}
+          OM.v0[nm]=Math.hypot(v[n-3]-v[0],v[n-1]-v[2])*.01/Math.max(c.duration,.1);}
+        if(nm!=='Idle')inPlace(c);c.name=nm;mine[nm]=c;}));
+      if(mine.Idle&&mine.Walk){clips=clips.filter(c=>!mine[c.name]);clips.push(...Object.values(mine));}
       await Promise.all(Object.entries(OSCAR_CLIPS).map(async([name,path])=>{
         const o=await firstOk(['assets/'+path,'../assets/'+path],u=>fbx.loadAsync(u));
         if(o&&o.animations&&o.animations[0]){const c=inPlace(o.animations[0]);c.name=name;clips.push(c);}}));
       const root=new THREE.Group();charObj.scale.setScalar(.01);root.add(charObj);OM.src='soldat-camouflage';
       setupOscarModel({scene:root,animations:clips});
+      if(OM.ready)await dressOscar(fbx);
     }else if(soldier&&soldier.scene){OM.src='modele-exemple';setupOscarModel({scene:soldier.scene,animations:loco});}
   }catch(e){console.warn('Modèle 3D d’Oscar indisponible, Oscar classique conservé.',e);}}
 function setupOscarModel(gl){
@@ -4275,6 +4287,29 @@ function setupOscarModel(gl){
   OM.body=[];h.g.traverse(o=>{if(o.isMesh&&!keep.has(o)&&!isIn(o,root)){OM.body.push(o);}});
   Object.assign(OM,{root,model,mixer,acts,hips0:h.hips.position.y,ready:true});applyOscarModel();
 }
+function rpPrepare(o){
+  o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
+    if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=8;if(m.specular)m.specular.setScalar(.05);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;}}}});
+  o.updateMatrixWorld(true);const head=o.getObjectByName('rp_head'),hip=o.getObjectByName('rp_hip');if(!head||!hip)return null;
+  const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
+  const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=!!(fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z);
+  const bb=new THREE.Box3().setFromObject(o);return {obj:o,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}
+// Oscar porte le corps scanné de Nathan (Renderpeople) : visage et vêtements réels ; le corps Mixamo invisible garde animations et armes
+const OSCAR_LOOK='nathan';
+async function dressOscar(fbx){
+  try{const o=await firstOk(['assets/characters/rp/'+OSCAR_LOOK+'.fbx','../assets/characters/rp/'+OSCAR_LOOK+'.fbx'],u=>fbx.loadAsync(u));if(!o)return;
+    const P=rpPrepare(o);if(!P)return;const h=oscarMesh,B=n=>OM.model.getObjectByName('mixamorig'+n);
+    const rx=h.g.rotation.x,ry=h.g.rotation.y;h.g.rotation.set(0,0,0);h.g.updateMatrixWorld(true);
+    const ph=OM.root.worldToLocal(B('Head').getWorldPosition(new THREE.Vector3())).y-OM.root.worldToLocal(B('LeftToeBase').getWorldPosition(new THREE.Vector3())).y+.04;
+    h.g.rotation.set(rx,ry,0);
+    o.scale.setScalar(ph/P.headY);o.rotation.y=-OM.root.rotation.y+(P.back?Math.PI:0);OM.root.add(o);
+    OM.model.traverse(x=>{if(x.isMesh)x.visible=false;});
+    const bones={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))bones[x.name.slice(3)]=x;});
+    OM.rp={model:o,bones,rest:P.rest};OM.rpI={bn:B,rp:OM.rp};
+    if(bones.hand_r&&bones.lowerarm_r){OM.hand=bones.hand_r;OM.fore=bones.lowerarm_r;}
+    OM.src='nathan-scanne';
+  }catch(e){console.warn('Tenue scannée d’Oscar indisponible',e);}
+}
 function isIn(o,root){for(let x=o;x;x=x.parent)if(x===root)return true;return false;}
 function applyOscarModel(){if(!OM.ready)return;const on=SET.oscarModel!=='classic';OM.root.visible=on;for(const m of OM.body)m.visible=!on;
   if(oscarMesh.guns)for(const k in oscarMesh.guns){const g=oscarMesh.guns[k];(on?OM.gunAnchor:oscarMesh.armR.wr).add(g);}}
@@ -4296,7 +4331,7 @@ function updateOscarModel(dt){
   OM.over=over;OM.lastAtk=CB.atk;
   let ow=0;for(const n in A){if(n==='Idle'||n==='Walk'||n==='Run'||n==='TPose')continue;OM.ow[n]=lerp(OM.ow[n]||0,n===over?1:0,1-Math.exp(-dt*14));A[n].setEffectiveWeight(OM.ow[n]);ow=Math.max(ow,OM.ow[n]);}
   OM.wI=lerp(OM.wI,still?1:0,k);OM.wW=lerp(OM.wW,!still&&speed<3.6?1:0,k);OM.wR=lerp(OM.wR,speed>=3.6?1:0,k);
-  const base=1-ow;if(A.Idle)A.Idle.setEffectiveWeight(OM.wI*base);if(A.Walk){A.Walk.setEffectiveWeight(OM.wW*base);A.Walk.timeScale=clamp(speed/1.45,.6,2.2);}if(A.Run){A.Run.setEffectiveWeight(OM.wR*base);A.Run.timeScale=clamp(speed/5.2,.75,1.6);}
+  const base=1-ow;if(A.Idle)A.Idle.setEffectiveWeight(OM.wI*base);if(A.Walk){A.Walk.setEffectiveWeight(OM.wW*base);A.Walk.timeScale=clamp(speed/((OM.v0&&OM.v0.Walk>.3)?OM.v0.Walk:1.45),.5,2.6);}if(A.Run){A.Run.setEffectiveWeight(OM.wR*base);A.Run.timeScale=clamp(speed/((OM.v0&&OM.v0.Run>.8)?OM.v0.Run:5.2),.6,2.2);}
   if(A.TPose)A.TPose.setEffectiveWeight(0);
   OM.mixer.update(dt);
   // copy the old skeleton's pose where no captured animation exists
@@ -4307,6 +4342,7 @@ function updateOscarModel(dt){
   if(OM.wl>.01){for(const t of OM.torso)retarget(...t,OM.wl);for(const t of OM.legs)retarget(...t,OM.wl);}
   if(OM.wa>.01)for(const t of OM.arms)retarget(...t,OM.wa);
   OM.dy=lerp(OM.dy,legsOn?oscarMesh.hips.position.y-OM.hips0:0,kk);OM.root.position.y=OM.dy;
+  if(OM.rpI){OM.root.updateMatrixWorld(true);rpDrive(OM.rpI);}
   // weapon in the right hand, barrel along the forearm
   if(OM.gunAnchor&&OM.hand){oscarMesh.g.updateMatrixWorld(true);OM.hand.getWorldPosition(_ga);OM.fore.getWorldPosition(_gb);
     _gd.subVectors(_ga,_gb);oscarMesh.g.getWorldQuaternion(_gq).invert();_gd.applyQuaternion(_gq).normalize();
@@ -4319,14 +4355,14 @@ function updateOscarModel(dt){
    animations capturées (assets/animations/pnj). Le squelette simple continue de tourner en coulisse : il donne la position,
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
-const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:nathan','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
+const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
   omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
   deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux'};
 const RH_ONCE=new Set(['deathB','deathF','kneelDown','punch','hit','hit2']),RH_WALK=/^(walkM|walkF|textWalk|oldWalk|jog|pistolWalk)$/;
 const HUMANS=[];let RFRAME=0;
-const RH={ready:false,loading:false,clips:{},base:{},pending:{},free:{},bound:new Set(),selT:0,fbx:null,SU:null,pruneT:0};
+const RH={v0:{},ready:false,loading:false,clips:{},base:{},pending:{},free:{},bound:new Set(),selT:0,fbx:null,SU:null,pruneT:0};
 const rhNorm=n=>n.replace(/^mixamorig\d+/,'mixamorig');
 function rhMax(){if(SET.people==='classic')return 0;const n=COMF.q==='low'?8:COMF.q==='medium'?12:18;const I=S&&INTERIORS[S.location];return I&&I.indoor?Math.max(n,12):n;}
 function rhRole(h){if(h.role)return h.role;const L=h.look||{};if((L.height||1)<.8)return 'enfant';return L.type==='woman'||L.long&&!L.beard?'femme':'homme';}
@@ -4338,8 +4374,8 @@ async function rhInit(){
     RH.fbx=new FBXLoader();RH.SU=SU;
     await Promise.all(Object.entries(PNJ_CLIPS).map(async([k,f])=>{const o=await firstOk([PNJ_ANIM+f+'.fbx','../'+PNJ_ANIM+f+'.fbx'],u=>RH.fbx.loadAsync(u));
       if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);
-        if(RH_WALK.test(k))inPlace(c);c.name=k;RH.clips[k]=c;}}));
-    if(OM.loco)for(const c of OM.loco)if(c.name==='Run')RH.clips.run=c;
+        if(RH_WALK.test(k)){const tr=c.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));if(tr){const v=tr.values,n=v.length;RH.v0[k]=Math.hypot(v[n-3]-v[0],v[n-1]-v[2])*.01/Math.max(c.duration,.1);}inPlace(c);}c.name=k;RH.clips[k]=c;}}));
+
     RH.ready=!!(RH.clips.idle&&(RH.clips.walkM||RH.clips.walkF));
   }catch(e){console.warn('Vrais humains indisponibles, personnages simples conservés.',e);}
 }
@@ -4391,12 +4427,12 @@ function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.c
   if(cs){if(cs.down)return A[cs.deathKind]?cs.deathKind:'idle';if(cs.surrender)return A.kneel?'kneel':'idle';if(cs.swing&&A.punch)return 'punch';if(cs.hit&&A[cs.hitKind])return cs.hitKind;
     if(cs.aim){if(cs.rifle&&A.rifleIdle)return 'rifleIdle';if(A.pistolIdle)return sp>.3&&A.pistolWalk?'pistolWalk':'pistolIdle';}}
   if(L.type==='elder'&&r.mode==='walk'){if(sp>.3&&A.oldWalk)return 'oldWalk';if(sp<=.3&&A.oldIdle&&!L.prop)return 'oldIdle';}
-  if(sp>2.2&&sp<=3.4&&A.jog)return 'jog';
+  if(sp>2.2&&A.jog)return 'jog';
   if(r.mode==='sit')return (rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
   if(r.mode==='drive')return A.drive?'drive':'sit';
   if(r.mode==='bike')return 'sit';
   if(r.mode==='talk')return L.prop==='phone'&&I.acts.phone?'phone':'talk';
-  if(sp>3.4&&I.acts.run)return 'run';
+  if(sp>3.4&&(I.acts.run||I.acts.jog))return I.acts.run?'run':'jog';
   if(sp>.3){if(L.prop==='phone'&&I.acts.textWalk)return 'textWalk';return rhRole(h)==='femme'&&I.acts.walkF?'walkF':(I.acts.walkM?'walkM':'walkF');}
   if(L.prop==='phone'&&I.acts.text)return 'text';return 'idle';}
 const _rv=new THREE.Vector3(),_rv2=new THREE.Vector3();
@@ -4416,7 +4452,7 @@ function updateRealHumans(dt){
     if(cur!==I.cur){const a=I.acts[cur];if(a&&(RH_ONCE.has(cur)||!(I.w[cur]>.05))){a.reset();a.time=RH_ONCE.has(cur)?0:Math.random()*a.getClip().duration;if(/^death/.test(cur)&&h.cs&&h.cs.downAt&&performance.now()-h.cs.downAt>2500)a.time=a.getClip().duration;}I.cur=cur;}
     for(const n in I.acts){I.w[n]=lerp(I.w[n]||0,n===cur?1:0,k);I.acts[n].setEffectiveWeight(I.w[n]);}
     const sp=(h.rs&&h.rs.speed)||0;
-    if(I.acts.jog)I.acts.jog.timeScale=clamp(sp/2.8,.7,1.3);if(I.acts.oldWalk)I.acts.oldWalk.timeScale=clamp(sp/.9,.6,1.5);if(I.acts.walkM)I.acts.walkM.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.walkF)I.acts.walkF.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.textWalk)I.acts.textWalk.timeScale=clamp(sp/1.1,.6,1.6);
+    for(const [kk,d] of [['jog',2.8],['oldWalk',.9],['walkM',1.3],['walkF',1.3],['textWalk',1.1],['pistolWalk',1.2]])if(I.acts[kk]){const v0=RH.v0[kk]>.2?RH.v0[kk]:d;I.acts[kk].timeScale=clamp(sp/v0,.5,2.4);}
     I.mixer.update(dt);
     // poses the clips do not have: cinematics (everything), weapons and umbrellas (arms)
     const cs=h.cs,busy=cs&&(cs.down||cs.surrender||cs.swing||cs.hit),full=cine||(h.g.rotation.x<-.5),arms=full||(!!h.gun&&!busy)||!!(h.umb&&h.umb.visible);

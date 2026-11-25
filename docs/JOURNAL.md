@@ -21,12 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Oscar change de tenue, pieds au sol (v1.11.0)
+- Demande de Boban : changer les vêtements d'Oscar et le rendre plus humain. Il traversait le sol et les tables, et glissait sans qu'on voie ses pieds.
+- Tenue : Boban a choisi Nathan, scanné par Renderpeople (visage réel, tenue civile). Le soldat Mixamo reste invisible dessous : il garde les animations, les armes et les cinématiques, et Nathan le suit à chaque image (`dressOscar`, `rpDrive`). Nathan est retiré des passants, pour qu'on ne croise pas de sosie d'Oscar.
+- Pieds dans le sol : la marche, le repos et la course d'Oscar venaient du soldat d'exemple de three.js, sans recalage de la hauteur du bassin. Ils sont remplacés par les animations Mixamo du jeu (repos, marche, jogging), dont la hauteur du bassin est recalée sur le corps d'Oscar. La course des passants passe aussi par le jogging recalé.
+- Glissade : la vitesse de chaque animation de marche est mesurée dans le fichier, avant de la fixer sur place. La foulée suit exactement la vitesse de déplacement, pour Oscar comme pour les passants.
+- Tables et sièges : tabourets et chaises du diner, ainsi que les chaises ajoutées sous les gens assis, sont maintenant des obstacles.
+
 ## 2026-11-25 — Claude — Personnages scannés Renderpeople (v1.10.0)
 - Boban a choisi d'utiliser quand même les 6 personnages Renderpeople, malgré la clause 4.3 (fichiers facilement téléchargeables dans un dépôt public).
 - `assets/characters/rp/` : textures réduites à 1024 px par `fbx_shrink.py`. Claudia, Carla et Eric pèsent environ 1 Mo chacun, Sophia 3,6 Mo, Nathan 2,0 Mo, Manuel 7,1 Mo (il garde son animation de danse dans le fichier).
 - Leur squelette n'est pas celui de Mixamo (`hip`, `spine_01`, `upperarm_l`…). Chaque personnage scanné suit à chaque image un squelette Mixamo invisible qui joue les animations du jeu (`rpDrive`, segment par segment). Ils marchent, s'assoient, conduisent, se battent et tombent comme les autres.
 - Ajoutés aux listes : femmes (Claudia, Carla, Sophia) et hommes (Eric, Nathan, Manuel).
 - Crédits : `CREDITS.md` et Options.
+- Vérifié sur le PC de Boban (commit fd13ff1) : les 6 personnages se chargent sans erreur. Au diner, Claudia est debout derrière le comptoir, Eric sert, Nathan et Manuel sont assis aux banquettes, au milieu des personnages Mixamo. Pièce bien éclairée.
 
 ## 2026-11-25 — Claude — Cheveux visibles sur les personnages Mixamo (v1.9.2)
 - Vérifié sur le PC de Boban (commit 0696699) : bar et nuits nettement plus clairs, aucun message d'erreur.
