@@ -172,6 +172,8 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
              ok(a0===0&&a1>0,'un coup de feu en ville fait fuir les passants ('+a1+' effrayés)');}
             {o.startLevel(null,'toronto');o.S.rep=40;const w=o.wary('lina');o.openDialogue('lina');const txt=document.getElementById('dText').textContent;o.closeUI();
              ok(w==='rep'&&/coups de feu/.test(txt),'réputation : les gens méfiants demandent à être rassurés avant de parler');o.S.rep=0;}
+            {const c={t:'Une soupe aux pois.',money:6},b={t:'Voilà 20 $.',money:20};o.startLevel(null,'toronto');o.S.weather.snow=0;o.S.weather.windStr=0;o.S.clock=13*60;const pT=o.price(c).p;o.startLevel(null,'nl');o.S.weather.snow=0;o.S.weather.windStr=0;o.S.clock=13*60;const pN=o.price(c).p,pB=o.price(b).p;
+             o.S.money=0;const m1=o.price(c).m,m2=o.price(b).m;ok(pN>pT&&pB===20&&m1==='card'&&m2===null,'économie : prix plus élevés à Terre-Neuve ('+pT+' → '+pN+' $), pot-de-vin fixe en espèces, carte acceptée en commerce');}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');

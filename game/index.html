@@ -105,6 +105,7 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
 .chap{display:grid;gap:8px;margin:12px 0;text-align:left}.chap button{display:flex;justify-content:space-between;gap:12px;text-align:left;font:500 16px Barlow}.chap button[disabled]{opacity:.4;cursor:default}
 .troph{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;text-align:left;margin:12px 0}.troph div{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.troph div.got{border-color:#c9a227}.troph div:not(.got){opacity:.55}
 .padfocus{outline:3px solid var(--amber)!important;outline-offset:2px}
+body.uiOpen #toast{bottom:auto;top:14%}
 body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-size:clamp(18px,2vw,24px)}body.subsL #dText{font-size:21px}body.subsL #toast{font-size:18px}body.subsL .dChoices button{font-size:19px}
 #cineSub{margin:0;max-width:900px;text-align:center;font-size:clamp(16px,1.9vw,21px);line-height:1.4;color:#fff;text-shadow:0 2px 6px #000}
 #cineSub b{display:block;font:700 clamp(14px,1.5vw,17px) "Barlow Condensed";color:var(--amber)}
@@ -313,7 +314,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.18.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.19.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -637,7 +638,7 @@ function createState(levelId){
   if(L.start){const I=INTERIORS[L.start.loc];loc=L.start.loc;sx=I.ox+L.start.x;sz=I.oz+L.start.z;}
   const pr=L.index>1?loadProgress():{};
   return {
-    v:GAME_VERSION, level:levelId, clock:L.startMinute, startClock:L.startMinute, rep:Math.round((pr.rep||0)*.6),
+    v:GAME_VERSION, level:levelId, clock:L.startMinute, startClock:L.startMinute, rep:Math.round((pr.rep||0)*.6), card:pr.card??500, cardTrace:0,
     player:{x:sx,z:sz,y:loc==='outside'?.15:0,vx:0,vz:0,vy:0,heading:Math.PI,anim:0,health:100,heat:100,stamina:100,lives:3,bonusLives:pr.bonusLives||0,bonusEarned:pr.bonusEarned||0,weapon:'fists',weapons:[],ammo:{pistol:{mag:0,res:0},rifle:{mag:0,res:0}}},
     checkpoint:{x:sx,z:sz,loc}, money:pr.money??START_MONEY, clues:[], tasks:{}, location:loc,
     camYaw:0, flags:{...(pr.gear||{})}, weather:{period:-1,kind:'clear',rain:0,cloud:.1,temp:12,target:{rain:0,cloud:.1}},
@@ -2037,8 +2038,8 @@ function syncStory(dt,t){
 }
 /* --- dialogue, reading, notebook UI --- */
 let dlgState=null,uiPrev='play';
-function openUI(){if(mode==='play'){mode='ui';keys.clear();if(document.pointerLockElement)document.exitPointerLock();}}
-function closeUI(){show('dialog',false);show('notebook',false);dlgState=null;if(mode==='ui'){mode='play';lockPointer();}}
+function openUI(){document.body.classList.add('uiOpen');if(mode==='play'){mode='ui';keys.clear();if(document.pointerLockElement)document.exitPointerLock();}}
+function closeUI(){document.body.classList.remove('uiOpen');show('dialog',false);show('notebook',false);dlgState=null;if(mode==='ui'){mode='play';lockPointer();}}
 // Réputation et méfiance (tout le jeu) : coups de feu et explosions dans des lieux civils rendent Oscar célèbre — la nouvelle le suit
 // d'une province à l'autre (60 % au niveau suivant). Les gens méfiants (réputation, tenue militaire, arme à la main) veulent être
 // rassurés, payés ou menacés avant de parler ; menacer fait encore monter la réputation.
@@ -2058,20 +2059,28 @@ function openDialogue(id){const D=DIALOGUES[id];const why=waryReason(id);
       {t:'Laisse tomber.',end:true}]};
     dlgState={id,node:'__mef'};}
   else dlgState={id,node:D.start(S)};openUI();renderDialogue();}
-function meets(c){const n=c.need||{};if(c.money&&S.money<c.money)return false;if(n.flag&&!S.flags[n.flag])return false;if(n.task){const [k,v]=n.task;if((S.tasks[k]||'none')!==v)return false;}if(n.noTask&&S.tasks[n.noTask])return false;return true;}
+// Économie (tout le jeu) : les prix des commerces dépendent de la province (isolement, transport) et des événements (tempête, verglas, nuit).
+// Les montants négociés (pots-de-vin, tarifs annoncés dans la réplique) restent fixes et se paient en espèces.
+// Les commerces acceptent la carte quand il manque des espèces, mais chaque paiement par carte laisse une trace qu'Omer peut suivre.
+const PRICE_IDX={toronto:1,bc:1.1,nl:1.25,ab:.95,ns:1.1,mb:1.08,mtl:1};
+function isMarket(c){return !!c.money&&!/\$|dollar/i.test(c.t);}
+function priceOf(c){if(!c.money)return 0;if(!isMarket(c))return c.money;const W=S.weather||{},h=dayInfo(S.clock).hour;
+  let k=PRICE_IDX[S.level]||1;if((W.snow||0)>.5||(W.windStr||0)>.7||/storm|blizzard|ice|verglas/i.test(W.kind||''))k*=1.2;if(h>=22||h<6)k*=1.1;return Math.max(1,Math.round(c.money*k));}
+function payMode(c){const pz=priceOf(c);if(!pz)return null;if(S.money>=pz)return 'cash';if(isMarket(c)&&(S.card??0)>=pz)return 'card';return null;}
+function meets(c){const n=c.need||{};if(c.money&&!payMode(c))return false;if(n.flag&&!S.flags[n.flag])return false;if(n.task){const [k,v]=n.task;if((S.tasks[k]||'none')!==v)return false;}if(n.noTask&&S.tasks[n.noTask])return false;return true;}
 function renderDialogue(){
   const D=DIALOGUES[dlgState.id],N=D.nodes[dlgState.node];
   $('dWho').textContent=D.who;$('dText').textContent=N.text;
   const vis=N.choices.filter(c=>!(c.need&&(c.need.task||c.need.noTask||c.need.flag)&&!meets({need:c.need})));
   dlgState.vis=vis;
-  $('dChoices').innerHTML=vis.map((c,i)=>{const ok=meets(c);const cost=[c.min?c.min+' min':'',c.money?'−'+c.money+' $':''].filter(Boolean).join(' · ');
+  $('dChoices').innerHTML=vis.map((c,i)=>{const ok=meets(c);const pm=payMode(c),pz=priceOf(c);const cost=[c.min?c.min+' min':'',c.money?'−'+pz+' $'+(pm==='card'?' (carte)':isMarket(c)&&pz!==c.money?(pz>c.money?' (prix local)':''):''):''].filter(Boolean).join(' · ');
     return `<button data-i="${i}" ${ok?'':'disabled'}><kbd>${i+1}</kbd><span>${c.t}</span>${cost?`<em>${cost}${!ok&&c.money?' (pas assez d’argent)':''}</em>`:''}</button>`}).join('');
   $('dChoices').querySelectorAll('button').forEach(b=>b.onclick=()=>choose(+b.dataset.i));
   show('dialog',true);
 }
 function choose(i){
   const c=dlgState&&dlgState.vis[i];if(!c||!meets(c))return;
-  addMinutes(c.min);if(c.money)S.money-=c.money;
+  addMinutes(c.min);if(c.money){const pm=payMode(c),pz=priceOf(c);if(pm==='card'){S.card-=pz;S.cardTrace=(S.cardTrace||0)+1;toast('Paiement par carte : '+pz+' $. Une trace bancaire… les hommes d’Omer pourraient la suivre.');}else S.money-=pz;}
   const fx=c.fx||{};
   if(fx.clue&&!S.clues.includes(fx.clue)){S.clues.push(fx.clue);toast('Indice ajouté au carnet : '+CLUES[fx.clue].title);}
   if(fx.flag)[].concat(fx.flag).forEach(f=>S.flags[f]=true);
@@ -2328,7 +2337,7 @@ function stepCombat(dt){
     const sees=d<range&&ang<fov&&losClear(e.x,e.z,p.x,p.z);
     if(e.gate&&S.flags.gateOpen&&!P2.alarm){e.meter=0;}
     else if(sees&&e.state!=='combat'){let rate=(55*(1-d/range)+18)*(CB.crouch?.45:1)*(night?.7:1);if(disguised&&d>3.5)rate*=.22;if(d<2.5)rate*=3;if(inWarehouse(p.x,p.z)&&e.id[0]==='b')rate*=1.6;
-      e.meter=Math.min(100,e.meter+rate*dt*DIFFK().det);e.lx=p.x;e.lz=p.z;if(e.meter>=40&&e.state==='patrol')e.state='investigate';
+      e.meter=Math.min(100,e.meter+rate*dt*DIFFK().det*(1+.12*(S.cardTrace||0)));e.lx=p.x;e.lz=p.z;if(e.meter>=40&&e.state==='patrol')e.state='investigate';
       if(e.meter>=100){e.state='combat';if(e.type==='boss'||e.id[0]==='b'){if(!S.flags.bossMet)triggerBossScene(true);}else alarm('Un garde t’a repéré.');}}
     else if(!sees&&e.state!=='combat'){e.meter=Math.max(0,e.meter-12*dt);}
     if(e.state==='combat'&&sees){e.lx=p.x;e.lz=p.z;}
@@ -2441,7 +2450,7 @@ function levelComplete(){
   const L=LEVELS[S.level];$('winKicker').textContent=L.win.kicker;$('winTitle').textContent=L.win.title;$('winText').textContent=L.win.text;$('winNext').textContent=L.win.next;show('bNext',!!L.next);
   $('winStats').innerHTML=`<div><b>${Math.floor(used/60)} h ${String(Math.floor(used%60)).padStart(2,'0')}</b><span>temps utilisé sur ${L.timeLimitMin/60} h</span></div><div><b>${S.clues.length}</b><span>indices trouvés</span></div><div><b>${p.bonusLives}</b><span>vies bonus en réserve</span></div><div><b>${S.money} $</b><span>argent restant</span></div>`;
   const pr=loadProgress();const done=[...new Set([...(pr.levelsDone||[]),S.level])];const gear={...(pr.gear||{})};for(const g of ['parka','gloves','tuque','boots','crampons'])if(S.flags[g])gear[g]=true;
-  try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:done,bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money,gear,rep:S.rep||0}))}catch(e){}
+  try{localStorage.setItem('oscar.progress',JSON.stringify({levelsDone:done,bonusLives:p.bonusLives,bonusEarned:p.bonusEarned,money:S.money,gear,rep:S.rep||0,card:S.card??500}))}catch(e){}
   trophiesOnWin();S.flags.levelDone=true;store.save(S);show('win',true);
 }
 
@@ -4085,7 +4094,7 @@ function updateHUD(){
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
   const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
   $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
-  $('hMoney').textContent=S.money+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
+  $('hMoney').textContent=S.money+' $ · carte '+(S.card??500)+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
   $('hLvlK').textContent='Niveau '+L.index+' · '+L.region+' · '+L.season;$('hLvlN').textContent=L.name;
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
@@ -5064,7 +5073,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={rep:()=>S.rep||0,wary:(id)=>waryReason(id),crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={price:(c)=>({p:priceOf(c),m:payMode(c)}),rep:()=>S.rep||0,wary:(id)=>waryReason(id),crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

@@ -21,6 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Économie : prix locaux, espèces et carte (v1.19.0)
+- Bloc 4 de la liste de Boban, appliqué à tous les achats du jeu (dialogues).
+- Prix des commerces (`priceOf`), quand le montant n'est pas annoncé dans la réplique :
+  - selon la province : Toronto 1, Colombie-Britannique 1,1, Terre-Neuve 1,25 (île isolée), Alberta 0,95, Nouvelle-Écosse 1,1, Manitoba 1,08, Montréal 1 ;
+  - +20 % pendant les tempêtes, la neige forte, le verglas ou le grand vent (routes coupées) ;
+  - +10 % la nuit.
+  L'étiquette indique « prix local » quand le prix monte.
+- Montants négociés (pots-de-vin, tarifs annoncés comme « Je te paie 100 $ ») : fixes, en espèces seulement.
+- Carte bancaire (`S.card`) : 500 $ au départ, conservés d'un niveau à l'autre. Les commerces l'acceptent quand les espèces manquent. Chaque paiement par carte laisse une trace : dans cette province, les hommes d'Omer repèrent Oscar 12 % plus vite par trace. Un message le rappelle.
+- Panneau : « Argent : 240 $ · carte 500 $ ».
+- Reste : objets volés reconnaissables (montres, téléphones des hommes d'Omer, qu'on ne revend pas sans risque).
+- Vérifié sur le PC de Boban (commit 1a678cc) : au diner, avec une mauvaise réputation, Lina répond « Vous êtes le type des coups de feu ? On en parle partout. » et propose les quatre choix. Un message passait par-dessus les choix : quand un dialogue ou le carnet est ouvert, les messages s'affichent maintenant en haut de l'écran (dans tout le jeu).
+- Tests : 159/159.
+
 ## 2026-11-25 — Claude — Réputation, méfiance, personne ne disparaît sous les yeux (v1.18.0)
 - Vérifié sur le PC de Boban (commit ac0eded) : après un coup de feu à Toronto, 3 passants proches s'enfuient et le message « Les coups de feu font fuir les passants » s'affiche. Aucune erreur.
 - Suite du bloc 3 (vie des passants), pour tout le jeu :
