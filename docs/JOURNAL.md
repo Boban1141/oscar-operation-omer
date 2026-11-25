@@ -21,6 +21,15 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-24 — Claude — Villes ouvertes des provinces, complètes comme Toronto (v1.7.0)
+- Demande de Boban : remettre les villes que Kimi voulait créer, mais complètes comme Toronto.
+- Un seul générateur pour toutes les villes : `generateCity(seed, CITY_PROFILES[id])`. Chaque profil fixe les quartiers, les commerces, les couleurs des maisons et des toits, la hauteur des tours, les arbres, l'hiver, l'eau, le tram et le monument.
+- Six villes : Vancouver (Harbour Centre, Burrard Inlet), St. John's (maisons « Jellybean », Cabot Tower), Calgary (Calgary Tower, neige, sans eau), Halifax (horloge de la Citadelle), Winnipeg (Palais législatif, rivière gelée), Montréal (Stade olympique, Saint-Laurent).
+- Chaque ville a des tours, des maisons, des commerces, des arbres (conifères à Vancouver), des lampadaires, des bancs, des passants et des voitures. En hiver, la pelouse et les toits sont enneigés. La mini-carte montre les noms et le point de retour.
+- Dans les niveaux 2 à 7, une porte « Explorer la ville » se trouve près du point de départ, et « Retour » ramène à l'enquête. Toronto reste intacte : le titre, l'intro et le niveau 1 la reconstruisent (`ensureCity`).
+- Changer de ville libère l'ancien monde (géométries, façades, passants). L'écorce et les bancs réels sont gardés en mémoire et réappliqués.
+- Tests : 143/143 (nouveau : les 6 villes sont complètes, l'aller-retour fonctionne, Toronto est intacte au retour).
+
 ## 2026-11-24 — Kimi (contribution) + Claude (intégration) — v1.6.0
 - Apport de Kimi (fichier `game/index.html` transmis par Boban, sans journal ni commit) : passants plus vivants (assis sur les bancs, groupes qui discutent, téléphone, regards), oiseaux, chiens, avions, vie dans les intérieurs (clients), pluie plus réaliste (éclaboussures, asphalte mouillé, voile de pluie à l'écran), voitures détaillées (jantes, feux de freinage), visages plus humains (grain de peau, rousseur, joues, nez asymétrique, silhouettes féminines), post-traitement (halo, vignettage, grain, aberration chromatique), HUD plus compact.
 - Corrigé par Claude à la demande de Boban (version de Kimi conservée) :

@@ -3,7 +3,7 @@
 ## État actuel (v1.6.0)
 - Vie (Kimi) : `initBirds/updateBirds`, `initDogs/updateDogs`, `initPlanes/updatePlanes` (lancés par `startLevel`), `initInteriorLife/updateInteriorLife` (à l'entrée d'un intérieur) ; comportements des passants (`behavior` : walk, phone_walk, look_around, group, sit).
 - Rendu (Kimi) : `initComposer()` (EffectComposer : RenderPass, UnrealBloomPass, vignettage, grain, aberration) ; utilisé seulement si `SET.postfx` et qualité `high` ; `updateRainOverlay()` (canvas `#rainOverlay`).
-- Une seule ville extérieure : Toronto (`generateCity`). Les niveaux 2 à 7 se jouent dans leurs lieux (`INTERIORS`).
+- Ville extérieure : `generateCity(seed, profil)` avec `CITY_PROFILES` (toronto, bc, nl, ab, ns, mb, mtl). `ensureCity(id)` vide `world`, les passants et les façades, puis reconstruit la ville demandée. Toronto est gardée dans `TORONTO_CITY`. Les niveaux 2 à 7 se jouent dans leurs lieux (`INTERIORS`) ; `cityZones()` relie chaque point de départ à sa ville.
 
 ## État v1.4.1
 - Section 8 : Oscar = `assets/characters/candidat5_camouflage.fbx` (FBXLoader) + clips `OSCAR_CLIPS` ; `reorientClips()` adapte les clips d'un squelette tourné ; `inPlace()` bloque le déplacement des hanches ; superpositions `OM.over` (punch, kick, guard, aim, fire, reload, hit) ; `OM.gunAnchor` suit la main droite. Chemins essayés : `assets/...` (GitHub Pages) puis `../assets/...` (dépôt).
@@ -72,7 +72,7 @@
 - `defs[].hp` remplace les points de vie du type. Progression : `oscar.progress.gear` conserve l'équipement.
 
 ## Principes à respecter
-1. **Déterminisme** : la ville vient de `generateCity(seed)`. Même graine → même ville chez tous les joueurs.
+1. **Déterminisme** : la ville vient de `generateCity(seed, profil)`. Même graine → même ville chez tous les joueurs.
 2. **Commandes** : les entrées produisent des commandes (`cmd`) ; la simulation les applique. C'est le format qu'un serveur recevra.
 3. **Séparation SIM / VIEW** : la simulation doit pouvoir tourner sans rendu (sur un serveur Node.js).
 4. **Versionnage** : `GAME_VERSION` et la clé de sauvegarde changent quand le format de l'état change.

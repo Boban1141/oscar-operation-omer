@@ -182,6 +182,12 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Corrections : plantage des niveaux, villes de province cassées retirées, Toronto rétabli, météo du HUD, performances
 - [ ] Vérification visuelle sur le PC de Boban après envoi
 
+## Bloc 17 — Villes ouvertes des provinces `[~]` (v1.7.0)
+- [x] Générateur commun avec un profil par province (quartiers, commerces, couleurs, arbres, hiver, eau, monument)
+- [x] Vancouver, St. John's, Calgary, Halifax, Winnipeg, Montréal : tours, maisons, commerces, arbres, bancs, passants, voitures
+- [x] Porte « Explorer la ville » / « Retour » dans chaque niveau 2 à 7 ; Toronto intacte
+- [ ] Vérification visuelle sur le PC de Boban après envoi
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)

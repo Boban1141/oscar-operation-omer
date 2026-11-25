@@ -307,7 +307,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.6.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.7.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -326,7 +326,7 @@ const LEVELS = {
     startMinute: 6*60+10, timeLimitMin: 72*60,
     temp:{min:4, max:11}, coldFactor:0.45,
     weather:{clear:.08, cloudy:.22, rain:.7},
-    density:{peds:0, cars:0, taxis:0, bikes:0},
+    density:{peds:25, cars:12, taxis:2, bikes:4},
     start:{loc:'vanport',x:0,z:46},
     next:'nl',
     ready:{kicker:'Vancouver · jour 1 · 6 h 10',title:'Pluie, brouillard, et le conteneur d’Omer.',text:'Le froid humide de la côte use les forces : un imperméable et un café chaud peuvent te sauver. Trouve le conteneur, puis le camp du Pasteur.'},
@@ -339,7 +339,7 @@ const LEVELS = {
     temp:{min:-1, max:6}, coldFactor:0.6,
     weather:{clear:.05, cloudy:.4, rain:.55},
     wind:{base:.45, gust:.5, dir:-2.4},
-    density:{peds:0, cars:0, taxis:0, bikes:0},
+    density:{peds:15, cars:8, taxis:1, bikes:0},
     start:{loc:'harbour',x:0,z:34},
     next:'ab',
     ready:{kicker:'St. John’s · jour 1 · 18 h 45',title:'Le vent hurle sur le port.',text:'Les rafales te ralentissent, te poussent et te glacent ; elles gênent aussi la visée et l’ouïe des gardes. Le Marie-Galante appareille à l’aube : trouve-le et monte à bord.'},
@@ -352,7 +352,7 @@ const LEVELS = {
     temp:{min:-26, max:-17}, coldFactor:0.32,
     weather:{clear:.45, cloudy:.25, snow:.3},
     wind:{base:.12, gust:.3, dir:2.2},
-    density:{peds:0, cars:0, taxis:0, bikes:0},
+    density:{peds:12, cars:10, taxis:0, bikes:0},
     start:{loc:'yard',x:0,z:39},
     next:'ns',
     ready:{kicker:'Calgary · jour 1 · 6 h 45 · −22 °C',title:'Le froid est l’ennemi n°1.',text:'Sans équipement, ton corps se refroidit en quelques minutes. Trouve parka, mitaines, tuque et bottes ; réchauffe-toi près des feux. Dans la neige, tes traces de pas peuvent te trahir.'},
@@ -365,7 +365,7 @@ const LEVELS = {
     temp:{min:-5, max:0}, coldFactor:0.4,
     weather:{clear:.08, cloudy:.3, rain:.62},
     wind:{base:.3, gust:.45, dir:-1.8},
-    density:{peds:0, cars:0, taxis:0, bikes:0},
+    density:{peds:20, cars:10, taxis:2, bikes:3},
     start:{loc:'halifax',x:0,z:-4},
     next:'mb',
     ready:{kicker:'Halifax · jour 1 · 21 h · pluie verglaçante',title:'Le sol est une patinoire.',text:'Sur le verglas, tu glisses et tu peux tomber si tu cours : avance doucement, ou trouve des crampons. Le Notaire d’Omer travaille tard. Ses dossiers mènent à Omer.'},
@@ -379,7 +379,7 @@ const LEVELS = {
     temp:{min:-42, max:-33}, coldFactor:0.3,
     weather:{clear:.15, cloudy:.25, snow:.6},
     wind:{base:.5, gust:.45, dir:1.4},
-    density:{peds:0, cars:0, taxis:0, bikes:0},
+    density:{peds:6, cars:6, taxis:1, bikes:0},
     start:{loc:'winnipeg',x:4,z:8},
     next:'mtl',
     ready:{kicker:'Winnipeg · jour 1 · 16 h 15 · −38 °C',title:'La poudrerie efface tout.',text:'À −40 °C, même bien équipé, le froid te tue en quelques minutes : passe d’un abri à l’autre. Dans les voiles blancs, personne ne voit à dix mètres, ni toi ni les gardes. Viktor s’envole dans 36 heures.'},
@@ -393,7 +393,7 @@ const LEVELS = {
     temp:{min:-9, max:-4}, coldFactor:0.35,
     weather:{clear:.02, cloudy:.18, rain:.8},
     wind:{base:.3, gust:.3, dir:2.2},
-    density:{peds:0, cars:0, taxis:0, bikes:0},
+    density:{peds:24, cars:14, taxis:2, bikes:0},
     start:{loc:'westmount',x:-50,z:8},
     next:null,
     ready:{kicker:'Montréal · vendredi · 22 h 30 · tempête de verglas',title:'Ils sont sous ses pieds.',text:'À l’aube, Omer quitte le pays avec Eva et Cédric : tu as jusqu’à 7 h 30. Le verglas fait tomber les branches et les fils électriques, toute la ville est dans le noir. Seule la maison d’Omer brille encore.'},
@@ -520,27 +520,64 @@ const bus={h:{},on(e,f){(this.h[e]??=[]).push(f)},emit(e,p){(this.h[e]||[]).forE
 const store={load(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));return s&&String(s.v).split('.')[0]===GAME_VERSION.split('.')[0]?s:null}catch(e){return null}},save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}},clear(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}};
 
 /* ---------------- City generation (pure data, deterministic) ---------------- */
+/* --- Profils des villes ouvertes (idée de Kimi : une ville par province), sur le même plan que Toronto ---
+   i = colonne (ouest→est), j = rangée (nord→sud, l'eau est au sud). Types : residential, commercial, park, tower, landmark. */
+const CITY_PROFILES={
+  toronto:{id:'toronto',name:'Toronto',blocks:BLOCK_TYPES,houseColors:HOUSE_COLORS,roofColors:ROOF_COLORS,shops:SHOP_NAMES,awnings:AWNINGS,towerScale:1,towerStyles:['glass','teal','brick','concrete','concrete'],shopStyles:['brick','concrete','brick'],
+    trees:'autumn',winter:false,water:{color:'#1d4a66'},trams:true,landmark:'cn',labels:{street:'King St',water:'Lac Ontario',landmark:'Tour CN'}},
+  bc:{id:'bc',name:'Vancouver',blocks:{'0,0':'park','0,1':'park','1,0':'residential','0,2':'residential','1,1':'commercial','1,2':'commercial','2,3':'landmark','0,3':'residential'},
+    houseColors:['#c9b79c','#7d8e7a','#b8a07a','#e2d8c3','#5f6e73','#9c7a5c'],roofColors:['#3b3b3f','#2f3437','#4a3b33'],
+    shops:['Gastown Espresso','Sushi Robson','Bubble Tea','Poutine & Co','Friperie Gastown','Pho Main St','Surf Shop','Pharmacie','Dépanneur 24h','Fish & Chips','Librairie du port','Ramen Denman'],awnings:AWNINGS,
+    towerScale:1.05,towerStyles:['glass','teal','glass','teal','concrete'],shopStyles:['brick','concrete','brick'],trees:'green',winter:false,water:{color:'#1a3a4a'},trams:false,landmark:'harbour',
+    labels:{street:'Water St',water:'Baie Burrard',landmark:'Harbour Centre'}},
+  nl:{id:'nl',name:'St. John’s',blocks:{'0,0':'park','1,0':'residential','2,0':'residential','3,0':'tower','0,1':'residential','1,1':'residential','2,1':'residential','3,1':'residential','0,2':'commercial','1,2':'commercial','2,2':'commercial','3,3':'landmark'},
+    houseColors:['#e8b923','#c0392b','#2e86c1','#27ae60','#8e44ad','#e67e22','#16a085','#d35400','#f1c40f'],roofColors:['#2f3437','#3b3b3f'],
+    shops:['The Ship Pub','Fish & Brewis','Coffee Matters','Rock Shop','Dépanneur','Pharmacie','Fudge Shop','Boulangerie','Chip Truck','Magasin de pêche'],awnings:AWNINGS,
+    towerScale:.32,towerStyles:['concrete','brick','concrete'],shopStyles:['brick','concrete'],trees:'autumn',winter:false,water:{color:'#1d3557'},trams:false,landmark:'cabot',
+    labels:{street:'Water St',water:'Port de St. John’s',landmark:'Cabot Tower'}},
+  ab:{id:'ab',name:'Calgary',blocks:{'0,0':'residential','0,1':'residential','0,2':'residential','0,3':'park','1,0':'residential','1,1':'commercial','1,2':'commercial','2,2':'landmark'},
+    houseColors:['#c9b79c','#8e9aa6','#a88a6a','#d4c4a8','#6f7f63'],roofColors:['#3b3b3f','#4a3b33'],
+    shops:['Western Wear','Steakhouse','Café Double','Ski Shop','Pharmacie','Bottes & Chapeaux','Ramen Calgary','Dépanneur','Quincaillerie','Saloon'],awnings:AWNINGS,
+    towerScale:1.2,towerStyles:['glass','teal','glass','concrete'],shopStyles:['brick','concrete'],trees:'conifer',winter:true,water:null,trams:false,landmark:'calgary',
+    labels:{street:'Stephen Ave',water:'',landmark:'Calgary Tower'}},
+  ns:{id:'ns',name:'Halifax',blocks:{'0,0':'residential','1,0':'landmark','0,1':'residential','1,1':'commercial','2,1':'commercial','0,2':'park','1,2':'commercial','0,3':'residential','2,0':'residential'},
+    houseColors:['#b5654a','#8e9aa6','#e2d8c3','#5f6e73','#c9b79c','#7a3b2e'],roofColors:['#2f3437','#3b3b3f'],
+    shops:['Lobster Shack','Donair','Pub irlandais','Café du port','Librairie','Pharmacie','Dépanneur','Boutique marine','Chowder House','Pâtisserie'],awnings:AWNINGS,
+    towerScale:.55,towerStyles:['brick','concrete','glass'],shopStyles:['brick','brick','concrete'],trees:'dull',winter:true,water:{color:'#1a3a52'},trams:false,landmark:'clock',
+    labels:{street:'Barrington St',water:'Port d’Halifax',landmark:'Horloge de la Citadelle'}},
+  mb:{id:'mb',name:'Winnipeg',blocks:{'0,0':'residential','0,1':'residential','1,0':'residential','0,2':'park','1,1':'commercial','2,1':'commercial','1,2':'landmark','2,2':'commercial','0,3':'residential'},
+    houseColors:['#b5654a','#8e9aa6','#d4c4a8','#a88a6a','#7a3b2e'],roofColors:['#2f3437','#3b3b3f'],
+    shops:['Perogies Baba','Café de la Fourche','Fourrures du Nord','Quincaillerie','Pharmacie','Dépanneur','Bar sportif','Bannock House','Bottes d’hiver','Friperie'],awnings:AWNINGS,
+    towerScale:.5,towerStyles:['brick','concrete','brick'],shopStyles:['brick','brick'],trees:'conifer',winter:true,water:{color:'#d6e2ea',frozen:true},trams:false,landmark:'dome',
+    labels:{street:'Portage Ave',water:'Rivière Rouge (gelée)',landmark:'Palais législatif'}},
+  mtl:{id:'mtl',name:'Montréal',blocks:{'0,0':'residential','0,1':'residential','1,0':'residential','1,1':'commercial','2,1':'commercial','0,2':'park','1,2':'commercial','3,0':'landmark','0,3':'residential'},
+    houseColors:['#8a8478','#7d776c','#9a9286','#6e6458','#b5654a'],roofColors:['#2a2d33','#3b3b3f'],
+    shops:['Bagels du Mile-End','Smoked Meat','Dépanneur','Pharmacie','Poutinerie','Friperie','Boulangerie','Librairie','Café','Fromagerie','Brasserie'],awnings:AWNINGS,
+    towerScale:.9,towerStyles:['glass','concrete','brick','glass'],shopStyles:['brick','concrete','brick'],trees:'conifer',winter:true,water:{color:'#24384a'},trams:false,landmark:'stadium',
+    labels:{street:'Rue Sainte-Catherine',water:'Fleuve Saint-Laurent',landmark:'Tour olympique'}},
+};
+const CITY_SPAWN={x:8.5,z:11.5},CITY_RETURN={x:8.5,z:8.5};
 function sidePos(cx,cz,f,p,off){
   if(f==='S')return{x:cx+p,z:cz+off,a:0};
   if(f==='N')return{x:cx+p,z:cz-off,a:Math.PI};
   if(f==='E')return{x:cx+off,z:cz+p,a:Math.PI/2};
   return{x:cx-off,z:cz+p,a:-Math.PI/2};
 }
-function generateCity(seed){
-  const r=mulberry32(seed);
-  const C={blocks:[],towers:[],houses:[],shops:[],trees:[],lamps:[],benches:[],tables:[],colliders:[],zones:[],idlers:[],cn:null,restaurant:null,oscarHouse:null};
+function generateCity(seed,prof=CITY_PROFILES.toronto){
+  const r=mulberry32(seed),TO=prof.id==='toronto';
+  const C={id:prof.id,prof,blocks:[],towers:[],houses:[],shops:[],trees:[],lamps:[],benches:[],tables:[],colliders:[],zones:[],idlers:[],cn:null,restaurant:null,oscarHouse:null};
   const col=(x,z,w,d)=>C.colliders.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});
   let shopIdx=0;
   CENTERS.forEach((cx,i)=>CENTERS.forEach((cz,j)=>{
-    const type=BLOCK_TYPES[i+','+j]||'tower';
+    let type=prof.blocks[i+','+j]||'tower';if(type==='landmark'&&TO)type='cntower';
     C.blocks.push({i,j,cx,cz,type});
     for(const [sx,sz] of [[-1,-1],[1,-1],[1,1],[-1,1],[0,-1],[1,0],[0,1],[-1,0]]) C.lamps.push({x:cx+sx*29.6,z:cz+sz*29.6,a:Math.atan2(sx,sz)});
     if(type==='tower'){
-      const hBase=26+125*Math.exp(-Math.hypot(cx-60,cz-40)/115);
-      if(r()<.25){const w=32+r()*10,d=32+r()*10;C.towers.push({x:cx,z:cz,w,d,h:Math.min(175,hBase*(.9+r()*.6)),style:pick(r,['glass','teal','glass'])});col(cx,cz,w,d);}
+      const hBase=(26+125*Math.exp(-Math.hypot(cx-60,cz-40)/115))*prof.towerScale;
+      if(r()<.25){const w=32+r()*10,d=32+r()*10;C.towers.push({x:cx,z:cz,w,d,h:Math.max(12,Math.min(175,hBase*(.9+r()*.6))),style:pick(r,prof.towerStyles.slice(0,3))});col(cx,cz,w,d);}
       else for(const qx of [-1,1])for(const qz of [-1,1]){
         const w=13+r()*10,d=13+r()*10,x=cx+qx*(LOT-w/2-1.5),z=cz+qz*(LOT-d/2-1.5);
-        C.towers.push({x,z,w,d,h:Math.min(170,Math.max(14,hBase*(.35+r()*.9))),style:pick(r,['glass','teal','brick','concrete','concrete'])});col(x,z,w,d);
+        C.towers.push({x,z,w,d,h:Math.min(170,Math.max(TO?14:9,hBase*(.35+r()*.9))),style:pick(r,prof.towerStyles)});col(x,z,w,d);
       }
     } else if(type==='residential'||type==='commercial'){
       const com=type==='commercial';
@@ -548,8 +585,8 @@ function generateCity(seed){
         const side=s.f==='E'||s.f==='W';
         if(com){
           const {x,z,a}=sidePos(cx,cz,s.f,p,19.5);
-          const lina=i===1&&j===1&&s.f==='S'&&p===-6;
-          const sh={x,z,a,w:11.4,d:14,h:lina?7.6:7+r()*5,style:lina?'brick':pick(r,['brick','concrete','brick']),name:lina?'Lina’s Diner':SHOP_NAMES[shopIdx++%SHOP_NAMES.length],awning:lina?'#b5121b':pick(r,AWNINGS),lina};
+          const lina=TO&&i===1&&j===1&&s.f==='S'&&p===-6;
+          const sh={x,z,a,w:11.4,d:14,h:lina?7.6:7+r()*5,style:lina?'brick':pick(r,prof.shopStyles),name:lina?'Lina’s Diner':prof.shops[shopIdx++%prof.shops.length],awning:lina?'#b5121b':pick(r,prof.awnings),lina};
           C.shops.push(sh);col(x,z,side?sh.d:sh.w,side?sh.w:sh.d);
           if(lina){C.restaurant=sh;
             const dz=z+sh.d/2;
@@ -559,8 +596,8 @@ function generateCity(seed){
           }
         } else {
           const {x,z,a}=sidePos(cx,cz,s.f,p,20.5);
-          const oscar=i===0&&j===0&&s.f==='S'&&p===6;
-          const h={x,z,a,w:9,d:8,h:5.2+r()*2.2,color:oscar?'#5b6f82':pick(r,HOUSE_COLORS),roof:pick(r,ROOF_COLORS),oscar};
+          const oscar=TO&&i===0&&j===0&&s.f==='S'&&p===6;
+          const h={x,z,a,w:9,d:8,h:5.2+r()*2.2,color:oscar?'#5b6f82':pick(r,prof.houseColors),roof:pick(r,prof.roofColors),oscar};
           C.houses.push(h);col(x,z,(side?h.d:h.w)+.4,(side?h.w:h.d)+.4);
           if(oscar){C.oscarHouse=h;C.zones.push({id:"house",x,z:z+h.d/2+1.3,r:2.4,label:"Entrer dans la maison",msg:"La maison est silencieuse. Sur la table de la cuisine, le mot d’Omer t’attend. L’intérieur jouable arrive dans le bloc 2."});}
         }
@@ -577,11 +614,12 @@ function generateCity(seed){
       for(const [bx,bz,a] of [[6,-12,Math.PI/2],[-6,12,-Math.PI/2],[12,6,0],[-12,-6,Math.PI],[6,14,Math.PI/2],[-6,-14,-Math.PI/2]]) C.benches.push({x:cx+bx,z:cz+bz,a});
       C.idlers.push({x:cx+2.2,z:cz+9,a:-Math.PI/2},{x:cx+1.2,z:cz+9,a:Math.PI/2},{x:cx-9,z:cz-2,a:0});
       C.park={cx,cz};
-    } else if(type==='cntower'){
-      C.cn={x:cx,z:cz};col(cx,cz,19,19);
+    } else if(type==='cntower'||type==='landmark'){
+      C.cn={x:cx,z:cz,kind:TO?'cn':prof.landmark};col(cx,cz,type==='cntower'?19:30,type==='cntower'?19:30);
       for(let k=0;k<10;k++){const an=k/10*Math.PI*2;C.trees.push({x:cx+Math.cos(an)*20,z:cz+Math.sin(an)*20,s:.8});}
     }
   }));
+  C.oscarHouse??=C.houses[0]||{x:0,z:0,w:9,d:8,h:6};
   return C;
 }
 
@@ -602,7 +640,7 @@ function createState(levelId){
 }
 
 /* ---------------- 4. SIM ---------------- */
-const CITY=generateCity(LEVELS.toronto.seed);
+let CITY=generateCity(LEVELS.toronto.seed);const TORONTO_CITY=CITY;
 let S=null;                       // current game state
 const simRand=mulberry32(4242);   // NPC decisions (server-side later)
 const P={x:0,z:0};                // cached player position for agents
@@ -713,7 +751,7 @@ function neighbors(n){
 }
 const peds=[],vehicles=[],trams=[],idlers=[];
 function spawnAgents(){
-  const L=LEVELS[S?S.level:'toronto'], r=mulberry32(99);
+  const L=LEVELS[CITY.id]||LEVELS.toronto, r=mulberry32(99+(L.index||1));
   // passants marchant normalement
   for(let k=0;k<L.density.peds;k++){
     const b=CITY.blocks[Math.floor(r()*CITY.blocks.length)];
@@ -754,7 +792,7 @@ function spawnAgents(){
   for(let k=0;k<L.density.cars;k++)mkV('car',3.2,11);
   for(let k=0;k<L.density.taxis;k++)mkV('taxi',3.2,12);
   for(let k=0;k<L.density.bikes;k++)mkV('bike',5.7,5);
-  trams.push({x:-120,z:1.8,dir:1,speed:0,max:8.5},{x:60,z:-1.8,dir:-1,speed:0,max:8.5});
+  if((CITY.prof||{}).trams!==false)trams.push({x:-120,z:1.8,dir:1,speed:0,max:8.5},{x:60,z:-1.8,dir:-1,speed:0,max:8.5});
   for(const d of CITY.idlers)idlers.push({...d,look:mkLook(r),anim:r()*6});
 }
 function density(){
@@ -848,7 +886,7 @@ function facade(style,seed,wall,cols=8,rows=8,litOverride){
   const S2=512,c=document.createElement('canvas');c.width=c.height=S2;const e=document.createElement('canvas');e.width=e.height=S2;
   const st=paintFacade(c,e,style,seed,wall,cols,rows,litOverride);
   const mk=cv=>{const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t};
-  const F={map:mk(c),em:mk(e),tw:cols*st.uw,th:rows*st.uh,st};FACADES.push({c,e,F,args:[style,seed,wall,cols,rows,litOverride]});return F;
+  const F={map:mk(c),em:mk(e),tw:cols*st.uw,th:rows*st.uh,st};FACADES.push({c,e,F,args:[style,seed,wall,cols,rows,litOverride],world:typeof BUILDING_WORLD!=='undefined'&&BUILDING_WORLD});return F;
 }
 function paintFacade(c,e,style,seed,wall,cols=8,rows=8,litOverride){
   const st=STYLES[style]||STYLES.concrete, r=mulberry32(seed), S2=512;
@@ -921,14 +959,17 @@ function addBox(w,h,d,m,x,y,z,parent=world,shadow=true){const o=new THREE.Mesh(n
 
 function buildWorld(){
   // ground + lake
+  const PR=CITY.prof||CITY_PROFILES.toronto,WINTER=!!PR.winter;
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(900,565),M.asphalt);ground.rotation.x=-Math.PI/2;ground.position.set(0,0,-117.5);ground.receiveShadow=true;world.add(ground);
-  const lake=new THREE.Mesh(new THREE.PlaneGeometry(1600,900),M.water);lake.rotation.x=-Math.PI/2;lake.position.set(0,-.7,165+450);world.add(lake);
-  addBox(340,1.4,1,M.concrete,0,-.1,165.4);
+  if(PR.water){const wm=PR.id==='toronto'?M.water:new THREE.MeshStandardMaterial({color:PR.water.color,roughness:PR.water.frozen?.35:.12,metalness:PR.water.frozen?0:.25});
+    const lake=new THREE.Mesh(new THREE.PlaneGeometry(1600,900),wm);lake.rotation.x=-Math.PI/2;lake.position.set(0,PR.water.frozen?-.2:-.7,165+450);world.add(lake);
+    addBox(340,1.4,1,M.concrete,0,-.1,165.4);}
+  else{const land=new THREE.Mesh(new THREE.PlaneGeometry(1600,900),WINTER?SNOWM:M.grass);land.rotation.x=-Math.PI/2;land.position.set(0,-.02,165+450);land.receiveShadow=true;world.add(land);}
   // sidewalks around blocks + outer ring
   for(const b of CITY.blocks){
     addBox(61,.15,61,M.sidewalk,b.cx,.075,b.cz,world,false);
-    if(b.type==='residential'||b.type==='park')addBox(53,.17,53,M.grass,b.cx,.085,b.cz,world,false);
-    if(b.type==='cntower')addBox(53,.17,53,M.path,b.cx,.085,b.cz,world,false);
+    if(b.type==='residential'||b.type==='park')addBox(53,.17,53,WINTER?SNOWM:M.grass,b.cx,.085,b.cz,world,false);
+    if(b.type==='cntower'||b.type==='landmark')addBox(53,.17,53,WINTER?SNOWM:M.path,b.cx,.085,b.cz,world,false);
   }
   addBox(330,.15,8,M.sidewalk,0,.075,-161,world,false);addBox(330,.15,8,M.sidewalk,0,.075,161,world,false);
   addBox(8,.15,314,M.sidewalk,-161,.075,0,world,false);addBox(8,.15,314,M.sidewalk,161,.075,0,world,false);
@@ -945,7 +986,7 @@ function buildWorld(){
   inst(new THREE.BoxGeometry(.18,.02,3),M.line,dashes);
   inst(new THREE.BoxGeometry(.6,.02,3.6),M.white,zebra);
   // King St tram rails
-  for(const tz of [1.8,-1.8])for(const o of [-.72,.72])addBox(330,.06,.12,M.rail,0,.03,tz+o,world,false);
+  if(PR.trams)for(const tz of [1.8,-1.8])for(const o of [-.72,.72])addBox(330,.06,.12,M.rail,0,.03,tz+o,world,false);
   // street lamps + light pools
   const lampGeo=new THREE.CylinderGeometry(.08,.12,6.2,8);lampGeo.translate(0,3.1,0);
   const headGeo=new THREE.BoxGeometry(.4,.16,1.1);
@@ -986,7 +1027,7 @@ function buildWorld(){
     hm[key]??=facadeMat('concrete',h.color.length*13+(h.oscar?7:0),h.color,4,2,h.oscar?0:.55);
     const F=hm[key],g=new THREE.Group();g.position.set(h.x,.17,h.z);g.rotation.y=h.a;world.add(g);
     const body=new THREE.Mesh(facadeBox(h.w,h.h,h.d,10,6.2),F.m);body.position.y=h.h/2;body.castShadow=body.receiveShadow=true;g.add(body);collidableMeshes.push(body);
-    const roof=new THREE.Mesh(new THREE.ConeGeometry(1,2.8,4),mat(h.roof));roof.rotation.y=Math.PI/4;roof.scale.set((h.w+.9)/Math.SQRT2,1,(h.d+.9)/Math.SQRT2);roof.position.y=h.h+1.4;roof.castShadow=true;g.add(roof);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(1,2.8,4),WINTER?SNOWM:mat(h.roof));roof.rotation.y=Math.PI/4;roof.scale.set((h.w+.9)/Math.SQRT2,1,(h.d+.9)/Math.SQRT2);roof.position.y=h.h+1.4;roof.castShadow=true;g.add(roof);
     addBox(1.3,2.3,.12,mat(h.oscar?'#7a1d16':'#3b2a20'),0,1.15,h.d/2+.05,g);
     addBox(2.6,.25,1.6,M.concrete,0,.12,h.d/2+.8,g);
     if(h.oscar){const pm=regNight(new THREE.MeshStandardMaterial({color:'#333',emissive:'#ffcc88',emissiveIntensity:0}),0,2.5);addBox(.3,.3,.15,pm,1,2.6,h.d/2+.1,g,false);}
@@ -1008,12 +1049,13 @@ function buildWorld(){
     for(const dx of [-.9,.9])addBox(.45,.06,.45,mat('#b5121b'),t.x+dx,.6,t.z);}
   // trees (autumn palette)
   const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.16,.24,2.8,6).translate(0,1.4,0),mat('#4a3626'),CITY.trees.length);
-  const crown=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1.9,1),new THREE.MeshStandardMaterial({roughness:.9,flatShading:true}),CITY.trees.length);
-  const tc=['#c4581c','#d98b1f','#a8321f','#e0b42a','#6f8a2f','#8f9a2c','#b8461b'].map(c=>new THREE.Color(c));
+  const CONIF=PR.trees==='conifer';
+  const crown=new THREE.InstancedMesh(CONIF?new THREE.ConeGeometry(2.1,1,8):new THREE.IcosahedronGeometry(1.9,1),new THREE.MeshStandardMaterial({roughness:.9,flatShading:true}),CITY.trees.length);
+  const tc=({autumn:['#c4581c','#d98b1f','#a8321f','#e0b42a','#6f8a2f','#8f9a2c','#b8461b'],green:['#3f6a35','#4f7a3a','#2f5a2c','#5c8a40','#466e33'],dull:['#7a5a32','#6b6040','#8a6a3a','#5c5a3a','#6f4a2a'],conifer:['#1e3a24','#24452a','#1a3220','#2c4a2a']}[PR.trees]||['#6f8a2f']).map(c=>new THREE.Color(c));
   const tr=mulberry32(7);
   CITY.trees.forEach((t,i)=>{o.position.set(t.x,.17,t.z);o.rotation.set(0,tr()*6,0);o.scale.setScalar(t.s);o.updateMatrix();trunk.setMatrixAt(i,o.matrix);
-    o.position.y=.17+(2.6+1.2)*t.s;o.scale.set(t.s*(1+tr()*.25),t.s*(.9+tr()*.3),t.s*(1+tr()*.25));o.updateMatrix();crown.setMatrixAt(i,o.matrix);crown.setColorAt(i,pick(tr,tc));});
-  trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;world.add(trunk,crown);TREES.push({crown,trunkMat:trunk.material,kind:'broad',bark:[2,1.5]});
+    if(CONIF){o.position.y=.17+(2.2+2.6)*t.s;o.scale.set(t.s*1.1,t.s*5.6,t.s*1.1);}else{o.position.y=.17+(2.6+1.2)*t.s;o.scale.set(t.s*(1+tr()*.25),t.s*(.9+tr()*.3),t.s*(1+tr()*.25));}o.updateMatrix();crown.setMatrixAt(i,o.matrix);crown.setColorAt(i,pick(tr,tc));});
+  trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;world.add(trunk,crown);TREES.push({crown,trunkMat:trunk.material,kind:CONIF?'conifer':'broad',bark:[2,1.5]});
   // park
   if(CITY.park){const {cx,cz}=CITY.park;addBox(53,.03,3.4,M.path,cx,.19,cz,world,false);addBox(3.4,.03,53,M.path,cx,.19,cz,world,false);
     const f=new THREE.Mesh(new THREE.CylinderGeometry(5,5.4,.7,32),M.concrete);f.position.set(cx,.5,cz);f.castShadow=true;world.add(f);
@@ -1023,7 +1065,8 @@ function buildWorld(){
   for(const b of CITY.benches){const g=new THREE.Group();g.position.set(b.x,.17,b.z);g.rotation.y=b.a;world.add(g);BENCHES.push(g);
     addBox(1.8,.08,.5,M.wood,0,.48,0,g);addBox(1.8,.45,.07,M.wood,0,.8,-.24,g);for(const dx of [-.75,.75])addBox(.07,.48,.45,M.pole,dx,.24,0,g);}
   // CN Tower (scaled)
-  if(CITY.cn){const {x,z}=CITY.cn,g=new THREE.Group();g.position.set(x,.17,z);world.add(g);
+  if(CITY.cn&&CITY.cn.kind&&CITY.cn.kind!=='cn'){const g=new THREE.Group();g.position.set(CITY.cn.x,.17,CITY.cn.z);world.add(g);buildLandmark(CITY.cn.kind,g);}
+  else if(CITY.cn){const {x,z}=CITY.cn,g=new THREE.Group();g.position.set(x,.17,z);world.add(g);
     const cyl=(rt,rb,h,y,m,seg=24)=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);c.position.y=y;c.castShadow=true;c.receiveShadow=true;g.add(c);collidableMeshes.push(c);return c};
     cyl(3.6,9.5,112,56,M.concrete,3).rotation.y=Math.PI/6;
     cyl(2.6,4.6,118,59,M.concrete);
@@ -1044,7 +1087,7 @@ function buildWorld(){
     sub.forEach((b,i)=>{o.position.set(b.x,0,b.z);o.rotation.set(0,0,0);o.scale.set(b.w,b.h,b.d);o.updateMatrix();im.setMatrixAt(i,o.matrix)});world.add(im);}
   // objective marker
   const mk=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshStandardMaterial({color:'#d52b1e',emissive:'#d52b1e',emissiveIntensity:1.2}));
-  const rz=CITY.zones.find(z=>z.id==='restaurant');mk.position.set(rz.x,4,rz.z);scene.add(mk);M.marker=mk;
+  if(!M.marker){const rz=CITY.zones.find(z=>z.id==='restaurant');if(rz)mk.position.set(rz.x,4,rz.z);scene.add(mk);M.marker=mk;}
   // détails urbains : poubelles, cônes, boîtes aux lettres, hydrants
   const r=mulberry32(55);
   for(let i=0;i<18;i++){
@@ -1534,10 +1577,7 @@ M.taillight=regNight(new THREE.MeshStandardMaterial({color:'#5a0000',emissive:'#
 let oscarMesh;const pedMeshes=[],vehMeshes=[],tramMeshes=[],idlerMeshes=[];
 function buildAgents(){
   oscarMesh=createHuman({skin:'#a46a3c',jacket:'#4b5330',pants:'#2a2b25',hair:'#141414',bald:false,long:false,beard:true,height:1.03,build:1.08,slouch:.05,shAsym:.012,browAsym:.18,headTilt:.025,swingL:.95,swingR:1.05,breath:1.5,prop:'none',rolled:2,collarTilt:.3},{backpack:true});scene.add(oscarMesh.g);
-  for(const p of peds){const h=createHuman(p.look,{umbrella:p.umb});scene.add(h.g);pedMeshes.push(h);}
-  for(const v of vehicles){let m;if(v.kind==='bike'){m=createBike(v.look);}else{m={g:createCar(v.kind,v.color)};}m.g.position.set(v.x,0,v.z);scene.add(m.g);vehMeshes.push(m);}
-  for(const t of trams){const g=createTram();scene.add(g);tramMeshes.push(g);}
-  for(const i of idlers){const h=createHuman({...i.look,prop:i.look.prop==='phone'?'cup':i.look.prop});h.g.position.set(i.x,.15,i.z);h.g.rotation.y=i.a;scene.add(h.g);idlerMeshes.push(h);}
+  buildAgentMeshes();
 }
 
 /* --- sky, stars, moon, rain --- */
@@ -3917,6 +3957,7 @@ function CINES_fail(){return[
 /* --- player --- */
 const CINE={shots:null,i:0,t:0,onEnd:null};
 function playCine(name,onEnd){
+  if(name==='intro')ensureCity('toronto');
   const shots=name==='intro'?CINES_intro():name==='bcIntro'?CINES_bcIntro():name==='nlIntro'?CINES_nlIntro():name==='abIntro'?CINES_abIntro():name==='nsIntro'?CINES_nsIntro():name==='mbIntro'?CINES_mbIntro():name==='mtlIntro'?CINES_mtlIntro():name==='finale'?CINES_finale():name==='fail'?CINES_fail():CINES_msg(+name.slice(3));
   Object.assign(CINE,{shots,i:0,t:0,onEnd,name});mode='cine';show('hud',false);keys.clear();CB.firing=false;audioInit();
   $('cine').classList.toggle('video',!!shots[0].video);show('cine',true);show('prompt',false);startShot();
@@ -3973,13 +4014,13 @@ const mapC=$('map'),mg=mapC.getContext('2d'),mapBg=document.createElement('canva
 const MS=360/360,mx=x=>(x+180)*MS,mz=z=>(z+180)*MS;
 function drawMapBg(){
   const g=mapBg.getContext('2d');g.fillStyle='#3a3e45';g.fillRect(0,0,360,360);
-  g.fillStyle='#1d4a66';g.fillRect(0,mz(165),360,360);
-  for(const b of CITY.blocks){g.fillStyle={residential:'#7d7a60',park:'#4e6b34',commercial:'#8a6a52',cntower:'#9a968d',tower:'#5d6672'}[b.type];g.fillRect(mx(b.cx-30.5),mz(b.cz-30.5),61*MS,61*MS);}
+  const PR=CITY.prof||CITY_PROFILES.toronto;g.fillStyle=PR.water?(PR.water.frozen?'#b9c7d1':'#1d4a66'):(PR.winter?'#cfd8de':'#4e6b34');g.fillRect(0,mz(165),360,360);
+  for(const b of CITY.blocks){g.fillStyle={residential:PR.winter?'#a9b0b4':'#7d7a60',park:PR.winter?'#c4ccd1':'#4e6b34',commercial:'#8a6a52',cntower:'#9a968d',landmark:'#9a968d',tower:'#5d6672'}[b.type];g.fillRect(mx(b.cx-30.5),mz(b.cz-30.5),61*MS,61*MS);}
   g.fillStyle='rgba(0,0,0,.35)';for(const c of CITY.colliders)g.fillRect(mx(c.x0),mz(c.z0),(c.x1-c.x0)*MS,(c.z1-c.z0)*MS);
   g.fillStyle='#c8102e';g.fillRect(0,mz(-1),360,2);
   if(CITY.cn){g.fillStyle='#fff';g.beginPath();g.arc(mx(CITY.cn.x),mz(CITY.cn.z),5,0,7);g.fill();}
-  const h=CITY.oscarHouse;g.fillStyle='#6cc4ff';g.fillRect(mx(h.x-4.5),mz(h.z-4),9,8);
-  g.font='600 15px "Barlow Condensed"';g.fillStyle='rgba(255,255,255,.75)';g.fillText('King St',8,mz(-4));g.fillText('Lac Ontario',8,mz(176));g.fillText('Tour CN',mx(CITY.cn.x)-22,mz(CITY.cn.z)-10);
+  if(PR.id==='toronto'){const h=CITY.oscarHouse;g.fillStyle='#6cc4ff';g.fillRect(mx(h.x-4.5),mz(h.z-4),9,8);}else{g.fillStyle='#ffd27a';g.beginPath();g.arc(mx(CITY_RETURN.x),mz(CITY_RETURN.z),5,0,7);g.fill();}
+  g.font='600 15px "Barlow Condensed"';g.fillStyle='rgba(255,255,255,.75)';g.fillText(PR.labels.street,8,mz(-4));if(PR.labels.water)g.fillText(PR.labels.water,8,mz(176));if(CITY.cn)g.fillText(PR.labels.landmark,Math.max(4,mx(CITY.cn.x)-40),mz(CITY.cn.z)-10);
 }
 function drawMap(){
   mg.drawImage(mapBg,0,0);const p=S.player;
@@ -4051,6 +4092,7 @@ function interact(){if(activeZone&&activeZone.act)activeZone.act();}
 /* --- game flow --- */
 function show(id,on){$(id).classList.toggle('hidden',!on)}
 function startLevel(fromSave,levelId){
+  ensureCity((fromSave&&fromSave.level)||levelId||'toronto');
   S=fromSave||createState(levelId||'toronto');S.status='playing';
   camYaw=S.camYaw||0;timeScale=1;
   S.location=S.location||'outside';S.money??=START_MONEY;S.clues??=[];S.tasks??={};
@@ -4121,7 +4163,7 @@ function frame(now){
     const a=t*.05;camera.position.set(40+Math.cos(a)*190,85,40+Math.sin(a)*190);camera.lookAt(60,40,60);
     updateEnvironment(viewClock,0,.15,{x:40,z:40},dt,t);syncTitle(dt,t);
   } else if(!S){
-    updateEnvironment(7*60+28,0,.2,CITY.oscarHouse,dt,t);
+    updateEnvironment(7*60+28,0,.2,TORONTO_CITY.oscarHouse,dt,t);
   } else {
     if(mode==='ui'){syncView(dt,t);updateCamera(dt);$('prompt').classList.add('hidden');}
     updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,0,t,!!(INTERIORS[S.location]&&INTERIORS[S.location].indoor));
@@ -4308,7 +4350,7 @@ function leafTex(kind){const S=256,c=document.createElement('canvas');c.width=c.
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
 function buildFoliage(){
   const T={broad:leafTex('broad'),conifer:leafTex('conifer'),snow:leafTex('snow')},m4=new THREE.Matrix4(),o=new THREE.Object3D(),p=new THREE.Vector3(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),col=new THREE.Color();
-  for(const tr of TREES){const cr=tr.crown;if(!cr||!cr.isInstancedMesh)continue;const n=cr.count,per=tr.kind==='broad'?26:18,cone=tr.kind!=='broad';
+  for(const tr of TREES){const cr=tr.crown;if(tr.cards||!cr||!cr.isInstancedMesh)continue;const n=cr.count,per=tr.kind==='broad'?26:18,cone=tr.kind!=='broad';
     const mat_=new THREE.MeshStandardMaterial({map:T[tr.kind],alphaTest:.5,side:THREE.DoubleSide,roughness:.85});
     const cards=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),mat_,n*per),r=mulberry32(n*7+per);
     const base=cr.material.color?cr.material.color.clone():new THREE.Color('#ffffff');
@@ -4324,17 +4366,75 @@ function buildFoliage(){
     cards.castShadow=true;cards.receiveShadow=true;(cr.parent||scene).add(cards);cr.visible=false;tr.cards=cards;}
 }
 async function realTrees(){
-  const [img,nor]=await Promise.all([loadImg(PHURL('bark_brown_02','diff')),SET.gfx==='low'?null:loadImg(PHURL('bark_brown_02','nor_gl'))]);if(!img)return;
-  for(const tr of TREES){const m=tr.trunkMat;if(!m)continue;const t=new THREE.Texture(img);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...(tr.bark||[2,2]));t.colorSpace=THREE.SRGBColorSpace;t.needsUpdate=true;
+  const [img,nor]=await Promise.all([loadImg(PHURL('bark_brown_02','diff')),SET.gfx==='low'?null:loadImg(PHURL('bark_brown_02','nor_gl'))]);if(!img)return;REAL.bark={img,nor};applyBark();}
+function applyBark(){if(!REAL.bark)return;const {img,nor}=REAL.bark;
+  for(const tr of TREES){const m=tr.trunkMat;if(!m||m.map)continue;const t=new THREE.Texture(img);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...(tr.bark||[2,2]));t.colorSpace=THREE.SRGBColorSpace;t.needsUpdate=true;
     m.map=t;m.color.lerp(new THREE.Color('#ffffff'),.6);if(nor){const n=new THREE.Texture(nor);n.wrapS=n.wrapT=THREE.RepeatWrapping;n.repeat.copy(t.repeat);n.needsUpdate=true;m.normalMap=n;}m.needsUpdate=true;REAL.count++;}}
+function applyRealToWorld(){applyBark();placeBenches();}
 async function phModel(id){
   const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const f=await (await fetch('https://api.polyhaven.com/files/'+id)).json();const g=f.gltf&&f.gltf['1k']&&f.gltf['1k'].gltf;if(!g)return null;
   const inc=g.include||{},mgr=new THREE.LoadingManager();mgr.setURLModifier(u=>{for(const k in inc)if(u.endsWith(k)||u.endsWith(encodeURI(k)))return inc[k].url;return u;});
   const gl=await new GLTFLoader(mgr).loadAsync(g.url);gl.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});return gl.scene;}
 async function realBenches(){
-  if(!BENCHES.length)return;const model=await phModel('painted_wooden_bench').catch(()=>null);if(!model)return;
+  const model=await phModel('painted_wooden_bench').catch(()=>null);if(!model)return;REAL.benchModel=model;placeBenches();}
+function placeBenches(){const model=REAL.benchModel;if(!model||!BENCHES.length)return;
   const bb=new THREE.Box3().setFromObject(model),sz=bb.getSize(new THREE.Vector3()),long=Math.max(sz.x,sz.z),s=1.8/long,alongZ=sz.z>sz.x;
-  for(const g of BENCHES){for(const c of g.children)c.visible=false;const b=model.clone();b.scale.setScalar(s);if(alongZ)b.rotation.y=Math.PI/2;b.position.y=-bb.min.y*s;g.add(b);}REAL.count+=BENCHES.length;}
+  for(const g of BENCHES){if(g.userData.real)continue;g.userData.real=true;for(const c of g.children)c.visible=false;const b=model.clone();b.scale.setScalar(s);if(alongZ)b.rotation.y=Math.PI/2;b.position.y=-bb.min.y*s;g.add(b);}REAL.count+=BENCHES.length;}
+
+/* --- monuments des villes de province --- */
+function buildLandmark(kind,g){
+  const stone=new THREE.MeshStandardMaterial({map:ITEX.plaster,color:'#bdb6a8',roughness:.95}),conc=M.concrete;
+  const cyl=(rt,rb,h,y,m,seg=24)=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);c.position.y=y;c.castShadow=c.receiveShadow=true;g.add(c);collidableMeshes.push(c);return c};
+  const box=(w,h,d,x,y,z,m)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=b.receiveShadow=true;g.add(b);collidableMeshes.push(b);return b};
+  const glow=(c,i)=>regNight(new THREE.MeshStandardMaterial({color:'#1a2433',emissive:c,emissiveIntensity:.2,roughness:.2,metalness:.5}),.2,i);
+  if(kind==='calgary'||kind==='harbour'){const H=kind==='calgary'?118:84;
+    cyl(3.4,4.6,H,H/2,conc);cyl(11,9,7,H+2,glow(kind==='calgary'?'#ff4a2a':'#ffd27a',2.4),40);cyl(9,11,3,H+7,conc,40);cyl(.5,.9,22,H+19,mat('#e9e9e9'),8);
+    const t=new THREE.Mesh(new THREE.SphereGeometry(.6,10,8),regNight(new THREE.MeshStandardMaterial({color:'#550000',emissive:'#ff2a1a',emissiveIntensity:1}),.6,4));t.position.y=H+30.5;g.add(t);}
+  else if(kind==='cabot'){cyl(16,22,6,3,mat('#5d6b4a',{roughness:1}),16);box(9,15,9,0,13.5,0,stone);
+    for(const [x,z] of [[-4,-4],[4,-4],[4,4],[-4,4],[0,-4],[0,4],[-4,0],[4,0]])box(1.4,1.4,1.4,x,21.6,z,stone);
+    const tur=cyl(2.2,2.2,19,9.5,stone,16);tur.position.set(4.6,9.5,4.6);
+    const fl=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.4),mat('#d52b1e',{side:THREE.DoubleSide}));fl.position.set(0,25,0);g.add(fl);cyl(.06,.06,5,23,M.pole,6);}
+  else if(kind==='clock'){cyl(18,24,5,2.5,mat('#5d6b4a',{roughness:1}),20);const white=mat('#f1efe8',{roughness:.7});
+    box(7,7,7,0,8.5,0,white);cyl(3.2,3.6,5,14.5,white,8);cyl(2.3,2.6,3.2,18.6,white,8);
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(2.2,16,10,0,Math.PI*2,0,Math.PI/2),mat('#3e7a5c',{roughness:.5,metalness:.3}));dome.position.y=20.2;g.add(dome);
+    for(const a of [0,Math.PI/2,Math.PI,-Math.PI/2]){const f=new THREE.Mesh(new THREE.CircleGeometry(1.2,24),regNight(new THREE.MeshStandardMaterial({color:'#fffbe8',emissive:'#ffe9b0',emissiveIntensity:0}),0,1.4));f.position.set(Math.sin(a)*3.65,14.8,Math.cos(a)*3.65);f.rotation.y=a;g.add(f);}}
+  else if(kind==='dome'){box(44,15,24,0,7.5,0,stone);for(let k=-3;k<=3;k++)cyl(.8,.8,11,7,stone,10).position.set(k*3.2,7,12.6);box(26,2.6,4,0,14.5,12.4,stone);
+    cyl(7.5,8,8,19,stone,24);const dome=new THREE.Mesh(new THREE.SphereGeometry(7.6,24,14,0,Math.PI*2,0,Math.PI/2),mat('#9aa39a',{roughness:.6,metalness:.3}));dome.position.y=23;g.add(dome);
+    const gold=new THREE.Mesh(new THREE.ConeGeometry(.9,4.4,10),regNight(mat('#e8b923',{metalness:.9,roughness:.25,emissive:'#7a5a10',emissiveIntensity:.4}),.4,1.2));gold.position.y=33;g.add(gold);}
+  else if(kind==='stadium'){const ring=new THREE.Mesh(new THREE.TorusGeometry(15,4.5,10,40),mat('#d9d6cf',{roughness:.8}));ring.rotation.x=Math.PI/2;ring.position.y=4;ring.scale.set(1,1.25,1);g.add(ring);collidableMeshes.push(ring);
+    const tw=new THREE.Mesh(new THREE.BoxGeometry(6,96,6),conc);tw.geometry.translate(0,48,0);tw.position.set(-16,0,0);tw.rotation.z=-.6;tw.castShadow=true;g.add(tw);collidableMeshes.push(tw);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(9,7,9),glow('#9ad1ff',2));top.position.set(-16+Math.sin(.6)*93,Math.cos(.6)*93,0);top.rotation.z=-.6;g.add(top);}
+}
+/* --- villes de province : reconstruction propre du monde extérieur --- */
+let BUILDING_WORLD=false;
+const attached=o=>{let x=o;for(let d=0;x&&d<64;d++,x=x.parent)if(x===scene)return true;return false;};
+function buildAgentMeshes(){
+  for(const p of peds){const h=createHuman(p.look,{umbrella:p.umb});scene.add(h.g);pedMeshes.push(h);}
+  for(const v of vehicles){let m;if(v.kind==='bike'){m=createBike(v.look);}else{m={g:createCar(v.kind,v.color)};}m.g.position.set(v.x,0,v.z);scene.add(m.g);vehMeshes.push(m);}
+  for(const t of trams){const g=createTram();scene.add(g);tramMeshes.push(g);}
+  for(const i of idlers){const h=createHuman({...i.look,prop:i.look.prop==='phone'?'cup':i.look.prop});h.g.position.set(i.x,.15,i.z);h.g.rotation.y=i.a;scene.add(h.g);idlerMeshes.push(h);}
+}
+function ensureCity(id){
+  const prof=CITY_PROFILES[id]||CITY_PROFILES.toronto;if(CITY.id===prof.id)return false;
+  const keep=new Set();scene.traverse(o=>{if(o.isMesh&&!isIn(o,world)&&o.geometry)keep.add(o.geometry);});
+  for(const c of [...world.children]){world.remove(c);c.traverse(o=>{if(o.geometry&&!keep.has(o.geometry))o.geometry.dispose();});}
+  for(let i=collidableMeshes.length-1;i>=0;i--)if(!attached(collidableMeshes[i]))collidableMeshes.splice(i,1);
+  for(let i=TREES.length-1;i>=0;i--)if(TREES[i].crown&&!attached(TREES[i].crown))TREES.splice(i,1);
+  for(let i=BENCHES.length-1;i>=0;i--)if(!attached(BENCHES[i]))BENCHES.splice(i,1);
+  for(let i=FACADES.length-1;i>=0;i--)if(FACADES[i].world){FACADES[i].F.map.dispose();FACADES[i].F.em.dispose();FACADES.splice(i,1);}
+  for(const h of [...pedMeshes,...idlerMeshes])scene.remove(h.g);for(const m of vehMeshes)scene.remove(m.g);for(const g of tramMeshes)scene.remove(g);
+  pedMeshes.length=vehMeshes.length=tramMeshes.length=idlerMeshes.length=0;peds.length=vehicles.length=trams.length=idlers.length=0;
+  CITY=prof.id==='toronto'?TORONTO_CITY:generateCity((LEVELS[prof.id]||LEVELS.toronto).seed*7+11,prof);
+  BUILDING_WORLD=true;try{buildWorld();}finally{BUILDING_WORLD=false;}
+  spawnAgents();buildAgentMeshes();buildFoliage();applyRealToWorld();drawMapBg();
+  return true;
+}
+// liens entre les lieux de l'enquête et la ville ouverte de chaque province
+function cityZones(){const Z=[];
+  for(const id of ['bc','nl','ab','ns','mb','mtl']){const L=LEVELS[id],prof=CITY_PROFILES[id];if(!L||!L.start)continue;const I=INTERIORS[L.start.loc];if(!I)continue;
+    Z.push({lvl:id,loc:L.start.loc,x:I.ox+L.start.x+2.5,z:I.oz+L.start.z,r:1.6,label:()=>'Explorer la ville : '+prof.name,act:()=>{ensureCity(id);exitTo('outside',CITY_SPAWN.x,CITY_SPAWN.z);toast(prof.name+' : la ville vit sa vie. Le retour vers l’enquête est juste à côté.');}});
+    Z.push({lvl:id,loc:'outside',x:CITY_RETURN.x,z:CITY_RETURN.z,r:1.6,label:()=>'Retour : '+I.label,act:()=>travelTo(L.start.loc,1,L.start.x,L.start.z,null)});}
+  return Z;}
 
 /* ---------------- 7. CONFORT DE JEU (v1.1) : options, chapitres, trophées, musique, indices, manette ---------------- */
 const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',realTex:true,postfx:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
@@ -4457,7 +4557,7 @@ function fillChapters(){const pr=loadProgress(),done=pr.levelsDone||[],R=getReco
 function startChapter(id){show('chapters',false);show('title',false);store.clear();audioInit();if(id==='toronto')playCine('intro',()=>{houseAfter();showReady('toronto');});else playCine(id+'Intro',()=>showReady(id));}
 function fillTrophies(){const T=getTrophies(),n=TROPHIES.filter(x=>T[x[0]]).length;$('trophyCount').textContent=n+' sur '+TROPHIES.length+' trophées débloqués.';
   $('trophyList').innerHTML=TROPHIES.map(x=>`<div class="${T[x[0]]?'got':''}"><b>${T[x[0]]?'★ ':'☆ '}${x[1]}</b><br><span class="small">${x[2]}</span></div>`).join('');}
-function quitToTitle(){if(S){store.save(S);}siren(false);show('pause',false);show('hud',false);show('dialog',false);show('notebook',false);S=null;hideAll();world.visible=true;show('bContinue',!!store.load());show('title',true);mode='title';}
+function quitToTitle(){if(S){store.save(S);}ensureCity('toronto');siren(false);show('pause',false);show('hud',false);show('dialog',false);show('notebook',false);S=null;hideAll();world.visible=true;show('bContinue',!!store.load());show('title',true);mode='title';}
 $('bOptions').onclick=()=>openMenu('options','title');$('bChapters').onclick=()=>openMenu('chapters','title');$('bTrophies').onclick=()=>openMenu('trophies','title');
 $('bPauseOpt').onclick=()=>openMenu('options','pause');$('bQuitTitle').onclick=quitToTitle;
 $('bOptClose').onclick=()=>closeMenu('options');$('bChapClose').onclick=()=>closeMenu('chapters');$('bTrophClose').onclick=()=>closeMenu('trophies');
@@ -4501,11 +4601,11 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones(),cityZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';loadOscarModel();setTimeout(loadRealSurfaces,300);
   initComposer();

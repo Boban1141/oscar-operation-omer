@@ -145,6 +145,11 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             C.openMenu('trophies','pause');ok(document.querySelectorAll('#trophyList .got').length>=3,'écran des trophées');C.closeMenu('trophies');
             C.openMenu('options','pause');const el=document.getElementById('oSens');el.value=1.7;el.dispatchEvent(new Event('input'));ok(JSON.parse(localStorage.getItem('oscar.settings')).sens===1.7,'options sauvegardées');C.closeMenu('options');
             C.applyGfx('low');ok(C.q==='low','qualité graphique basse');C.applyGfx('high');
+            const LM={bc:'harbour',nl:'cabot',ab:'calgary',ns:'clock',mb:'dome',mtl:'stadium'};
+            for(const id of ['bc','nl','ab','ns','mb','mtl']){o.startLevel(null,id);const back=o.S.location;const zc=zone('Explorer la ville');ok(!!zc,'ville ouverte accessible ('+id+')');if(!zc)continue;zc.act();
+              const c=o.city();ok(o.S.location==='outside'&&c.id===id&&c.landmark===LM[id]&&c.houses+c.shops+c.towers>20&&c.trees>20&&c.peds>0,'ville '+id+' complète : '+c.towers+' tours, '+c.houses+' maisons, '+c.shops+' commerces, '+c.trees+' arbres, '+c.peds+' passants, '+c.cars+' véhicules, monument '+c.landmark);
+              o.tick(.2);zone('Retour').act();ok(o.S.location===back,'retour vers l’enquête ('+id+')');}
+            o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');
             return r;});});});});});});});
