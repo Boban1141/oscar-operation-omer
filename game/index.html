@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.11.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.11.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4693,7 +4693,7 @@ const DIFF={decouverte:{det:.6,dmg:.6,txt:'Découverte : les gardes mettent plus
 function DIFFK(){return DIFF[SET.diff]||DIFF.normal}
 const COMF={q:'high',fpsT:0,frames:0,low:0,smsT:0,trT:0,saveT:0,tipT:0,focus:-1};
 function applyGfx(q){COMF.q=q;try{renderer.setPixelRatio(q==='high'?Math.min(devicePixelRatio,1.5):q==='medium'?1:.75);sun.castShadow=q!=='low';resize();}catch(e){}}
-function applySettings(){document.body.classList.toggle('subsL',SET.subs==='large');{if(OM.ready)applyOscarModel();else if(SET.oscarModel!=='classic'&&!OM.loading){OM.loading=true;loadOscarModel();}}show('fpsTag',!!SET.fps);applyGfx(SET.gfx==='auto'?COMF.q:SET.gfx);}
+function applySettings(){document.body.classList.toggle('subsL',SET.subs==='large');{if(OM.ready)applyOscarModel();else if(SET.oscarModel!=='classic')loadOscarModel();}show('fpsTag',!!SET.fps);applyGfx(SET.gfx==='auto'?COMF.q:SET.gfx);}
 /* --- audio: master bus, music that follows the action, rain and wind --- */
 const AUD={};
 function AOUT(){audioGraph();return AUD.sfx||actx.destination}

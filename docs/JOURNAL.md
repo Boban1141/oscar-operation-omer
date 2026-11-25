@@ -24,6 +24,7 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 ## 2026-11-25 — Claude — Un seul Oscar (v1.11.1)
 - Vérifié sur le PC de Boban (commit a64f29d) : Oscar porte bien la tenue de Nathan (t-shirt gris, jean), marche sur le passage piéton, pieds au sol, sans erreur.
 - Signalé par Boban : Oscar apparaissait en double. Le chargement de son modèle était lancé deux fois en même temps, par l'écran titre et par les réglages, d'où deux corps. Le second restait figé, superposé au premier : invisible à l'arrêt, visible en marchant. C'était sans doute aussi une cause de l'impression de glissade. Correction : un seul chargement à la fois (`OM.loading`), et l'ancien corps est retiré si le modèle est remonté.
+- v1.11.2 : les réglages posaient déjà `OM.loading` avant d'appeler le chargement, qui s'arrêtait donc aussitôt. Oscar restait en forme simple (vu sur le PC de Boban, commit fdfa6c1). Le drapeau n'est plus posé que par `loadOscarModel` lui-même.
 
 ## 2026-11-25 — Claude — Oscar change de tenue, pieds au sol (v1.11.0)
 - Demande de Boban : changer les vêtements d'Oscar et le rendre plus humain. Il traversait le sol et les tables, et glissait sans qu'on voie ses pieds.
