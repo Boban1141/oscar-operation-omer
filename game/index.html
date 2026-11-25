@@ -161,6 +161,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
       <div><kbd>Maj</kbd> courir</div>
       <div><kbd>Espace</kbd> sauter</div>
       <div><kbd>E</kbd> interagir / entrer</div>
+      <div><kbd>G</kbd> changer de tenue (civile / militaire)</div>
       <div><kbd>Souris</kbd> regarder</div>
       <div><kbd>Molette</kbd> zoom caméra</div>
       <div><kbd>C</kbd> carnet d’indices</div>
@@ -309,7 +310,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.12.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.13.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4069,6 +4070,7 @@ addEventListener('keydown',e=>{
   if(mode!=='play')return;
   if(e.code==='KeyC'){openNotebook();return;}
   if(e.code==='KeyH'){drinkThermos();return;}
+  if(e.code==='KeyG'){toggleOutfit();return;}
   if(e.code==='KeyF'){if(!takedownOrLoot()&&activeZone)interact();}
   if(e.code==='KeyV')CB.block=true;
   if(e.code==='KeyX'||e.code==='ControlLeft'){CB.crouch=!CB.crouch;e.preventDefault();}
@@ -4254,9 +4256,14 @@ async function loadOscarModel(){
         const o=await firstOk(['assets/'+path,'../assets/'+path],u=>fbx.loadAsync(u));
         if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);const tr=c.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
           if(tr&&hipsRest>1&&tr.values[1]>1){const r=hipsRest/tr.values[1];for(let i=0;i<tr.values.length;i++)tr.values[i]*=r;}inPlace(c);c.name=name;clips.push(c);}}));
+      // textures du KSK : fournies à côté du modèle (le FBX d'origine pointait vers l'ordinateur de son auteur)
+      const KSK_TEX={'mat0':'Tex_0002_0','mat0.001':'Tex_0006_0','mat0.002':'Tex_0010_0','mat0.003':'Tex_0010_0'},tl=new THREE.TextureLoader(),texC={};
+      charObj.traverse(x=>{if(!x.isMesh)return;for(const m of [].concat(x.material)){const f=m&&KSK_TEX[m.name];if(!f||(m.map&&m.map.image))continue;
+        const t=texC[f]||(texC[f]=tl.load('../assets/characters/'+f+'.jpg',undefined,undefined,()=>tl.load('assets/characters/'+f+'.jpg')));t.colorSpace=THREE.SRGBColorSpace;m.map=t;m.color.set('#ffffff');m.needsUpdate=true;}});
       const root=new THREE.Group();charObj.scale.setScalar(.01);root.add(charObj);OM.src=charObj.getObjectByName('mixamorigHips')&&charObj.getObjectByName('mixamorigHips').position.y>500?'soldat-ksk':'soldat-camouflage';
       setupOscarModel({scene:root,animations:clips});
       if(OM.ready&&OSCAR_LOOK)await dressOscar(fbx);
+      setOutfit(OM.outfit||'civil',true);
     }else if(soldier&&soldier.scene){OM.src='modele-exemple';setupOscarModel({scene:soldier.scene,animations:loco});}
   }catch(e){console.warn('Modèle 3D d’Oscar indisponible, Oscar classique conservé.',e);}finally{OM.loading=false;}}
 function setupOscarModel(gl){
@@ -4296,7 +4303,7 @@ function rpPrepare(o){
   const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=!!(fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z);
   const bb=new THREE.Box3().setFromObject(o);return {obj:o,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}
 // Oscar porte le corps scanné de Nathan (Renderpeople) : visage et vêtements réels ; le corps Mixamo invisible garde animations et armes
-const OSCAR_LOOK=null;   // Boban a choisi le soldat KSK : plus de tenue scannée par-dessus (mettre 'nathan' pour la remettre)
+const OSCAR_LOOK='nathan';   // tenue civile (scannée) ; la tenue militaire est le soldat KSK lui-même
 async function dressOscar(fbx){
   try{const o=await firstOk(['assets/characters/rp/'+OSCAR_LOOK+'.fbx','../assets/characters/rp/'+OSCAR_LOOK+'.fbx'],u=>fbx.loadAsync(u));if(!o)return;
     const P=rpPrepare(o);if(!P)return;const h=oscarMesh,B=n=>OM.model.getObjectByName('mixamorig'+n);
@@ -4304,19 +4311,28 @@ async function dressOscar(fbx){
     const ph=OM.root.worldToLocal(B('Head').getWorldPosition(new THREE.Vector3())).y-OM.root.worldToLocal(B('LeftToeBase').getWorldPosition(new THREE.Vector3())).y+.04;
     h.g.rotation.set(rx,ry,0);
     o.scale.setScalar(ph/P.headY);o.rotation.y=-OM.root.rotation.y+(P.back?Math.PI:0);OM.root.add(o);
-    OM.model.traverse(x=>{if(x.isMesh)x.visible=false;});
+    OM.kskMeshes=[];OM.model.traverse(x=>{if(x.isMesh)OM.kskMeshes.push(x);});OM.handK=OM.hand;OM.foreK=OM.fore;
     const bones={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))bones[x.name.slice(3)]=x;});
     OM.rp={model:o,bones,rest:P.rest};OM.rpI={bn:B,rp:OM.rp};
-    if(bones.hand_r&&bones.lowerarm_r){OM.hand=bones.hand_r;OM.fore=bones.lowerarm_r;}
-    OM.src='nathan-scanne';
+    if(bones.hand_r&&bones.lowerarm_r){OM.handN=bones.hand_r;OM.foreN=bones.lowerarm_r;}
+    OM.src+='+civil';
   }catch(e){console.warn('Tenue scannée d’Oscar indisponible',e);}
 }
+// Deux tenues : civile (en ville, chez les gens) et militaire (missions de combat). Le jeu choisit selon le lieu ; la touche G change à la main.
+function setOutfit(o,silent){if(!OM.ready)return;OM.outfit=o;const civ=o==='civil'&&!!OM.rp;
+  if(OM.kskMeshes)for(const m of OM.kskMeshes)m.visible=!civ;if(OM.rp)OM.rp.model.visible=civ;
+  OM.hand=civ?OM.handN:(OM.handK||OM.hand);OM.fore=civ?OM.foreN:(OM.foreK||OM.fore);
+  if(!silent&&S)toast(civ?'Oscar enfile sa tenue civile : t-shirt, jean, rien qui inquiète les gens.':'Oscar enfile sa tenue militaire : casque, gilet, camouflage.');}
+function autoOutfit(){if(!OM.ready||!S)return;const loc=S.location;if(OM.outLoc===loc)return;OM.outLoc=loc;OM.manual=false;
+  const combat=!!(typeof ARENAS!=='undefined'&&ARENAS[loc]);setOutfit(combat?'militaire':'civil',true);}
+function toggleOutfit(){if(!OM.ready||!OM.rp)return;OM.manual=true;setOutfit(OM.outfit==='civil'?'militaire':'civil');}
 function isIn(o,root){for(let x=o;x;x=x.parent)if(x===root)return true;return false;}
 function applyOscarModel(){if(!OM.ready)return;const on=SET.oscarModel!=='classic';OM.root.visible=on;for(const m of OM.body)m.visible=!on;
   if(oscarMesh.guns)for(const k in oscarMesh.guns){const g=oscarMesh.guns[k];(on?OM.gunAnchor:oscarMesh.armR.wr).add(g);}}
 const _ga=new THREE.Vector3(),_gb=new THREE.Vector3(),_gd=new THREE.Vector3(),_gq=new THREE.Quaternion(),_gy=new THREE.Vector3(0,-1,0);
 function updateOscarModel(dt){
   if(!OM.ready||!OM.root.visible||!oscarMesh.g.visible)return;
+  autoOutfit();
   const cine=mode==='cine',p=S&&S.player,inPlay=!!(S&&!cine);
   const speed=inPlay?(p.speed||0):0,still=speed<.3,k=1-Math.exp(-dt*8),A=OM.acts;
   const w=inPlay?playerWeapon():'fists';
@@ -4343,7 +4359,7 @@ function updateOscarModel(dt){
   if(OM.wl>.01){for(const t of OM.torso)retarget(...t,OM.wl);for(const t of OM.legs)retarget(...t,OM.wl);}
   if(OM.wa>.01)for(const t of OM.arms)retarget(...t,OM.wa);
   OM.dy=lerp(OM.dy,legsOn?oscarMesh.hips.position.y-OM.hips0:0,kk);OM.root.position.y=OM.dy;
-  if(OM.rpI){OM.root.updateMatrixWorld(true);rpDrive(OM.rpI);}
+  if(OM.rpI&&OM.outfit==='civil'){OM.root.updateMatrixWorld(true);rpDrive(OM.rpI);}
   // weapon in the right hand, barrel along the forearm
   if(OM.gunAnchor&&OM.hand){oscarMesh.g.updateMatrixWorld(true);OM.hand.getWorldPosition(_ga);OM.fore.getWorldPosition(_gb);
     _gd.subVectors(_ga,_gb);oscarMesh.g.getWorldQuaternion(_gq).invert();_gd.applyQuaternion(_gq).normalize();
@@ -4356,7 +4372,7 @@ function updateOscarModel(dt){
    animations capturées (assets/animations/pnj). Le squelette simple continue de tourner en coulisse : il donne la position,
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
-const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:nathan','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
+const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
   omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
@@ -4851,7 +4867,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

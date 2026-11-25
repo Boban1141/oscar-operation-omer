@@ -21,11 +21,22 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Oscar change de tenue (v1.13.0)
+- Question de Boban : Oscar peut-il changer de vêtements ? En tenue militaire dans certains lieux, il ferait peur aux gens. Choix de Boban : changement automatique, plus une touche.
+- Deux tenues sur le même corps animé :
+  - civile : t-shirt gris et jean, le corps scanné de Nathan par-dessus ;
+  - militaire : le soldat KSK lui-même, casque, gilet et camouflage.
+  Les armes suivent la main de la tenue portée.
+- Automatique (`autoOutfit`) : tenue militaire dans les lieux de combat (`ARENAS` : port, entrepôts, forêt, silos, manoir…), tenue civile partout ailleurs (ville, maisons, diner, bars, pub, café, refuge…). À chaque changement de lieu, le jeu choisit de nouveau.
+- Touche G (`toggleOutfit`) : Oscar change à la main ; un message dit quelle tenue il enfile. Ce choix vaut jusqu'au prochain changement de lieu. La touche est indiquée dans l'aide des commandes.
+- Nathan reste réservé à Oscar : il n'est pas parmi les passants.
+
 ## 2026-11-25 — Claude — Oscar devient l'opérateur KSK (v1.12.0)
 - Boban a téléchargé deux soldats sur Sketchfab (« German KSK operator rigged », « American soldier rigged ») et a choisi le KSK : visage réel, casque, gilet tactique, camouflage.
 - Le fichier (déjà passé par Mixamo, squelette `mixamorig`) pointait vers des textures .dds d'un autre ordinateur. Elles ont été intégrées dans le FBX (`embed.py`, à partir des PNG fournis), puis réduites par `fbx_shrink.py` : 16 Mo → 2,4 Mo, `assets/characters/oscar_ksk.fbx`. Le camouflage de l'ancien soldat reste en secours.
 - Ce modèle utilise des unités 20 fois plus grandes : la taille est recalée à la hauteur de la tête, et les clés de bassin de toutes les animations d'Oscar (marche, course, coups, armes) sont recalées sur son corps.
 - La tenue scannée de Nathan n'est plus portée par Oscar (`OSCAR_LOOK=null`). Nathan retourne parmi les passants.
+- v1.12.1 : à l'écran (commit 9916b17), Oscar apparaissait tout noir. Les textures intégrées n'étaient pas reliées aux matières dans le FBX, et FBXLoader ne les chargeait pas. Les trois images sont maintenant fournies à côté du modèle (`assets/characters/Tex_0002_0.jpg`, `Tex_0006_0.jpg`, `Tex_0010_0.jpg`, 1024 px) et branchées par le jeu : casque, visage, corps.
 - Licence : modèle Sketchfab, auteur et licence à confirmer avec la page d'origine (à ajouter dans `CREDITS.md`).
 
 ## 2026-11-25 — Claude — Chiens tenus en laisse (v1.11.3)
