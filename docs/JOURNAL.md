@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Sous-sol : pose des captifs réglable, plus de gouttes « sur l'objectif » sous un toit (v1.25.1)
+**Vu sur le PC (v1.25.0)** : Eva a bien son corps scanné (Sophia), Eva et Cédric sont assis ensemble sur le matelas, chaîne et tuyau en place. Mais les jambes pendaient au bord du matelas et une main d'Eva était près de son visage. Des traits de pluie restaient visibles au sous-sol.
+**Corrections** :
+- Les gouttes dessinées sur l'écran (`updateRainOverlay`) s'affichaient même à l'intérieur → seulement dehors, pour tout le jeu (lieux couverts et cinématiques d'intérieur).
+- Pose des captifs refaite et rendue réglable en direct (`CAPT_P`, crochet `__oscar.capt`) : dos vers le mur, genoux remontés sur le matelas, bras gauche d'Eva autour de Cédric ; anneau à la cheville qui suit le vrai pied.
+
 ## 2026-11-25 — Claude — Eva et Cédric captifs, chacun le corps de sa couleur de peau (v1.25.0)
 **Demande** : la femme d'Oscar peut rester blanche, mais elle et son fils doivent être de vraies personnes, bien assis, montrant qu'ils sont vraiment captifs.
 **Constat** : au sous-sol, Eva et Cédric étaient debout en mode « discussion » (bras qui gesticulent). Leurs corps étaient tirés au hasard ; Cédric avait le seul corps d'enfant disponible, un garçon de dessin animé (Mixamo « Boy01 », grands yeux, lunettes).
