@@ -313,7 +313,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.16.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.17.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -814,10 +814,15 @@ function density(){
   let d=(h<6||h>=23)?.25:(h<7.5||h>=21)?.55:1;
   return d*(1-.3*(S?S.weather.rain:0));
 }
+// Peur : une arme sortie, la tenue militaire en ville, un coup de feu ou une explosion font reculer et fuir les passants (tout le jeu).
+function publicThreat(){if(!S||S.location!=='outside')return 0;const sh=S.flags.lastShot;if(sh&&S.clock-sh.c<15)return 28;
+  const armed=playerWeapon()!=='fists';if(armed&&CB.aim)return 12;if(armed)return 8;if(typeof OM!=='undefined'&&OM.outfit==='militaire')return 5;return 0;}
 function stepAgents(dt){
-  const dens=density();
+  const dens=density(),thr=publicThreat();let scared=0;
   for(const a of peds){
     a.visible=dens>a.thresh;
+    if(thr>0&&a.visible&&Math.hypot(a.x-P.x,a.z-P.z)<thr){if(!(a.fear>0))scared++;a.fear=Math.max(a.fear||0,thr>=28?12:5);}
+    if(a.fear>0){a.fear-=dt;a.pause=0;if(!a.sitting&&!a.group){const fx=Math.sin(a.heading),fz=Math.cos(a.heading);if(fx*(P.x-a.x)+fz*(P.z-a.z)>0)a.dir*=-1;}}
     // comportements spéciaux : assis ou en groupe ne bougent pas
     if(a.sitting||a.group&&!a.moving){a.moving=false;continue;}
     if(a.pause>0){a.pause-=dt;a.moving=false;continue;}
@@ -833,7 +838,8 @@ function stepAgents(dt){
       if(same&&Math.abs(l)<.45)slow=Math.min(slow,f<.8?0:.45);else side+=l>0?-1:1;}
     for(const o of idlers){const rx=o.x-a.x,rz=o.z-a.z,f=rx*hs+rz*hc,l=rx*hc-rz*hs;if(f>0&&f<1.6&&Math.abs(l)<.8)side+=l>0?-1:1;}
     a.avo=lerp(a.avo||0,clamp(side,-1,1)*.8,1-Math.exp(-dt*3));
-    const per=a.half*8;a.u=((a.u+a.dir*a.speed*slow*dt)%per+per)%per;if(slow<.5)a.moving=slow>0;
+    const fearMul=a.fear>0?2.3:1;
+    const per=a.half*8;a.u=((a.u+a.dir*a.speed*fearMul*slow*dt)%per+per)%per;if(slow<.5)a.moving=slow>0;
     if(simRand()<.0012)a.pause=1.5+simRand()*4;
     const L2=a.half*2,seg=Math.floor(a.u/L2),t=a.u%L2-a.half,h=a.half;
     let x,z,hx,hz;
@@ -841,8 +847,9 @@ function stepAgents(dt){
     else if(seg===2){x=a.cx-t;z=a.cz+h;hx=-1;hz=0}else{x=a.cx-h;z=a.cz-t;hx=0;hz=-1}
     // chacun garde sa droite : deux files sur le trottoir selon le sens de marche
     const off=(a.dir>0?-.55:.55)+(a.avo||0)*a.dir;
-    a.x=x+hz*off;a.z=z-hx*off;a.heading=Math.atan2(hx*a.dir,hz*a.dir);a.anim+=a.speed*slow*dt*2.4;
+    a.x=x+hz*off;a.z=z-hx*off;a.heading=Math.atan2(hx*a.dir,hz*a.dir);a.anim+=a.speed*fearMul*slow*dt*2.4;
   }
+  if(scared>2&&!(S.flags.fearToastT>S.clock)){S.flags.fearToastT=S.clock+90;toast(thr>=28?'Les coups de feu font fuir les passants.':thr>=8?'Les passants s’écartent, effrayés par ton arme.':'Les gens te regardent de travers et s’écartent : la tenue militaire inquiète en ville.');}
   for(const v of vehicles){
     v.visible=dens>v.thresh;
     const dx=v.b.x-v.a.x,dz=v.b.z-v.a.z,L=Math.hypot(dx,dz),ux=dx/L,uz=dz/L;
@@ -1679,8 +1686,9 @@ function syncView(dt,t){
   peds.forEach((a,i)=>{const h=pedMeshes[i];const d=Math.hypot(a.x-cx,a.z-cz);const vis=a.visible&&d<200;h.g.visible=vis;if(!vis)return;
     h.g.position.set(a.x,.15,a.z);h.g.rotation.y=a.heading;if(h.umb)h.umb.visible=raining&&h.look.prop!=='phone';
     // comportements variés selon le type de personnage
-    let mode='walk',speed=a.moving?a.speed:0;
-    if(a.bench&&a.sitting){mode='sit';speed=0;h.g.position.y=.55;}
+    let mode='walk',speed=a.moving?a.speed*(a.fear>0?2.3:1):0;
+    if(a.bench&&a.sitting&&!(a.fear>0)){mode='sit';speed=0;h.g.position.y=.55;}
+    else if(a.fear>0&&(a.sitting||a.group)){mode='walk';speed=0;h.g.rotation.y=Math.atan2(a.x-P.x,a.z-P.z);}
     else if(a.group&&a.talking){mode='talk';speed=0;}
     else if(h.look.prop==='phone'&&!a.moving){mode='talk';speed=0;}
     else if(a.looking){speed=0;mode='walk';}
@@ -1694,7 +1702,8 @@ function syncView(dt,t){
     if(m.g.brakeLights){const braking=v.speed<.5||v.speed<(v.max*.3);for(const bl of m.g.brakeLights){bl.material.emissiveIntensity=braking?2.5:.4;}}});
   trams.forEach((tr,i)=>{const g=tramMeshes[i];g.position.set(tr.x,0,tr.z);g.rotation.y=tr.dir>0?Math.PI/2:-Math.PI/2;
     if(g.userData.pax&&Math.hypot(tr.x-cx,tr.z-cz)<80)for(const p of g.userData.pax)animRig(p.h,dt,t+p.h.g.position.z,0,p.sit?'sit':'walk',0,false);});
-  idlers.forEach((d,i)=>{const h=idlerMeshes[i];const dd=Math.hypot(d.x-cx,d.z-cz);h.g.visible=dd<200;if(h.g.visible){
+  const hourNow=dayInfo(S.clock).hour,shopsOpen=hourNow>=8&&hourNow<21.5;
+  idlers.forEach((d,i)=>{const h=idlerMeshes[i];const dd=Math.hypot(d.x-cx,d.z-cz);h.g.visible=dd<200&&(shopsOpen||i%5===0);if(h.g.visible){
     const modes=['talk','talk','walk','talk'];
     const mode=d.mode||modes[i%modes.length];
     animRig(h,dt,t+i*1.7,0,mode,0,dd<22);
@@ -2247,7 +2256,7 @@ function playerAttack(kind){
 function tryFire(){
   const w=playerWeapon(),W=WEAPONS[w],A=S.player.ammo[w];if(CB.fireCd>0||CB.reloadT>0||CB.lockT>0)return;
   if(A.mag<=0){if(A.res>0)reload();else toast('Plus de munitions.');CB.firing=false;return;}S.flags.shotFired=true;
-  A.mag--;CB.fireCd=W.rate;CB.shake=.08;sfx('shot');oscarMesh.flash.intensity=6;
+  A.mag--;CB.fireCd=W.rate;CB.shake=.08;sfx('shot');S.flags.lastShot={c:S.clock,x:S.player.x,z:S.player.z};oscarMesh.flash.intensity=6;
   // ray from the camera through the crosshair
   const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=W.spread+(S.player.speed>.5?W.move:0)+(CB.aim?0:.03)+(S.weather.windStr||0)*.025+(S.weather.temp<-10&&!S.flags.gloves?.035:0)+bodyFx().aim;
   dir.x+=(Math.random()-.5)*sp*2;dir.y+=(Math.random()-.5)*sp*2;dir.z+=(Math.random()-.5)*sp*2;dir.normalize();
@@ -4498,7 +4507,7 @@ function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.c
   if(sp>3.4&&(I.acts.run||I.acts.jog))return I.acts.run?'run':'jog';
   if(sp>.3){if(L.prop==='phone'&&I.acts.textWalk)return 'textWalk';return rhRole(h)==='femme'&&I.acts.walkF?'walkF':(I.acts.walkM?'walkM':'walkF');}
   if(L.prop==='phone'&&I.acts.text)return 'text';return 'idle';}
-const _rv=new THREE.Vector3(),_rv2=new THREE.Vector3();
+const _rv=new THREE.Vector3(),_rv2=new THREE.Vector3(),_rq3=new THREE.Quaternion();
 function updateRealHumans(dt){
   RFRAME++;const N=rhMax();
   if(N===0||!RH.ready){if(RH.bound.size)for(const h of [...RH.bound])rhUnbind(h);if(N>0&&!RH.loading&&OM.ready!==undefined)rhInit();return;}
@@ -4520,6 +4529,11 @@ function updateRealHumans(dt){
     // poses the clips do not have: cinematics (everything), weapons and umbrellas (arms)
     const cs=h.cs,busy=cs&&(cs.down||cs.surrender||cs.swing||cs.hit),full=cine||(h.g.rotation.x<-.5),arms=full||(!!h.gun&&!busy)||!!(h.umb&&h.umb.visible);
     if(arms||full){h.g.updateMatrixWorld(true);if(full)for(const t of I.legs)retarget(...t,1);for(const t of I.arms)retarget(...t,1);}
+    // regard : on tourne la tête vers Oscar quand il passe tout près, puis on détourne les yeux au bout de 2-3 s (sauf si on a peur)
+    if(!busy&&!cine&&oscarMesh){h.g.getWorldPosition(_rv);const ox=oscarMesh.g.position.x-_rv.x,oz=oscarMesh.g.position.z-_rv.z,dd=Math.hypot(ox,oz);
+      h.gazeT=dd<4.5?(h.gazeT||0)+dt:0;h.g.getWorldQuaternion(_rq3);const yaw=2*Math.atan2(_rq3.y,_rq3.w);let df=Math.atan2(ox,oz)-yaw;df=((df+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+      const want=dd<4.5&&h.gazeT<2.6&&Math.abs(df)<2?clamp(df,-1.1,1.1):0;h.gazeY=lerp(h.gazeY||0,want,1-Math.exp(-dt*4));
+      if(Math.abs(h.gazeY)>.01){const n=I.bn('Neck'),hd=I.bn('Head');if(n)n.rotateY(h.gazeY*.4);if(hd)hd.rotateY(h.gazeY*.6);}}
     // seated (bench, bike): put the real hips where the simple rig's hips are
     const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||m==='drive'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
@@ -5031,7 +5045,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

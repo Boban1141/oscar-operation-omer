@@ -21,6 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Vie des passants : peur, regards, heures d'ouverture (v1.17.0)
+- Vérifié sur le PC de Boban (commit 8dfbab2) :
+  - au port, un baril explose : alerte, message, 5 foyers et une vingtaine de nuages de fumée ;
+  - 22 flaques posées ;
+  - aucune erreur ;
+  - la tenue militaire (KSK) apparaît enfin avec son camouflage.
+  Le feu lui-même n'a pas été bien cadré : il brûlait derrière un conteneur.
+- Bloc 3 de la liste de Boban (vie des passants), appliqué à toutes les villes :
+  - Peur (`publicThreat`) : les passants proches se retournent et s'enfuient en courant. Rayon selon le danger : tenue militaire 5 m, arme sortie 8 m, arme en joue 12 m, coup de feu ou explosion dans les 15 dernières minutes 28 m. Les gens assis ou en groupe se lèvent et se tournent vers Oscar. Un message dit pourquoi.
+  - Regards (vrais humains) : quand Oscar passe à moins de 4,5 m, les gens tournent la tête vers lui (cou et tête), puis détournent les yeux au bout de 2,6 s.
+  - Heures d'ouverture : les clients des terrasses et des commerces ne sont là que de 8 h à 21 h 30. La nuit, il ne reste qu'un habitué sur cinq. La foule diminuait déjà la nuit et sous la pluie.
+- Reste à faire dans ce bloc : rentrer chez soi le soir, réputation qui circule d'une ville à l'autre, confiance et méfiance dans les dialogues, refus et négociation.
+- Tests : 157/157.
+
 ## 2026-11-25 — Claude — Physique du monde (v1.16.0)
 - Bloc 2 de la liste de Boban, appliqué à tout le jeu (section 14).
 - Poids et élan : le fusil, le pistolet et la tenue militaire pèsent (`playerLoad`). Plus Oscar porte lourd, plus il met de temps à démarrer, s'arrêter et tourner, et sa vitesse baisse un peu.

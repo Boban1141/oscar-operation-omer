@@ -168,6 +168,8 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             {o.startLevel(null,'bc');o.S.location='forest';o.S.weather.rain=1;o.ignite(o.S.player.x+30,o.S.player.z);for(let i=0;i<20;i++)o.tick(.5);const f2=o.phys();ok(f2.fires<=4,'sous la pluie le feu ne se propage presque pas ('+f2.fires+' foyers)');}
             {o.startLevel(null,'toronto');o.S.location='port';o.tick(.1);const ok1=o.boom();const ph=o.phys();ok(ok1&&ph.fires>0,'un baril de carburant touché explose et met le feu ('+ph.barrels.length+' barils dans l’entrepôt)');}
             {o.startLevel(null,'mtl');o.S.weather.rain=1;o.tick(.2);const e=o.phys().elec;ok(e.length>0&&parseFloat(e[0].split(':')[1])>1.1,'sous la pluie, le fil tombé électrise l’eau autour ('+(e[0]||'aucun')+' m)');}
+            {o.startLevel(null,'toronto');o.S.location='outside';o.S.clock=13*60;const a0=o.crowd(.1).afraid;o.S.player.weapons=['pistol'];o.S.player.weapon='pistol';o.S.flags.lastShot={c:o.S.clock,x:0,z:0};const a1=o.crowd(1).afraid;o.S.player.weapon='fists';o.S.flags.lastShot=null;
+             ok(a0===0&&a1>0,'un coup de feu en ville fait fuir les passants ('+a1+' effrayés)');}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');
