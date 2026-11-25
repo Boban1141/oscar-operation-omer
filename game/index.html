@@ -2336,8 +2336,10 @@ function syncCombat(dt,t){
   const inPort=!!AR();
   for(const e of (AS()?AS().enemies:[])){const m=enemyMeshes[S.location+':'+e.id];if(!m)continue;m.h.g.visible=inPort;m.bar.visible=inPort&&!e.down&&e.meter>2&&e.state!=='combat';if(!inPort)continue;
     if(e.gone){m.h.g.visible=false;m.bar.visible=false;continue;}
-    m.h.g.position.set(e.x,e.down&&!e.surrender?.12:0,e.z);
-    if(e.down&&!e.surrender){m.h.g.rotation.set(-Math.PI/2+.05,e.heading,0);animRig(m.h,dt*.2,0,0,'walk',0,false);continue;}
+    const cs=m.h.cs||(m.h.cs={deathKind:(e.sx||0)*7%2>1?'deathF':'deathB'});cs.down=e.down&&!e.surrender;if(cs.down&&!cs.downAt)cs.downAt=performance.now();if(!cs.down)cs.downAt=0;cs.surrender=!!e.surrender;cs.swing=m.swing>0;cs.hit=m.hit>0;if(cs.hit&&!cs.hitKind)cs.hitKind=Math.random()<.5?'hit':'hit2';if(!cs.hit)cs.hitKind=null;
+    cs.aim=e.state==='combat'&&(e.type==='pistol'||e.type==='rifle'||(e.type==='boss'&&Math.hypot(S.player.x-e.x,S.player.z-e.z)>5));cs.rifle=e.type==='rifle';
+    m.h.g.position.set(e.x,e.down&&!e.surrender&&!m.h.real?.12:0,e.z);
+    if(e.down&&!e.surrender){if(m.h.gun)m.h.gun.visible=!m.h.real;if(m.h.real)m.h.g.rotation.set(0,e.heading,0);else m.h.g.rotation.set(-Math.PI/2+.05,e.heading,0);animRig(m.h,dt*.2,0,0,'walk',0,false);continue;}
     m.h.g.rotation.set(0,e.heading,0);
     animRig(m.h,dt,t+e.sx,e.spd||0,'walk',e.state==='combat'?.6:0,Math.hypot(e.x-camera.position.x,e.z-camera.position.z)<22);
     if(e.surrender){m.h.hips.position.y=.45;m.h.legL.th.rotation.x=-.2;m.h.legR.th.rotation.x=-.2;m.h.legL.kn.rotation.x=1.9;m.h.legR.kn.rotation.x=1.9;m.h.spine.rotation.x=.35;
@@ -4306,7 +4308,10 @@ function updateOscarModel(dt){
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
 const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige'],
   omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
-const PNJ_CLIPS={walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle'};
+const PNJ_CLIPS={walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
+  oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
+  deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux'};
+const RH_ONCE=new Set(['deathB','deathF','kneelDown','punch','hit','hit2']),RH_WALK=/^(walkM|walkF|textWalk|oldWalk|jog|pistolWalk)$/;
 const HUMANS=[];let RFRAME=0;
 const RH={ready:false,loading:false,clips:{},base:{},pending:{},free:{},bound:new Set(),selT:0,fbx:null,SU:null,pruneT:0};
 const rhNorm=n=>n.replace(/^mixamorig\d+/,'mixamorig');
@@ -4320,7 +4325,7 @@ async function rhInit(){
     RH.fbx=new FBXLoader();RH.SU=SU;
     await Promise.all(Object.entries(PNJ_CLIPS).map(async([k,f])=>{const o=await firstOk([PNJ_ANIM+f+'.fbx','../'+PNJ_ANIM+f+'.fbx'],u=>RH.fbx.loadAsync(u));
       if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);
-        if(/walk|Walk/.test(k))inPlace(c);c.name=k;RH.clips[k]=c;}}));
+        if(RH_WALK.test(k))inPlace(c);c.name=k;RH.clips[k]=c;}}));
     if(OM.loco)for(const c of OM.loco)if(c.name==='Run')RH.clips.run=c;
     RH.ready=!!(RH.clips.idle&&(RH.clips.walkM||RH.clips.walkF));
   }catch(e){console.warn('Vrais humains indisponibles, personnages simples conservés.',e);}
@@ -4345,7 +4350,7 @@ function rhInstance(name){
   const f=(RH.free[name]||(RH.free[name]=[]));if(f.length)return f.pop();
   const model=RH.SU.clone(B.obj),root=new THREE.Group();root.add(model);
   const mixer=new THREE.AnimationMixer(model),acts={};
-  for(const [k,c] of Object.entries(B.clips)){const a=mixer.clipAction(c);a.play();a.setEffectiveWeight(0);acts[k]=a;}
+  for(const [k,c] of Object.entries(B.clips)){const a=mixer.clipAction(c);if(RH_ONCE.has(k)){a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;}a.play();a.setEffectiveWeight(0);acts[k]=a;}
   const bn=n=>model.getObjectByName('mixamorig'+n);
   return {name,root,model,mixer,acts,w:{},cur:null,s:1.7/B.headY,bn,
     arms:null,legs:null,hips:bn('Hips')};
@@ -4365,7 +4370,11 @@ function rhBind(h,I){
 }
 function rhUnbind(h){const I=h.real;if(!I)return;if(I.root.parent)I.root.parent.remove(I.root);
   for(const [o,v] of h.rhide||[])o.visible=v;h.rhide=null;h.real=null;RH.bound.delete(h);(RH.free[I.name]||(RH.free[I.name]=[])).push(I);}
-function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0;
+function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.cs;
+  if(cs){if(cs.down)return A[cs.deathKind]?cs.deathKind:'idle';if(cs.surrender)return A.kneel?'kneel':'idle';if(cs.swing&&A.punch)return 'punch';if(cs.hit&&A[cs.hitKind])return cs.hitKind;
+    if(cs.aim){if(cs.rifle&&A.rifleIdle)return 'rifleIdle';if(A.pistolIdle)return sp>.3&&A.pistolWalk?'pistolWalk':'pistolIdle';}}
+  if(L.type==='elder'&&r.mode==='walk'){if(sp>.3&&A.oldWalk)return 'oldWalk';if(sp<=.3&&A.oldIdle&&!L.prop)return 'oldIdle';}
+  if(sp>2.2&&sp<=3.4&&A.jog)return 'jog';
   if(r.mode==='sit')return (rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
   if(r.mode==='bike')return 'sit';
   if(r.mode==='talk')return L.prop==='phone'&&I.acts.phone?'phone':'talk';
@@ -4386,16 +4395,16 @@ function updateRealHumans(dt){
     for(const h of want)if(!h.real){const I=rhInstance(rhChar(h));if(I)rhBind(h,I);}}
   const cine=mode==='cine';
   for(const h of RH.bound){const I=h.real,cur=rhClip(h,I),k=1-Math.exp(-dt*8);
-    if(cur!==I.cur){const a=I.acts[cur];if(a&&!(I.w[cur]>.05)){a.reset();a.time=Math.random()*a.getClip().duration;}I.cur=cur;}
+    if(cur!==I.cur){const a=I.acts[cur];if(a&&(RH_ONCE.has(cur)||!(I.w[cur]>.05))){a.reset();a.time=RH_ONCE.has(cur)?0:Math.random()*a.getClip().duration;if(/^death/.test(cur)&&h.cs&&h.cs.downAt&&performance.now()-h.cs.downAt>2500)a.time=a.getClip().duration;}I.cur=cur;}
     for(const n in I.acts){I.w[n]=lerp(I.w[n]||0,n===cur?1:0,k);I.acts[n].setEffectiveWeight(I.w[n]);}
     const sp=(h.rs&&h.rs.speed)||0;
-    if(I.acts.walkM)I.acts.walkM.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.walkF)I.acts.walkF.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.textWalk)I.acts.textWalk.timeScale=clamp(sp/1.1,.6,1.6);
+    if(I.acts.jog)I.acts.jog.timeScale=clamp(sp/2.8,.7,1.3);if(I.acts.oldWalk)I.acts.oldWalk.timeScale=clamp(sp/.9,.6,1.5);if(I.acts.walkM)I.acts.walkM.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.walkF)I.acts.walkF.timeScale=clamp(sp/1.3,.6,1.8);if(I.acts.textWalk)I.acts.textWalk.timeScale=clamp(sp/1.1,.6,1.6);
     I.mixer.update(dt);
     // poses the clips do not have: cinematics (everything), weapons and umbrellas (arms)
-    const full=cine||(h.g.rotation.x<-.5),arms=full||!!h.gun||!!(h.umb&&h.umb.visible);
+    const cs=h.cs,busy=cs&&(cs.down||cs.surrender||cs.swing||cs.hit),full=cine||(h.g.rotation.x<-.5),arms=full||(!!h.gun&&!busy)||!!(h.umb&&h.umb.visible);
     if(arms||full){h.g.updateMatrixWorld(true);if(full)for(const t of I.legs)retarget(...t,1);for(const t of I.arms)retarget(...t,1);}
     // seated (bench, bike): put the real hips where the simple rig's hips are
-    const m=h.rs&&h.rs.mode;if(m==='sit'||m==='bike'||full){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
+    const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
     else I.root.position.y=lerp(I.root.position.y,0,k);}
 }

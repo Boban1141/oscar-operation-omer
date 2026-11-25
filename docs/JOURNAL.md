@@ -38,6 +38,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Option ajoutée : « Passants et personnages » : vrais humains ou simples (plus léger).
 - Tests : 144/144.
 - Vérifié sur le PC de Boban (commit 19ca5f7) : aucun message d'erreur ; vrais humains assis et qui discutent au diner, passants à Toronto, hommes d'Omer au port ; 31 images/s en qualité basse.
+- Deuxième série d'animations téléchargée par Boban :
+  - Combat : pistolet (attente, marche), fusil en visée, coup de poing, deux réactions aux coups, chute en arrière, chute en avant, à genoux.
+  - Quotidien : marche et attente d'une personne âgée, jogging.
+  - Branchement : les hommes d'Omer visent, frappent, encaissent, tombent (sans retomber quand ils redeviennent réels) et se rendent à genoux. Les personnes âgées marchent à leur rythme et les passants pressés font du jogging.
+- Cyclistes : pas d'animation de vélo sur Mixamo pour l'instant. Le vrai corps assis recopie le pédalage, le dos penché et les mains au guidon du squelette simple.
 - Retouche après vérification : plus de vrais humains à la fois (8 en basse, 12 en moyenne, 18 en haute, au moins 12 à l'intérieur) et rayon porté à 45 m, car au diner certains clients restaient simples.
 
 ## 2026-11-24 — Claude — Villes ouvertes des provinces, complètes comme Toronto (v1.7.0)

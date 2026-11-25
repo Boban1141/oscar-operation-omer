@@ -192,7 +192,9 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] 13 personnages Mixamo (hommes, femmes, hommes d'Omer, enfant) et 9 animations du quotidien
 - [x] Remplacement automatique des personnages proches (passants, assis, cyclistes, ennemis, lieux, cinématiques)
 - [ ] Vérification visuelle sur le PC de Boban après envoi
-- [ ] Plus tard : animation de vélo, combat et chute propres aux ennemis
+- [x] Combat des hommes d'Omer : visée, coups, réactions, chutes, reddition
+- [x] Personnes âgées et jogging
+- [x] Cyclistes : pédalage recopié du squelette simple (pas d'animation de vélo Mixamo)
 
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
