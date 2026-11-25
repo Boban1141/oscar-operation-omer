@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.11.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.11.3', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1356,54 +1356,51 @@ function updateBirds(dt,t,center){
 /* Chiens qui se promènent dans les rues */
 let dogPack=[];
 function initDogs(count=6){
-  for(const d of dogPack)scene.remove(d.g);
+  for(const d of dogPack){scene.remove(d.g);if(d.leash)scene.remove(d.leash);}
   dogPack=[];
   const r=mulberry32(Date.now()%5000);
-  const dogColors=['#8B4513','#D2691E','#000000','#F5F5DC','#696969','#A0522D'];
+  const dogColors=['#8B4513','#D2691E','#1a1a1a','#e8dcc0','#696969','#A0522D'];
   for(let i=0;i<count;i++){
-    const g=new THREE.Group();
-    const col=dogColors[Math.floor(r()*dogColors.length)];
+    const g=new THREE.Group(),inner=new THREE.Group();inner.rotation.y=-Math.PI/2;g.add(inner);   // le museau regarde vers l'avant (+Z)
+    const col=dogColors[Math.floor(r()*dogColors.length)],sz=.8+r()*.6;inner.scale.setScalar(sz);
     const dm=new THREE.MeshStandardMaterial({color:col,roughness:.8});
-    // corps
-    const body=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.22,4,8),dm);body.rotation.z=Math.PI/2;body.position.y=.12;g.add(body);
-    // tête
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.08,8,6),dm);head.position.set(.22,.22,0);g.add(head);
-    // queue
-    const tail=new THREE.Mesh(new THREE.CylinderGeometry(.015,.03,.12,4),dm);tail.position.set(-.22,.18,0);tail.rotation.z=.8;g.add(tail);
-    // pattes
-    for(const [lx,lz] of [[.1,.06],[.1,-.06],[-.1,.06],[-.1,-.06]]){
-      const leg=new THREE.Mesh(new THREE.CylinderGeometry(.025,.02,.1,4),dm);leg.position.set(lx,.05,lz);g.add(leg);}
-    // oreilles
-    for(const sx of[-1,1]){const ear=new THREE.Mesh(new THREE.ConeGeometry(.03,.06,4),dm);ear.position.set(.2,.28,sx*.06);ear.rotation.x=sx*.5;g.add(ear);}
-    g.position.set((r()-.5)*120,.15,(r()-.5)*120);
-    scene.add(g);
-    dogPack.push({g,phase:r()*6,speed:.5+r()*1.2,heading:r()*Math.PI*2,idle:r()<.3,idleT:0,owner:i<3?{x:(r()-.5)*80,z:(r()-.5)*80}:null,sniffT:0});
+    const body=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.22,4,8),dm);body.rotation.z=Math.PI/2;body.position.y=.17;inner.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.08,8,6),dm);head.position.set(.24,.27,0);inner.add(head);
+    const snout=new THREE.Mesh(new THREE.SphereGeometry(.045,6,5),dm);snout.position.set(.31,.25,0);snout.scale.set(1.3,.8,.9);inner.add(snout);
+    const tail=new THREE.Mesh(new THREE.CylinderGeometry(.015,.03,.12,4),dm);tail.position.set(-.22,.23,0);tail.rotation.z=.8;inner.add(tail);
+    const legs=[];for(const [lx,lz] of [[.11,.06],[.11,-.06],[-.11,.06],[-.11,-.06]]){
+      const leg=new THREE.Mesh(new THREE.CylinderGeometry(.025,.02,.12,4),dm);leg.geometry.translate(0,-.06,0);leg.position.set(lx,.12,lz);inner.add(leg);legs.push(leg);}
+    for(const sx of[-1,1]){const ear=new THREE.Mesh(new THREE.ConeGeometry(.03,.06,4),dm);ear.position.set(.22,.34,sx*.05);ear.rotation.x=sx*.5;inner.add(ear);}
+    const leash=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:'#2a2a2a'}));leash.frustumCulled=false;
+    scene.add(g);scene.add(leash);
+    dogPack.push({g,tail,legs,leash,phase:r()*6,own:null,side:r()<.5?-1:1,sniff:r()*4,speed:0,px:0,pz:0,sz});
   }
 }
+// Un chien n'est jamais seul : il est tenu en laisse par un passant, marche à côté de lui sur le trottoir et s'arrête quand il s'arrête.
 function updateDogs(dt,t,center){
-  for(const d of dogPack){
-    d.phase+=dt*4;
-    d.g.position.y=.15+Math.abs(Math.sin(d.phase))*.03;
-    if(d.owner){
-      const dx=d.owner.x-d.g.position.x,dz=d.owner.z-d.g.position.z;
-      const dist=Math.hypot(dx,dz);
-      if(dist>3){d.heading=Math.atan2(dx,dz);d.speed=lerp(d.speed,1.8,dt*2);d.idle=false;}
-      else if(dist<1.5){d.idle=true;d.idleT+=dt;d.speed=lerp(d.speed,0,dt*3);}
-      else{d.heading=Math.atan2(dx,dz)+Math.sin(t*.5)*.3;d.speed=lerp(d.speed,.8,dt*2);d.idle=false;}
-    }else{
-      d.idleT+=dt;
-      if(d.idleT>3+Math.random()*2){d.idle=!d.idle;d.idleT=0;d.heading+=Math.sin(t)*.5;}
-      if(!d.idle){d.speed=lerp(d.speed,.6+Math.random()*.4,dt);d.heading+=Math.sin(t*.3)*.002;}
-      else{d.speed=lerp(d.speed,0,dt*3);}
-    }
-    d.g.position.x+=Math.sin(d.heading)*d.speed*dt;
-    d.g.position.z+=Math.cos(d.heading)*d.speed*dt;
-    d.g.rotation.y=d.heading;
-    // queue qui remue
-    const tail=d.g.children[2];if(tail)tail.rotation.z=.8+Math.sin(d.phase*2)*.4;
+  const out=S&&S.location==='outside';
+  for(let i=0;i<dogPack.length;i++){const d=dogPack[i];
+    if(d.own==null||!pedMeshes[d.own]||!peds[d.own]||peds[d.own].behavior==='sit'||peds[d.own].behavior==='talk'){
+      d.own=null;for(let k=0;k<pedMeshes.length&&d.own==null;k++){const j=(i*11+k*7+3)%pedMeshes.length;const p=peds[j];if(p&&p.behavior!=='sit'&&p.behavior!=='talk'&&p.behavior!=='group'&&!dogPack.some(o=>o!==d&&o.own===j))d.own=j;}
+      if(d.own!=null){const m=pedMeshes[d.own].g;d.g.position.set(m.position.x,0,m.position.z);d.px=m.position.x;d.pz=m.position.z;}}
+    const m=d.own!=null?pedMeshes[d.own]:null;
+    const vis=!!(out&&m&&m.g.visible);d.g.visible=d.leash.visible=vis;if(!vis)continue;
+    const a=m.g.rotation.y,ox=m.g.position.x,oz=m.g.position.z;
+    d.sniff-=dt;const lag=d.sniff<0?.5:1.15;if(d.sniff<-1.5)d.sniff=3+Math.random()*4;
+    const tx=ox+Math.cos(a)*.55*d.side+Math.sin(a)*lag,tz=oz-Math.sin(a)*.55*d.side+Math.cos(a)*lag;
+    const k=1-Math.exp(-dt*4);const nx=lerp(d.g.position.x,tx,k),nz=lerp(d.g.position.z,tz,k);
+    const vx=(nx-d.g.position.x)/Math.max(dt,1e-3),vz=(nz-d.g.position.z)/Math.max(dt,1e-3);d.speed=lerp(d.speed,Math.hypot(vx,vz),1-Math.exp(-dt*6));
+    d.g.position.set(nx,groundHeight(nx,nz),nz);
+    if(d.speed>.15)d.g.rotation.y=angLerp(d.g.rotation.y,Math.atan2(vx,vz),1-Math.exp(-dt*8));else d.g.rotation.y=angLerp(d.g.rotation.y,a,1-Math.exp(-dt*2));
+    d.phase+=dt*(2+d.speed*9);const sw=Math.min(1,d.speed/1.2)*.6;
+    d.legs.forEach((l,j)=>{l.rotation.z=Math.sin(d.phase+(j===0||j===3?0:Math.PI))*sw;});
+    d.tail.rotation.z=.8+Math.sin(d.phase*1.6+t*6)*.4;
+    // laisse : de la main du maître au collier
+    const P=d.leash.geometry.attributes.position;const hy=m.g.position.y+.9*(m.g.scale.y||1);
+    P.setXYZ(0,ox+Math.cos(a)*.25*d.side+Math.sin(a)*.1,hy,oz-Math.sin(a)*.25*d.side+Math.cos(a)*.1);
+    P.setXYZ(1,d.g.position.x+Math.sin(d.g.rotation.y)*.22*d.sz,d.g.position.y+.3*d.sz,d.g.position.z+Math.cos(d.g.rotation.y)*.22*d.sz);P.needsUpdate=true;
   }
 }
-
 /* Avions qui traversent le ciel */
 let planes=[];
 function initPlanes(count=2){

@@ -21,6 +21,14 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Chiens tenus en laisse (v1.11.3)
+- Vérifié sur le PC de Boban (commit 6260884) : un seul Oscar, tenue de Nathan, en marchant comme à l'arrêt.
+- Signalé par Boban : des animaux traversaient la route seuls, en zigzag. Les chiens ajoutés par Kimi erraient au hasard dans la ville. Leur modèle regardait sur le côté, si bien qu'ils avançaient en crabe.
+- Correction : chaque chien est maintenant tenu en laisse par un passant qui marche. Il trotte à côté de lui sur le trottoir, s'arrête quand son maître s'arrête et renifle de temps en temps.
+  - On voit la laisse, de la main du maître au collier.
+  - Le chien est tourné dans le sens de la marche, ses pattes bougent selon sa vitesse, sa taille varie, et il a maintenant un museau.
+  - Un chien n'a jamais pour maître un passant assis ou en pleine discussion.
+
 ## 2026-11-25 — Claude — Un seul Oscar (v1.11.1)
 - Vérifié sur le PC de Boban (commit a64f29d) : Oscar porte bien la tenue de Nathan (t-shirt gris, jean), marche sur le passage piéton, pieds au sol, sans erreur.
 - Signalé par Boban : Oscar apparaissait en double. Le chargement de son modèle était lancé deux fois en même temps, par l'écran titre et par les réglages, d'où deux corps. Le second restait figé, superposé au premier : invisible à l'arrêt, visible en marchant. C'était sans doute aussi une cause de l'impression de glissade. Correction : un seul chargement à la fois (`OM.loading`), et l'ancien corps est retiré si le modèle est remonté.
