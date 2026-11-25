@@ -21,6 +21,16 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — La nuit, on voit les gens et leurs visages (v1.22.0)
+**Demande** : la nuit, dans les rues et certains endroits, on voit mal les personnages et leur visage.
+**Cause commune** : les lampadaires n'étaient que des taches lumineuses peintes au sol (`M.pools`) ; ils n'éclairaient personne. La nuit, les visages ne recevaient que la lune, souvent de dos, et un ciel bleu-noir.
+**Correction pour TOUT le jeu** (nouvelle section 17 `NL`, `updateNightLights` appelé par `updateEnvironment`) :
+- 6 vraies lumières chaudes se placent sur les lampadaires les plus proches de la caméra : ceux de la ville courante (les 7 provinces, `CITY.lamps`) et ceux des lieux extérieurs repérés par leur flaque de lumière (port, ranch, chantier, quais, silos…). Éteintes le jour, sans ombre (coût faible).
+- Adaptation de l'œil : une lumière douce suit la caméra la nuit (plus faible à l'intérieur, un peu plus forte en cinématique) ; on lit un visage à 10 m sans perdre l'ambiance.
+- Le sol renvoie un peu de lumière bleutée sous le menton la nuit ; exposition de nuit 1,30 → 1,48 dehors, 1,20 → 1,25 dedans.
+- Concerne : rues, lieux extérieurs, intérieurs sombres, cinématiques.
+**Test** : `nuit : vrais lampadaires allumés près de la caméra` (161 vérifications). Crochet `__oscar.night(minute)`.
+
 ## 2026-11-25 — Claude — Interface invisible, accents régionaux, décors qui racontent (v1.21.0)
 - Les deux derniers blocs de la liste de Boban, pour tout le jeu.
 - Interface immersive (Options → Interface, désactivée par défaut) :
