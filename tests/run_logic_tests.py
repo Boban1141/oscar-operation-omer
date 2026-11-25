@@ -155,6 +155,11 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             ok(worst.pedOverlap<=1&&worst.carOnPed===0,'personne ne se marche dessus ni ne se fait écraser (30 s simulées) : chevauchements '+worst.pedOverlap+', voiture sur piéton '+worst.carOnPed);
             {o.startLevel(null,'toronto');const g=window.__oscarGod;window.__oscarGod=false;const p=o.S.player;const x0=p.x,z0=p.z,h0=p.health;o.comfort.hurt(25);const moved=Math.hypot(p.x-x0,p.z-z0);window.__oscarGod=g;
              ok(p.health<h0&&moved>.5,'un choc lourd renverse et repousse Oscar ('+moved.toFixed(2)+' m)');}
+            {window.__oscarGod=false;o.startLevel(null,'ab');for(let i=0;i<4;i++)o.comfort.hurt(18);const b=o.body();const parts=Object.keys(b.wounds);
+             ok(parts.length>0&&b.kits===2&&Object.values(b.wounds).some(w=>w.bleed),'les coups blessent des parties précises du corps ('+parts.join(', ')+')');
+             const h1=o.S.player.health;for(let i=0;i<300;i++)o.player(1/60);ok(o.S.player.health<h1,'une plaie qui saigne fait perdre de la santé');
+             o.treat();const b2=o.body();ok(b2.kits===1&&!Object.values(b2.wounds).some(w=>w.bleed||w.dirty),'la trousse (touche B) arrête le saignement et désinfecte');
+             ok(b.fx.speed<=1&&b.fx.melee<=1,'les blessures gênent la marche, les coups et le tir');window.__oscarGod=true;}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');

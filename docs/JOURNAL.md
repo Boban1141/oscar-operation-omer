@@ -21,6 +21,27 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Corps et blessures (v1.15.0)
+- Boban a partagé une longue liste d'idées de réalisme (vie des passants, économie, physique, corps, interface invisible, décors qui racontent). Elle est adaptée à Oscar (Canada moderne) et notée dans la feuille de route, bloc 20. Il a choisi de commencer par « Corps et blessures ».
+- Appliqué à tout le jeu, par la règle commune des dégâts (`hurtPlayer` → `woundPlayer`). Chaque coup touche une partie du corps : tête, torse, bras droit, bras gauche, jambe droite ou jambe gauche. La partie dépend du coup :
+  - corps à corps : plutôt tête, torse, bras ;
+  - chute : plutôt jambes ;
+  - balle : surtout torse et jambes.
+- Effets :
+  - jambe : Oscar boite (le corps plonge à chaque pas sur la jambe blessée) et marche moins vite. Au-delà d'une blessure grave, il ne peut plus courir ;
+  - bras droit : tir moins précis, coups plus faibles ;
+  - bras gauche : rechargement plus lent ;
+  - torse : endurance réduite, coups plus faibles ;
+  - tête : vision trouble.
+- Plaies :
+  - une plaie qui saigne fait perdre de la santé tant qu'elle n'est pas pansée, et la santé ne remonte pas ;
+  - une plaie sale s'infecte après 3 h de jeu : fièvre, vision trouble, fatigue. Une forte fièvre aggrave l'état lentement et peut tuer ;
+  - une plaie pansée guérit, deux fois plus vite à l'intérieur.
+- Froid : en dessous de 40 de chaleur corporelle, les doigts s'engourdissent. Le tir est moins précis et le rechargement plus lent.
+- Soins : touche B, trousse de premiers soins (2 au départ de chaque niveau, 40 % de chances d'en trouver une sur un homme d'Omer fouillé). Oscar met 4 s à se soigner, sans bouger, pendant que le monde continue.
+- Interface : lignes « Blessures » et « Trousses (B) » dans le panneau, touche B dans l'aide.
+- Tests : 151/151, dont parties touchées, saignement, effet de la trousse et gênes.
+
 ## 2026-11-25 — Claude — Tout choc a un effet physique, dans tout le jeu (v1.14.0)
 - Demande de Boban : les corrections doivent toucher le jeu entier à partir de maintenant. Règle ajoutée dans `AGENTS.md` (« une correction vaut pour TOUT le jeu »).
 - Appliqué au choc signalé (la branche qui tombait sur Oscar sans qu'il bouge). Une seule règle, `impactPlayer`, est appelée par `hurtPlayer` pour chaque dégât, quelle que soit sa source :
