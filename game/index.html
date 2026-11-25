@@ -310,7 +310,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.13.3', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.13.4', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3401,14 +3401,17 @@ const inHouse=p=>{const x=p.x-MANOIR.ox,z=p.z-MANOIR.oz;return x>-22&&x<22&&z>-3
 const kitchenWindow=()=>{const m=((S.clock%1440)+1440)%1440;return m<15;};
 // falling ice-laden branches (outdoors in the storm) and a downed live wire
 function stormHazards(p,I,inside){
-  if(I===WMT&&!S.flags.wireSafe){const d=Math.hypot(p.x-(WMT.ox+14),p.z-(WMT.oz+11));if(d<1.1&&!(CB.wireCd>0)){CB.wireCd=2;hurtPlayer(40,false);p.x-=1.5;toast('Une décharge te projette en arrière : le fil tombé est encore sous tension !');}}
+  if(I===WMT&&!S.flags.wireSafe){const d=Math.hypot(p.x-(WMT.ox+14),p.z-(WMT.oz+11));if(d<1.1&&!(CB.wireCd>0)){CB.wireCd=2;hurtPlayer(40,false);p.x-=1.5;CB.lockT=1.6;CB.fall=1.4;CB.shake=Math.max(CB.shake||0,.8);toast('Une décharge te projette en arrière : le fil tombé est encore sous tension !');}}
   CB.wireCd=Math.max(0,(CB.wireCd||0)-1/60);
   const br=I.branch;if(!br)return;
   if(inside){br.fall=0;return;}
   S.flags.brT=(S.flags.brT??40)-1/60;
   if(S.flags.brT<=0&&!br.fall){br.fall=1.5;br.x=p.x+(Math.random()-.5)*1.4;br.z=p.z+(Math.random()-.5)*1.4;toast('Un craquement sec au-dessus de toi… Bouge !');csnd('thump');}
   if(br.fall>0){br.fall-=1/60;const k=clamp(1-br.fall/.6,0,1);br.m.visible=true;br.m.position.set(br.x-I.ox,lerp(8,.15,k),br.z-I.oz);
-    if(br.fall<=0){br.fall=0;S.flags.brT=35+Math.random()*30;sfx('down');if(Math.hypot(p.x-br.x,p.z-br.z)<1.3){hurtPlayer(22,false);toast('Une branche chargée de glace s’écrase sur toi !');}}}
+    if(br.fall<=0){br.fall=0;S.flags.brT=35+Math.random()*30;sfx('down');if(Math.hypot(p.x-br.x,p.z-br.z)<1.3){hurtPlayer(22,false);
+      // le choc renverse Oscar : il tombe à la renverse, repoussé loin de la branche, et met un moment à se relever
+      const dx=p.x-br.x,dz=p.z-br.z,d=Math.hypot(dx,dz)||1;p.x+=dx/d*.9;p.z+=dz/d*.9;CB.lockT=1.6;CB.fall=1.4;CB.shake=Math.max(CB.shake||0,.6);sfx('down');
+      toast('Une branche chargée de glace s’écrase sur toi ! Tu tombes à la renverse.');}}}
 }
 ARENAS.westmount={area:WMT,lvl:'mtl',ground:'#2c333b',
   defs:[{id:'w1',type:'pistol',post:[40,-2.4,0],friendly:true},{id:'w2',type:'melee',route:[[30,1.5],[54,1.5]],friendly:true}],

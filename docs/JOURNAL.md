@@ -21,6 +21,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Oscar réagit quand une branche le frappe (v1.13.4)
+- Signalé par Boban : un objet est tombé sur Oscar et il n'a pas bougé. C'était une branche chargée de glace, pendant la tempête de verglas de Westmount. Elle retirait de la santé, sans aucune réaction physique.
+- Maintenant, la branche renverse Oscar : il tombe à la renverse, est repoussé d'environ 1 m, l'écran tremble, et il met un moment à se relever, sans pouvoir bouger pendant 1,6 s (`CB.fall`, `CB.lockT`).
+- Le fil électrique tombé fait la même chose : décharge, projection en arrière et chute.
+
 ## 2026-11-25 — Claude — Tenue civile dans les rues de toutes les villes (v1.13.3)
 - Vérifié sur le PC de Boban (commit f841c4d) : aucune erreur. Les 7 niveaux démarrent bien. Oscar était en tenue civile à Toronto, mais en militaire au point de départ des niveaux 2 à 7. Ces départs (Vanport, port de St. John's, cour de triage, Halifax, Winnipeg, Westmount) sont des zones de jeu ouvertes (`ARENAS`) pleines de passants.
 - La tenue militaire ne sert plus que dans les lieux de mission armée (`HOSTILE` : entrepôt du port, forêt et chapelle, chalutier, ranch, bureau du notaire, silos, manoir, sous-sol, cour de triage). Partout ailleurs, tenue civile ; la touche G reste disponible.
