@@ -21,6 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Plus personne n'est assis dans le vide (v1.9.1)
+- Signalé par Boban : des gens assis sans table, chaise ni fauteuil.
+- Causes et corrections :
+  - Diner : les clients ajoutés par Kimi étaient placés au hasard, à 50 cm du sol et tournés n'importe comment. Ils s'assoient maintenant sur les vrais sièges du diner (5 tabourets, 5 places de banquette, 3 chaises), face au comptoir ou à leur table. Marcus et M. Kowalski gardent leur place.
+  - Serveur du diner : il marchait côté clients, à 50 cm du sol. Il marche maintenant au sol, derrière le comptoir.
+  - Rue : une personne sur quatre parmi les gens qui discutent « s'asseyait » sur rien. Ils restent debout.
+  - Niveaux : chaises ajoutées sous Bridget (pub), Dale (Truck Stop), Nadia et Louis (café), Marie-Rose et Réjean (refuge). Tabouret ajouté pour Wilf au comptoir du pub. Earl est remonté sur son tabouret du bar (`SIT_FIX`, `fixSeats`).
+- Signalé par Boban : la serveuse du bar n'était pas comme les autres. Maggie (barmaid du Rusty Anchor) recevait un corps d'homme en t-shirt blanc : son apparence de base portait une barbe, et le choix homme/femme se faisait sur « cheveux longs sans barbe ». Les personnages nommés ont maintenant un rôle fixe (`FEMMES`, `assignRoles`). Lina, Maggie, Bridget, Priya, Gisèle, Mireille, Nadia, Hélène, Marie-Rose et Eva sont des femmes. Louis, qui a les cheveux longs, garde un corps d'homme.
+- Signalé par Boban : la nuit et dans certains lieux, l'image était trop noire.
+  - Dehors la nuit : lumière du ciel et de la lune nettement plus fortes (ciel 0,42 → 0,85, lune 0,32 → 0,62), teinte plus claire, exposition 1,3.
+  - Intérieurs : lumière d'ambiance chaude 0,18–0,40 → 0,60–0,85, lampes toujours allumées pleinement (avant, réduites de moitié le jour), exposition 1,2.
+  - Qualité haute : le post-traitement sortait l'image sans conversion de couleurs (pas d'`OutputPass`), ce qui l'assombrissait. Corrigé. Vignette plus légère (0,42 → 0,30).
+- Véhicules vérifiés à l'écran et avec des vues de profil : voitures, taxi, police et vélo dans le bon sens. La moto roulait à l'envers, corrigé (`flip:true`).
+
 ## 2026-11-25 — Claude — Vrais véhicules, conducteurs et motos (v1.9.0)
 - Boban a téléchargé 7 modèles Sketchfab, tous sous licence CC-BY 4.0. Les auteurs sont cités dans `CREDITS.md` et dans Options → Crédits des modèles 3D.
   - Voitures : Honda Civic, Toyota Corolla AE86, Range Rover Evoque.

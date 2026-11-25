@@ -5,3 +5,6 @@ node_modules/
 
 # modèle de démonstration Mixamo inutile (5 Mo)
 assets/animations/shooter/X Bot.fbx
+
+# vue de contrôle générée pendant la vérification des véhicules
+assets/vehicles/side.png

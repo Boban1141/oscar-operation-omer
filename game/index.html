@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.9.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.9.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1456,36 +1456,28 @@ function initInteriorLife(loc){
   interiorLife=[];
   const I=INTERIORS[loc];if(!I)return;
   const r=mulberry32(I.ox+I.oz);
-  // clients assis à des tables
-  if(loc==='diner'||loc==='restaurant'){
-    const tableCount=5+Math.floor(r()*4);
-    for(let i=0;i<tableCount;i++){
-      const tx=(r()-.5)*I.hw*.7,tz=(r()-.5)*I.hd*.5;
-      const look=mkLook(r);
-      const h=createHuman({...look,prop:r()<.5?'cup':'phone'});
-      h.g.position.set(I.ox+tx,.5,I.oz+tz);
-      h.g.rotation.y=r()*Math.PI*2;
-      scene.add(h.g);
-      interiorLife.push({h,x:I.ox+tx,z:I.oz+tz,mode:'sit',type:'customer',talkT:r()*5});
-      // parfois un partenaire
-      if(r()<.4){
-        const look2=mkLook(r);
-        const h2=createHuman({...look2,prop:r()<.5?'cup':'none'});
-        h2.g.position.set(I.ox+tx+.8,.5,I.oz+tz);
-        h2.g.rotation.y=Math.atan2(-.8,0)+Math.PI/2;
-        scene.add(h2.g);
-        interiorLife.push({h:h2,x:I.ox+tx+.8,z:I.oz+tz,mode:'sit',type:'customer',talkT:r()*5});
-      }
-    }
-  }
+  // clients assis sur les vrais sièges du lieu (tabourets, banquettes, chaises) : jamais dans le vide
+  const SEATS={diner:[
+    ...[0,1,2,3,4].map(i=>({x:1.6+i*1.05,z:-1.85,y:.29,a:Math.PI})),                       // tabourets du comptoir
+    {x:-6.25,z:-3.92,y:0,a:0},{x:-6.25,z:-2.48,y:0,a:Math.PI},{x:-6.25,z:.32,y:0,a:Math.PI},   // banquettes (Marcus occupe la 4e)
+    {x:-6.25,z:1.68,y:0,a:0},{x:-6.25,z:3.12,y:0,a:Math.PI},
+    {x:-1.8,z:2.15,y:.03,a:Math.PI},{x:1.2,z:3.35,y:.03,a:Math.PI},{x:1.2,z:1.85,y:.03,a:0}]}; // chaises des tables rondes
+  const seats=(SEATS[loc]||[]).slice();
+  for(let i=seats.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[seats[i],seats[j]]=[seats[j],seats[i]];}
+  const nCust=Math.min(seats.length,5+Math.floor(r()*4));
+  for(let i=0;i<nCust;i++){const st=seats[i];const look=mkLook(r);
+    const h=createHuman({...look,prop:r()<.5?'cup':'phone'});
+    h.g.position.set(I.ox+st.x,st.y,I.oz+st.z);h.g.rotation.y=st.a;scene.add(h.g);
+    interiorLife.push({h,x:I.ox+st.x,z:I.oz+st.z,mode:'sit',type:'customer',talkT:r()*5});}
   // barman/serveur
   if(loc==='diner'||loc==='restaurant'||loc==='pub'){
     const look=mkLook(r);look.prop='none';
     const h=createHuman(look);
-    h.g.position.set(I.ox,.5,I.oz-I.hd*.4);
+    const bz=loc==='diner'?-3.75:-I.hd*.4,bx0=loc==='diner'?1.6:-I.hw*.3,bx1=loc==='diner'?5.9:I.hw*.3;
+    h.g.position.set(I.ox+bx0,0,I.oz+bz);
     h.g.rotation.y=Math.PI;
     scene.add(h.g);
-    interiorLife.push({h,x:I.ox,z:I.oz-I.hd*.4,mode:'stand',type:'staff',patrol:[{x:I.ox-I.hw*.3,z:I.oz-I.hd*.4},{x:I.ox+I.hw*.3,z:I.oz-I.hd*.4}],patrolI:0,patrolT:0});
+    interiorLife.push({h,x:I.ox+bx0,z:I.oz+bz,mode:'stand',type:'staff',patrol:[{x:I.ox+bx0,z:I.oz+bz},{x:I.ox+bx1,z:I.oz+bz}],patrolI:0,patrolT:0});
   }
 }
 function updateInteriorLife(dt,t){
@@ -1499,7 +1491,7 @@ function updateInteriorLife(dt,t){
       const dist=Math.hypot(dx,dz);
       if(dist<.2){il.patrolI=(il.patrolI+1)%il.patrol.length;il.patrolT=0;}
       else{il.h.g.rotation.y=Math.atan2(dx,dz);il.h.g.position.x+=dx/dist*.8*dt;il.h.g.position.z+=dz/dist*.8*dt;}
-      animRig(il.h,dt,t,1.5,'walk',0,true);
+      animRig(il.h,dt,t,.8,'walk',0,true);
     }
     else{animRig(il.h,dt,t,0,'talk',0,true);}
   }
@@ -1616,9 +1608,9 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   const up=el>0;const ld=up?sd:sd.clone().multiplyScalar(-1);
   sun.position.set(center.x+ld.x*220,Math.max(30,ld.y*220),center.z+ld.z*220);sun.target.position.set(center.x,0,center.z);
   sun.color.set(up?(dusk>.3?'#ffc48a':'#fff3e0'):'#9fb7ff');
-  sun.intensity=up?2.6*smooth(0,.15,el)*(1-cloud*.65):.32*smooth(0,.2,-el)*(1-cloud*.5);
-  hemi.intensity=lerp(.42,1.05,day)*(1-cloud*.15);
-  hemi.color.set(day>.5?'#cfe6ff':'#5a6c9c');
+  sun.intensity=up?2.6*smooth(0,.15,el)*(1-cloud*.65):.62*smooth(0,.2,-el)*(1-cloud*.4);
+  hemi.intensity=lerp(.85,1.05,day)*(1-cloud*.1);
+  hemi.color.set(day>.5?'#cfe6ff':'#8a9cc8');
   stars.material.opacity=smooth(.4,.9,nightF)*(1-cloud);
   sunDisc.position.set(center.x+sd.x*1200,sd.y*1200,center.z+sd.z*1200);sunDisc.material.opacity=up?(1-cloud*.9):0;
   moon.position.set(center.x-sd.x*1200,-sd.y*1200,center.z-sd.z*1200+300);moon.material.opacity=up?0:(1-cloud*.85);
@@ -1643,9 +1635,10 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   }else{splashMat.opacity=0;}
   if(SNOWAMT>0){scene.fog.near=lerp(scene.fog.near,30,SNOWAMT*.6);scene.fog.far=lerp(scene.fog.far,200,SNOWAMT*.7);const wo=SNOWAMT*clamp((WIND.str-.45)*2.2,0,1);scene.fog.near=lerp(scene.fog.near,4,wo);scene.fog.far=lerp(scene.fog.far,46,wo);}
   updateInteriorLights(day*(1-cloud*.5),smooth(.25,.75,nightF));
-  if(mode==='cine')hemi.intensity=Math.max(hemi.intensity,.55);
+  if(mode==='cine')hemi.intensity=Math.max(hemi.intensity,.8);
+  renderer.toneMappingExposure=indoor?1.2:lerp(1.3,1,day);
   {const I=S&&INTERIORS[S.location];if(I&&I.nightFill&&!indoor)hemi.intensity=Math.max(hemi.intensity,I.nightFill);}
-  if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=Math.max(.18+.22*day,S&&S.location==='manoir'?.5:0);hemi.color.set('#f3e6d2');
+  if(indoor){scene.background=tmpC2.set('#0c0b0a');scene.fog.near=60;scene.fog.far=200;sun.intensity=0;hemi.intensity=Math.max(.6+.25*day,S&&S.location==='manoir'?.7:0);hemi.color.set('#f3e6d2');
     rain.visible=false;stars.material.opacity=0;sunDisc.material.opacity=0;moon.material.opacity=0;}
 }
 
@@ -1675,7 +1668,7 @@ function syncView(dt,t){
     if(m.g.brakeLights){const braking=v.speed<.5||v.speed<(v.max*.3);for(const bl of m.g.brakeLights){bl.material.emissiveIntensity=braking?2.5:.4;}}});
   trams.forEach((tr,i)=>{tramMeshes[i].position.set(tr.x,0,tr.z);tramMeshes[i].rotation.y=tr.dir>0?Math.PI/2:-Math.PI/2;});
   idlers.forEach((d,i)=>{const h=idlerMeshes[i];const dd=Math.hypot(d.x-cx,d.z-cz);h.g.visible=dd<200;if(h.g.visible){
-    const modes=['talk','talk','walk','sit'];
+    const modes=['talk','talk','walk','talk'];
     const mode=d.mode||modes[i%modes.length];
     animRig(h,dt,t+i*1.7,0,mode,0,dd<22);
     if(mode==='sit')h.g.position.y=.55;
@@ -1693,16 +1686,17 @@ function syncView(dt,t){
 /* --- post-processing --- */
 async function initComposer(){
   try{
-    const [{EffectComposer},{RenderPass},{UnrealBloomPass},{ShaderPass}]=await Promise.all([
+    const [{EffectComposer},{RenderPass},{UnrealBloomPass},{ShaderPass},{OutputPass}]=await Promise.all([
       import('three/addons/postprocessing/EffectComposer.js'),
       import('three/addons/postprocessing/RenderPass.js'),
       import('three/addons/postprocessing/UnrealBloomPass.js'),
-      import('three/addons/postprocessing/ShaderPass.js')]);
+      import('three/addons/postprocessing/ShaderPass.js'),import('three/addons/postprocessing/OutputPass.js')]);
     composer=new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene,camera));
     const bloom=new UnrealBloomPass(new THREE.Vector2(canvas.width,canvas.height),.35,.4,.85);
     composer.addPass(bloom);
-    const vig=new ShaderPass(VIGNETTE_SH);vig.uniforms.vignette.value=.42;composer.addPass(vig);
+    composer.addPass(new OutputPass());
+    const vig=new ShaderPass(VIGNETTE_SH);vig.uniforms.vignette.value=.3;composer.addPass(vig);
     const grain=new ShaderPass(GRAIN_SH);grain.uniforms.amount.value=.025;composer.addPass(grain);
     const chroma=new ShaderPass(CHROMATIC_SH);chroma.uniforms.amount.value=.0012;composer.addPass(chroma);
     COMF.vig=vig;COMF.grain=grain;COMF.chroma=chroma;
@@ -1991,7 +1985,7 @@ function applyLocation(){
 }
 function updateInteriorLights(day,night){
   for(const d of dayMats){if(d.opacity)d.m.opacity=d.base+d.k*day;else d.m.emissiveIntensity=d.base+d.k*day;}
-  for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.kind==='office'?L.base*(S&&S.flags.powerCut?.15:1):L.night?L.base*night:L.base*(.45+.75*night);
+  for(const k in INTERIORS)for(const L of INTERIORS[k].lights)L.l.intensity=L.kind==='sun'?55*day:L.kind==='office'?L.base*(S&&S.flags.powerCut?.15:1):L.night?L.base*night:L.base*(.95+.45*night);
 }
 function syncStory(dt,t){
   if(S.location==='halifax')animWaves(HFX,t,S.weather.windStr||.4);
@@ -3729,6 +3723,20 @@ function walkTo(h,a,b,k,d,t,dt,y=0){const x=lerp(a[0],b[0],k),z=lerp(a[1],b[1],k
   if(dist>.01)h.g.rotation.set(0,Math.atan2(b[0]-a[0],b[1]-a[1]),0);animRig(h,dt,t,k<1?dist/d:0,'walk',0,true);}
 /* --- sets --- */
 let A={};const FX={};
+// Chaque personnage assis des niveaux a un vrai siège sous lui (chaise, tabouret) et y est posé à la bonne hauteur.
+const SIT_FIX={earl:{y:.3},wilf:{y:.3,stool:true},bridget:{chair:true},dale:{chair:true},nadia:{chair:true},louis:{chair:true},marierose:{chair:true},rejean:{chair:true}};
+// Les personnages nommés reçoivent un corps du bon sexe (Maggie, Lina, Bridget… sont des femmes ; Louis a les cheveux longs mais c'est un homme).
+const FEMMES=new Set(['lina','maggie','bridget','priya','gisele','mireille','nadia','helene','marierose','eva']);
+function assignRoles(){for(const n of interiorNPCs){const L=n.h.look||{};n.h.role=(L.height||1)<.8?'enfant':FEMMES.has(n.id)?'femme':'homme';n.h.rchar=null;}}
+function fixSeats(){
+  const wood=new THREE.MeshStandardMaterial({map:ITEX.wood,color:'#6b4a30',roughness:.6}),metal=M.pole,red=mat('#5a1a14',{roughness:.5});
+  for(const n of interiorNPCs){const f=SIT_FIX[n.id];if(!f||n.mode!=='sit'||n.seated)continue;const I=INTERIORS[n.loc];if(!I||!I.group)continue;n.seated=true;
+    const g=new THREE.Group();g.position.set(n.x-I.ox,0,n.z-I.oz);g.rotation.y=n.a;I.group.add(g);
+    const box=(w,h,d,m,x,y,z)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=b.receiveShadow=true;g.add(b);};
+    if(f.chair){box(.46,.05,.46,wood,0,.44,-.04);for(const [x,z] of [[-.2,-.24],[.2,-.24],[-.2,.16],[.2,.16]])box(.04,.44,.04,wood,x,.22,z);box(.46,.5,.04,wood,0,.71,-.27);}
+    if(f.stool){const c=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.68,8),metal);c.position.y=.34;g.add(c);const t=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.09,16),red);t.position.y=.72;g.add(t);}
+    if(f.y)n.h.g.position.y=f.y;n.sitY=f.y||0;}
+}
 function buildCineSets(){
   // BRAZIL — jungle clearing, drug lab compound, helicopter
   const g=cgroup('brazil',BX,BZ);
@@ -4419,7 +4427,7 @@ function updateRealHumans(dt){
    Modèles Sketchfab CC-BY 4.0 (auteurs dans CREDITS.md et l'écran Crédits), textures réduites par tools/glb_shrink.py.
    Comme pour les humains : les véhicules proches de la caméra reçoivent le vrai modèle, les autres gardent la forme simple. */
 const VEH_DIR='assets/vehicles/';
-const VEH_MODELS={civic:{len:4.1,flip:false},corolla:{len:4.2,flip:false},evoque:{len:4.37,flip:false},taxi:{len:5.4,flip:false},police:{len:5.1,flip:true},moto:{len:2.15,flip:false},velo:{len:1.75,flip:false}};
+const VEH_MODELS={civic:{len:4.1,flip:false},corolla:{len:4.2,flip:false},evoque:{len:4.37,flip:false},taxi:{len:5.4,flip:false},police:{len:5.1,flip:true},moto:{len:2.15,flip:true},velo:{len:1.75,flip:false}};
 const CARS=[];let CAR_ID=0;
 const RV={loading:false,ready:false,tpl:{},free:{},bound:new Set(),selT:0,pruneT:0};
 function rvMax(){return SET.realTex===false?0:COMF.q==='low'?8:COMF.q==='medium'?14:22;}
@@ -4770,7 +4778,7 @@ window.__oscar={rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bou
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones(),cityZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();fixSeats();assignRoles();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones(),cityZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';loadOscarModel();setTimeout(loadRealSurfaces,300);
   initComposer();
