@@ -21,6 +21,10 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Cédric : la peau suit enfin les os (v1.27.2)
+**Vu sur le PC (v1.27.1)** : le pantin adulte n'a rien changé, une jambe de Cédric remontait toujours. Mesures en direct : ses os sont pourtant bien assis (genoux à 49 cm, pieds au sol, comme le pantin). C'est la peau (pantalon, jambes, chaussures) qui restait accrochée à d'autres copies d'os, et aux os de torsion (thigh_twist…) que rien n'anime.
+**Correction** (`rpRebind`, seulement pour les modèles à os dédoublés, donc Cédric) : au chargement, en pose de repos, chaque morceau est rattaché aux copies d'os les plus intérieures (celles que le jeu anime), les torsions à leur membre, avec des poses de liaison recalculées. Retour à l'animation de ces copies intérieures.
+
 ## 2026-11-25 — Claude — Cédric assis comme sa mère (v1.27.1)
 **Signalé par Boban** : les pieds de Cédric sont mal formés ; il doit être bien assis, les mains et les pieds comme ceux de sa mère.
 **Vu sur le PC (v1.27.0)** : Oscar est bien en vêtements normaux. Cédric a sa taille d'enfant mais une jambe remonte presque à l'épaule, l'autre part à l'horizontale.

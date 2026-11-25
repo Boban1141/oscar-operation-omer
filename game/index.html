@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.27.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.27.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4876,13 +4876,21 @@ function rpKidTextures(name,o){const K=RP_KIDS[name];if(!K)return;const TL=new T
     const k=Object.keys(K.tex).find(k=>new RegExp(k,'i').test(nm));if(!k)return m;const f=K.tex[k];
     return new THREE.MeshStandardMaterial({map:tex(f,true),normalMap:tex(f+'_n',false),roughness:/Eye/i.test(nm)?.15:.75,metalness:0,name:nm});});
     if(x.material.length===1)x.material=x.material[0];});}
+// Export Unreal (Cédric) : chaque os existe en 6 copies emboîtées, et chaque morceau (corps, haut, bas, chaussures, yeux, cils) est attaché
+// à une copie différente ; les os de torsion (thigh_twist…) ne sont pas animés. Au chargement, en pose de repos, on rattache tous les morceaux
+// aux copies les plus intérieures (les vraies positions des os), torsions comprises (vers leur membre), et on recalcule leurs poses de liaison.
+const RP_TWIST={thigh_twist_01_l:'rp_upperleg_l',thigh_twist_01_r:'rp_upperleg_r',upperarm_twist_01_l:'rp_upperarm_l',upperarm_twist_01_r:'rp_upperarm_r',
+  calf_twist_01_l:'rp_lowerleg_l',calf_twist_01_r:'rp_lowerleg_r',lowerarm_twist_01_l:'rp_lowerarm_l',lowerarm_twist_01_r:'rp_lowerarm_r'};
+function rpRebind(o){const last={},seen={};let dup=false;o.traverse(x=>{if(x.isBone){if(seen[x.name])dup=true;seen[x.name]=1;last[x.name]=x;}});if(!dup)return;
+  o.updateMatrixWorld(true);o.traverse(m=>{if(!m.isSkinnedMesh)return;const bones=m.skeleton.bones.map(b=>last[RP_TWIST[b.name]||b.name]||b);
+    m.bind(new THREE.Skeleton(bones),m.matrixWorld);});}
 function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(name)?'femme':'homme',pup=RP_KIDS[name]?RP_PUPPET.homme:RP_PUPPET[gender];rhLoadChar(pup);
   firstOk([RP_DIR+file+'.fbx','../'+RP_DIR+file+'.fbx'],u=>RH.fbx.loadAsync(u)).then(o=>{
     if(!o){RH.base[name]='none';return;}
     rpKidTextures(name,o);o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
       if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=8;if(m.specular)m.specular.setScalar(.05);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;}}}});
     o.updateMatrixWorld(true);const head=o.getObjectByName('rp_head'),hip=o.getObjectByName('rp_hip');if(!head||!hip){RH.base[name]='none';return;}
-    const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_')&&!rest[x.name])rest[x.name]=x.quaternion.clone();});
+    rpRebind(o);const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
     const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z;
     const bb=new THREE.Box3().setFromObject(o);
     RH.base[name]={rp:true,obj:o,pup,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}).catch(()=>{RH.base[name]='none';});}
@@ -4890,9 +4898,8 @@ function rpInstance(name){
   const B=RH.base[name],P=RH.base[B.pup];if(!P||P==='none')return null;
   const I=rhNewInstance(B.pup);I.name=name;I.model.traverse(x=>{if(x.isMesh)x.visible=false;});
   const rp=RH.SU.clone(B.obj);rp.scale.setScalar(((RP_KIDS[name]||{}).h||1.7)/B.headY/I.s);if(B.back)rp.rotation.y=Math.PI;I.root.add(rp);
-  // certains modèles (Cédric, export Unreal) ont chaque os en plusieurs copies EMBOÎTÉES (une par morceau : corps, haut, bas, chaussures, yeux, cils).
-  // On anime la copie la plus extérieure (la première trouvée) : les copies intérieures suivent. Animer la dernière laissait le corps figé en croix.
-  const bones={};rp.traverse(x=>{if(x.name&&x.name.startsWith('rp_')){const k=x.name.slice(3);if(!bones[k])bones[k]=x;}});
+  // (os en copies emboîtées, export Unreal de Cédric : tous les morceaux ont été rattachés à la copie la plus intérieure au chargement, voir rpRebind)
+  const bones={};rp.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))bones[x.name.slice(3)]=x;});
   I.rp={model:rp,bones,rest:B.rest};return I;}
 const _rpv=new THREE.Vector3(),_rpq=new THREE.Quaternion();
 function rpDrive(I){const R=I.rp,b=R.bones;
