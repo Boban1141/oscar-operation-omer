@@ -207,8 +207,8 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [~] Vie des passants (v1.17.0 : peur et fuite, regards, heures d'ouverture ; v1.18.0 : réputation qui circule, méfiance et négociation avant de parler, personne n'apparaît sous les yeux) — reste : emplois du temps détaillés (commerces qui ouvrent et ferment, retour à la maison), réputation qui circule entre villes, confiance et méfiance, regards et micro-réactions, refus et négociation
 - [~] Économie (v1.19.0 : prix selon la province, la météo et l'heure ; espèces et carte avec trace bancaire) — reste : objets volés reconnaissables
 - [x] Hygiène et odeur : saleté selon le temps, la météo et les lieux ; passants qui s'écartent, chiens qui flairent, méfiance ; se laver dans 8 lieux (v1.20.0)
-- [ ] Interface invisible : mode sans mini-carte ni boussole (panneaux, carte papier, téléphone), inventaire et lecture sans pause
-- [ ] Décors qui racontent et accents régionaux : québécois, terre-neuvien, acadien, métis
+- [x] Interface invisible : mode immersif sans mini-carte ni marqueur, carte sur le téléphone (M), lecture sans pause (v1.21.0)
+- [x] Décors qui racontent et accents régionaux : répliques surprises dans 7 parlers, traces de captivité au sous-sol (v1.21.0)
 
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres

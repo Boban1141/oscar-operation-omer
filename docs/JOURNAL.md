@@ -21,6 +21,23 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Interface invisible, accents régionaux, décors qui racontent (v1.21.0)
+- Les deux derniers blocs de la liste de Boban, pour tout le jeu.
+- Interface immersive (Options → Interface, désactivée par défaut) :
+  - pas de mini-carte ni de marqueur d'objectif flottant ;
+  - panneau plus discret ;
+  - touche M : Oscar sort son téléphone et la carte s'affiche 7 s.
+- Carnet et lectures (Options → Carnet et lectures, activé par défaut) : le monde continue pendant qu'Oscar lit son carnet ou une note. Le temps passe, les passants marchent, les hommes d'Omer patrouillent et peuvent attaquer. Oscar reste immobile. Au premier coup reçu, il referme le carnet en catastrophe. Les dialogues mettent toujours le temps en pause.
+- Accents régionaux (`OVERHEARD`) : en passant à moins de 3,5 m de quelqu'un en ville, Oscar surprend une réplique, environ toutes les 20 à 40 s, dans l'accent de la province :
+  - anglais de Toronto, de Vancouver et de Calgary ;
+  - parler terre-neuvien (« Whaddaya at, b’y? ») ;
+  - acadien en Nouvelle-Écosse (« Ça va-ti, mon ami ? ») ;
+  - franco-manitobain à Winnipeg ;
+  - québécois à Montréal (« Y fait frette en tabarnouche ! »).
+  Les répliques anglaises sont traduites dessous.
+- Décors qui racontent : dans le sous-sol de Westmount, les jours comptés à la craie au mur par Eva (13 traits), le petit camion de Cédric près du matelas, une assiette à peine touchée. Ils s'ajoutent au dessin « PAPA » et, dans la maison de Toronto, à la chaise renversée, au courrier et aux clés déjà en place.
+- Tests : 160/160. La lecture sans pause se vérifie à l'écran, car les tests tournent sans horloge réelle.
+
 ## 2026-11-25 — Claude — Hygiène et odeur (v1.20.0)
 - Vérifié sur le PC de Boban (commit c6ad8a6) : au diner, 12 vrais humains et aucune erreur. Les gens assis aux banquettes n'ont pas de mains qui dépassent du plateau sur les vues prises, mais une banquette cachait une partie des bras.
 - Bloc 5 de la liste de Boban, pour tout le jeu (section 15). Oscar se salit (`dirt`, 0 à 100) :

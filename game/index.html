@@ -106,6 +106,8 @@ button:hover{filter:brightness(1.15)}button:focus-visible{outline:3px solid #fff
 .troph{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;text-align:left;margin:12px 0}.troph div{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.troph div.got{border-color:#c9a227}.troph div:not(.got){opacity:.55}
 .padfocus{outline:3px solid var(--amber)!important;outline-offset:2px}
 body.uiOpen #toast{bottom:auto;top:14%}
+#overheard{position:fixed;left:50%;bottom:240px;transform:translateX(-50%);max-width:min(520px,86vw);text-align:center;color:#f3efe6;font-style:italic;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .5s;pointer-events:none;font-size:17px}#overheard.on{opacity:.95}#overheard small{font-style:normal;opacity:.8;font-size:14px}
+body.immersive #hud .bar{opacity:.55}body.immersive #hud{background:rgba(10,16,26,.35)}
 body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-size:clamp(18px,2vw,24px)}body.subsL #dText{font-size:21px}body.subsL #toast{font-size:18px}body.subsL .dChoices button{font-size:19px}
 #cineSub{margin:0;max-width:900px;text-align:center;font-size:clamp(16px,1.9vw,21px);line-height:1.4;color:#fff;text-shadow:0 2px 6px #000}
 #cineSub b{display:block;font:700 clamp(14px,1.5vw,17px) "Barlow Condensed";color:var(--amber)}
@@ -147,6 +149,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <div class="bar"><label><span>Endurance</span><span id="tStam">100</span></label><i><b id="bStam" style="background:var(--amber)"></b></i></div>
   </section>
   <div id="prompt" class="hidden"></div>
+  <div id="overheard"></div>
   <div id="speedTag" class="hidden">Temps accéléré ×20</div>
   <div id="cross"></div>
   <div id="hStealth"></div>
@@ -167,6 +170,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
       <div><kbd>E</kbd> interagir / entrer</div>
       <div><kbd>G</kbd> changer de tenue (civile / militaire)</div>
       <div><kbd>B</kbd> se soigner (trousse de premiers soins)</div>
+      <div><kbd>M</kbd> carte sur le téléphone (interface immersive)</div>
       <div><kbd>Souris</kbd> regarder</div>
       <div><kbd>Molette</kbd> zoom caméra</div>
       <div><kbd>C</kbd> carnet d’indices</div>
@@ -204,6 +208,8 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <label for="oSubs">Taille des sous-titres et dialogues</label><select id="oSubs"><option value="normal">Normale</option><option value="large">Grande</option></select>
     <label for="oHints">Indices du numéro masqué</label><select id="oHints"><option value="auto">Automatiques (si tu bloques 5 min)</option><option value="ask">Sur demande seulement (touche I)</option><option value="off">Désactivés</option></select>
     <label for="oModel">Personnage d’Oscar</label><select id="oModel"><option value="new">Soldat 3D animé (Mixamo)</option><option value="classic">Classique (plus léger)</option></select>
+    <label for="oImm">Interface</label><select id="oImm"><option value="off">Classique (mini-carte, marqueur)</option><option value="on">Immersive : sans mini-carte ni marqueur (téléphone : touche M)</option></select>
+    <label for="oLive">Carnet et lectures</label><select id="oLive"><option value="on">Le monde continue pendant la lecture</option><option value="off">Pause pendant la lecture</option></select>
     <label for="oPeople">Passants et personnages</label><select id="oPeople"><option value="real">Vrais humains (Mixamo)</option><option value="classic">Simples (plus léger)</option></select>
     <label for="oReal">Matières photographiques (lieux réels)</label><input id="oReal" type="checkbox">
     <label for="oPost">Effets de cinéma (halo, grain, vignettage)</label><input id="oPost" type="checkbox">
@@ -315,7 +321,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.20.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.21.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1715,7 +1721,7 @@ function syncView(dt,t){
     if(mode==='sit')h.g.position.y=.55;
   }});
   }
-  if(M.marker){const tg=S.clues&&(!inside||S.location==='port')?objectiveTarget(objective(S)):null;M.marker.visible=!!tg;if(tg){M.marker.position.set(tg.x,4.2+Math.sin(t*2.5)*.3,tg.z);M.marker.rotation.y=t*1.5;}}
+  if(M.marker){const tg=S.clues&&(!inside||S.location==='port')?objectiveTarget(objective(S)):null;M.marker.visible=!!tg&&SET.immersive!=='on';if(tg){M.marker.position.set(tg.x,4.2+Math.sin(t*2.5)*.3,tg.z);M.marker.rotation.y=t*1.5;}}
   if(S.clues){syncStory(dt,t);syncCombat(dt,t);}
   // systèmes de vie
   updateBirds(dt,t,{x:cx,z:cz});
@@ -2262,7 +2268,7 @@ function impactPlayer(n,melee,o={}){const p=S.player;const kind=o.kind||(melee?'
   if(kind==='fall'){CB.lockT=Math.max(CB.lockT,1.6);CB.fall=1.4;CB.shake=Math.max(CB.shake||0,.7);sfx('down');}
   else if(kind==='blow'){CB.lockT=Math.max(CB.lockT,CB.block?.1:.28);CB.shake=Math.max(CB.shake||0,.3);}
   else CB.shake=Math.max(CB.shake||0,.22);}
-function hurtPlayer(n,melee,o){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;n*=DIFFK().dmg;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);impactPlayer(n,melee,o);woundPlayer(n,(o&&o.kind)||(melee?'blow':n>=20?'fall':'shot'));CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
+function hurtPlayer(n,melee,o){const p=S.player;if(S.status!=='playing'||window.__oscarGod)return;if(mode==='ui'&&dlgState&&dlgState.reading){closeUI();toast('Tu refermes le carnet en catastrophe !');}n*=DIFFK().dmg;if(melee&&CB.block)n*=.25;p.health=Math.max(0,p.health-n);impactPlayer(n,melee,o);woundPlayer(n,(o&&o.kind)||(melee?'blow':n>=20?'fall':'shot'));CB.flash=Math.min(1,CB.flash+.35+n/40);sfx('hit');if(p.health<=0)bus.emit('death');}
 function alarm(reason){const P2=AS();if(P2.alarm)return;S.flags.hadAlarm=true;P2.alarm=true;for(const e of P2.enemies)if(!e.down){e.friendly=false;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;}siren(true);toast('Alerte ! '+reason);}
 function damageEnemy(e,n,how){
   if(e.down)return;e.hp-=n;e.state='combat';e.lx=S.player.x;e.lz=S.player.z;const m=enemyMeshes[S.location+':'+e.id];if(m)m.hit=.25;
@@ -3625,6 +3631,15 @@ function buildSoussol(){
   for(let i=0;i<3;i++){const p=icyl(I,.06,.06,10,mat('#6a5a4a',{metalness:.6,roughness:.5}),0,2.35-i*.14,-3.6+i*.15,8);p.rotation.z=Math.PI/2;}
   const bm=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),new THREE.MeshStandardMaterial({color:'#fff2c8',emissive:'#ffcf7a',emissiveIntensity:3}));bm.position.set(-.5,2.05,-1);I.group.add(bm);const bl=new THREE.PointLight('#ffcf8a',22,12,1.8);bl.position.set(-.5,2,-1);I.group.add(bl);
   ibox(I,1.4,2.3,.12,mat('#555b60',{metalness:.7}),0,1.15,3.94,0,false,false);
+  // les jours comptés au mur par Eva, à la craie ; le petit camion de Cédric près du matelas ; une assiette froide à peine touchée
+  const tally=texCanvas(1971,256,128,(g)=>{g.fillStyle='rgba(0,0,0,0)';g.clearRect(0,0,256,128);g.strokeStyle='rgba(235,235,225,.85)';g.lineWidth=3;g.lineCap='round';
+    for(let grp=0;grp<2;grp++){const x0=20+grp*90;for(let i=0;i<4;i++){g.beginPath();g.moveTo(x0+i*14,30);g.lineTo(x0+i*14+2,92);g.stroke();}g.beginPath();g.moveTo(x0-6,80);g.lineTo(x0+50,40);g.stroke();}
+    for(let i=0;i<3;i++){g.beginPath();g.moveTo(200+i*14,30);g.lineTo(202+i*14,92);g.stroke();}});
+  const tm=new THREE.Mesh(new THREE.PlaneGeometry(1,.5),new THREE.MeshStandardMaterial({map:tally,transparent:true,roughness:1}));tm.position.set(-4.97,1.15,-2.6);tm.rotation.y=Math.PI/2;I.group.add(tm);
+  const truck=new THREE.Group();const tb=new THREE.Mesh(new THREE.BoxGeometry(.26,.1,.12),mat('#c8102e',{roughness:.5}));tb.position.y=.09;truck.add(tb);const tc=new THREE.Mesh(new THREE.BoxGeometry(.1,.09,.11),mat('#2c5d8a'));tc.position.set(.08,.17,0);truck.add(tc);
+  for(const [x,z] of [[-.08,.06],[-.08,-.06],[.08,.06],[.08,-.06]]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.03,10),mat('#1a1a1a'));w.rotation.x=Math.PI/2;w.position.set(x,.04,z);truck.add(w);}
+  truck.position.set(-1.5,0,-2.7);truck.rotation.y=.7;I.group.add(truck);
+  icyl(I,.13,.11,.02,mat('#e9e6df',{roughness:.4}),-1.9,.01,-3.5,18);ibox(I,.08,.03,.06,mat('#b5651d'),-1.88,.03,-3.48);
   I.group.visible=false;
 }
 function buildMTLActors(){
@@ -4097,7 +4112,7 @@ function updateHUD(){
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
   const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
   $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
-  $('hMoney').textContent=S.money+' $ · carte '+(S.card??500)+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;{const d=S.player.dirt||0;show('hDirtRow',d>=35);$('hDirt').textContent=d>=75?'tu sens très mauvais':d>=60?'tu sens mauvais':'un peu sale';}}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
+  $('hMoney').textContent=S.money+' $ · carte '+(S.card??500)+' $';{const imm=SET.immersive==='on';COMF.phoneT=Math.max(0,(COMF.phoneT||0)-.1);const mapOn=!imm||COMF.phoneT>0;$('map').style.display=mapOn?'':'none';document.body.classList.toggle('immersive',imm);}{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;{const d=S.player.dirt||0;show('hDirtRow',d>=35);$('hDirt').textContent=d>=75?'tu sens très mauvais':d>=60?'tu sens mauvais':'un peu sale';}}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
   $('hLvlK').textContent='Niveau '+L.index+' · '+L.region+' · '+L.season;$('hLvlN').textContent=L.name;
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
@@ -4154,6 +4169,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyH'){drinkThermos();return;}
   if(e.code==='KeyG'){toggleOutfit();return;}
   if(e.code==='KeyB'){treatWounds();return;}
+  if(e.code==='KeyM'){COMF.phoneT=7;toast('Oscar sort son téléphone : la carte s’affiche quelques secondes.');return;}
   if(e.code==='KeyF'){if(!takedownOrLoot()&&activeZone)interact();}
   if(e.code==='KeyV')CB.block=true;
   if(e.code==='KeyX'||e.code==='ControlLeft'){CB.crouch=!CB.crouch;e.preventDefault();}
@@ -4248,6 +4264,7 @@ function frame(now){
     for(const z of ZONES){if((z.lvl||'toronto')!==S.level||z.loc!==S.location||(z.cond&&!z.cond()))continue;const d=Math.hypot(S.player.x-z.x,S.player.z-z.z);if(d>=z.r)continue;
       if(z.auto){z.act();continue;}if(d<best){best=d;activeZone=z;}}
     const pr=$('prompt');if(activeZone&&mode==='play'){pr.innerHTML='<kbd>E</kbd>'+activeZone.label();pr.classList.remove('hidden');}else pr.classList.add('hidden');
+    stepOverheard(dt);
     hudT-=dt;if(hudT<=0){hudT=.1;updateHUD();}
     saveT+=dt;if(saveT>10){saveT=0;store.save(S);}
     const nm=S.msgs||0,due=[14,34,54][nm]*60;
@@ -4265,6 +4282,8 @@ function frame(now){
   } else if(!S){
     updateEnvironment(7*60+28,0,.2,TORONTO_CITY.oscarHouse,dt,t);
   } else {
+    if(mode==='ui'&&SET.live!=='off'&&dlgState&&dlgState.reading&&S.status==='playing'){cmd.f=0;cmd.r=0;cmd.run=false;cmd.jump=false;acc+=dt;let n=0;
+      while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto'||S.location==='outside')stepAgents(STEP);stepCombat(STEP);stepPhysics(STEP,performance.now()/1000);stepCameras(STEP);acc-=STEP;n++;}if(n===6)acc=0;}
     if(mode==='ui'){syncView(dt,t);updateCamera(dt);$('prompt').classList.add('hidden');}
     updateEnvironment(S.clock,S.weather.rain,S.weather.cloud,S.player,0,t,!!(INTERIORS[S.location]&&INTERIORS[S.location].indoor));
     if(mode==='ui'){hudT-=dt;if(hudT<=0){hudT=.2;updateHUD();}}
@@ -4797,6 +4816,22 @@ function washZones(){const Z=[];for(const [loc,label] of Object.entries(WASH_SPO
       act:()=>{addMinutes(loc==='stop'?20:10);S.player.dirt=0;for(const w of Object.values(S.player.wounds||{})){w.dirty=false;}toast('Oscar se lave : visage, mains, cou. Il se sent redevenir quelqu’un. Ses plaies sont rincées.');}});}
   return Z;}
 
+/* ---------------- 16. ACCENTS RÉGIONAUX (tout le jeu) ----------------
+   En passant près des gens, Oscar surprend des bouts de conversation dans la langue et l'accent de la province.
+   Les répliques anglaises sont suivies de leur traduction. */
+const OVERHEARD={
+  toronto:[['Le 504 est encore en retard, eh?',''],['Sorry, sorry — after you.','Pardon, pardon, après vous.'],['Double-double, please.','Un café, deux crèmes, deux sucres.'],['Leafs lost again. Every year, man.','Les Leafs ont encore perdu. Chaque année.']],
+  bc:[['Another atmospheric river, they said on the news.','Encore une « rivière atmosphérique », d’après les nouvelles.'],['Grab your toque, it’s chilly on the SeaBus.','Prends ta tuque, il fait frais sur le SeaBus.'],['Raincouver, eh? Never stops.','« Raincouver », hein ? Ça n’arrête jamais.']],
+  nl:[['Whaddaya at, b’y?','Qu’est-ce que tu fais, mon gars ?'],['Some day out, wha?','Quelle journée, hein ?'],['Long may your big jib draw.','Bon vent à toi.'],['She’s some cold on the harbour today.','Il fait vraiment froid sur le port aujourd’hui.']],
+  ab:[['Chinook’s coming. Plus ten by tomorrow.','Le chinook arrive : plus dix demain.'],['Gotta plug in the truck tonight, it’s minus thirty.','Faut brancher le camion ce soir, il fait moins trente.'],['Stampede feels a long way off, eh?','Le Stampede paraît bien loin, hein ?']],
+  ns:[['Ça va-ti, mon ami ?',''],['Il fait frette à soir, je te dis.',''],['Fog’s thick as chowder down by the harbour.','Le brouillard est épais comme une chaudrée près du port.']],
+  mb:[['Il fait moins quarante, mais c’est un froid sec.',''],['On se revoit au Festival du Voyageur !',''],['Winterpeg, eh? Gotta love it.','« Winterpeg », hein ? Faut aimer ça.']],
+  mtl:[['Y fait frette en tabarnouche !',''],['Le pont Jacques-Cartier est encore fermé, j’te dis.',''],['On va-tu au dépanneur ? J’ai pus de lait.',''],['Lâche pas, mon homme.','']]};
+function stepOverheard(dt){if(!S||S.location!=='outside'||mode!=='play')return;COMF.ohT=(COMF.ohT||8)-dt;if(COMF.ohT>0)return;
+  const lines=OVERHEARD[CITY.id]||OVERHEARD.toronto;let near=null;for(const a of peds){if(!a.visible)continue;const d=Math.hypot(a.x-S.player.x,a.z-S.player.z);if(d<3.5){near=a;break;}}
+  if(!near){COMF.ohT=2;return;}COMF.ohT=22+Math.random()*16;const [o,tr]=lines[Math.floor(Math.random()*lines.length)];
+  const el=$('overheard');el.innerHTML='« '+o+' »'+(tr?'<br><small>('+tr+')</small>':'');el.classList.add('on');clearTimeout(COMF.ohTo);COMF.ohTo=setTimeout(()=>el.classList.remove('on'),5200);}
+
 /* ---------------- 9. LIEUX RÉALISTES : matières photographiées (Poly Haven, licence CC0) ----------------
    Les textures dessinées par programme sont remplacées par de vraies photos de matières, ramenées à la même
    luminosité moyenne et teintées par la couleur d'origine : les couleurs choisies pour chaque lieu restent justes.
@@ -4943,7 +4978,7 @@ function cityZones(){const Z=[];
   return Z;}
 
 /* ---------------- 7. CONFORT DE JEU (v1.1) : options, chapitres, trophées, musique, indices, manette ---------------- */
-const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',people:'real',realTex:true,postfx:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
+const SET=Object.assign({sens:1,invertY:false,vol:.8,music:.55,diff:'normal',gfx:'auto',subs:'normal',hints:'auto',tips:true,fps:false,oscarModel:'new',people:'real',immersive:'off',live:'on',realTex:true,postfx:true,seen:{}},(()=>{try{return JSON.parse(localStorage.getItem('oscar.settings'))||{}}catch(e){return{}}})());
 function saveSettings(){try{localStorage.setItem('oscar.settings',JSON.stringify(SET))}catch(e){}}
 const DIFF={decouverte:{det:.6,dmg:.6,txt:'Découverte : les gardes mettent plus de temps à te repérer et frappent moins fort.'},normal:{det:1,dmg:1,txt:'Normale : l’expérience prévue.'},expert:{det:1.35,dmg:1.3,txt:'Expert : les gardes te repèrent vite et frappent fort.'}};
 function DIFFK(){return DIFF[SET.diff]||DIFF.normal}
@@ -5050,7 +5085,7 @@ function padPoll(dt){const gps=navigator.getGamepads?[...navigator.getGamepads()
   else padMenu();
   PAD.prev=PAD.g.buttons.map((b,i)=>padDown(i));}
 /* --- menus: options, chapters, trophies, quit --- */
-const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oModel','oscarModel','select'],['oPeople','people','select'],['oReal','realTex','check'],['oPost','postfx','check'],['oTips','tips','check'],['oFps','fps','check']];
+const OPT=[['oSens','sens','range'],['oInv','invertY','check'],['oVol','vol','range'],['oMus','music','range'],['oDiff','diff','select'],['oGfx','gfx','select'],['oSubs','subs','select'],['oHints','hints','select'],['oModel','oscarModel','select'],['oPeople','people','select'],['oImm','immersive','select'],['oLive','live','select'],['oReal','realTex','check'],['oPost','postfx','check'],['oTips','tips','check'],['oFps','fps','check']];
 function fillOptions(){for(const [id,k,t] of OPT){const el=$(id);if(t==='check')el.checked=!!SET[k];else el.value=SET[k];}$('oDiffTxt').textContent=DIFF[SET.diff].txt;}
 for(const [id,k,t] of OPT){const el=$(id);el.addEventListener(t==='range'?'input':'change',()=>{SET[k]=t==='check'?el.checked:t==='range'?+el.value:el.value;saveSettings();applySettings();fillOptions();});}
 let optFrom=null;
