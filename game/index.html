@@ -323,7 +323,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.26.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.26.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4883,7 +4883,7 @@ function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(n
     rpKidTextures(name,o);o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
       if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=8;if(m.specular)m.specular.setScalar(.05);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;}}}});
     o.updateMatrixWorld(true);const head=o.getObjectByName('rp_head'),hip=o.getObjectByName('rp_hip');if(!head||!hip){RH.base[name]='none';return;}
-    const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
+    const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_')&&!rest[x.name])rest[x.name]=x.quaternion.clone();});
     const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z;
     const bb=new THREE.Box3().setFromObject(o);
     RH.base[name]={rp:true,obj:o,pup,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}).catch(()=>{RH.base[name]='none';});}
@@ -4891,7 +4891,9 @@ function rpInstance(name){
   const B=RH.base[name],P=RH.base[B.pup];if(!P||P==='none')return null;
   const I=rhNewInstance(B.pup);I.name=name;I.model.traverse(x=>{if(x.isMesh)x.visible=false;});
   const rp=RH.SU.clone(B.obj);rp.scale.setScalar(((RP_KIDS[name]||{}).h||1.7)/B.headY/I.s);if(B.back)rp.rotation.y=Math.PI;I.root.add(rp);
-  const bones={};rp.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))bones[x.name.slice(3)]=x;});
+  // certains modèles (Cédric, export Unreal) ont chaque os en plusieurs copies EMBOÎTÉES (une par morceau : corps, haut, bas, chaussures, yeux, cils).
+  // On anime la copie la plus extérieure (la première trouvée) : les copies intérieures suivent. Animer la dernière laissait le corps figé en croix.
+  const bones={};rp.traverse(x=>{if(x.name&&x.name.startsWith('rp_')){const k=x.name.slice(3);if(!bones[k])bones[k]=x;}});
   I.rp={model:rp,bones,rest:B.rest};return I;}
 const _rpv=new THREE.Vector3(),_rpq=new THREE.Quaternion();
 function rpDrive(I){const R=I.rp,b=R.bones;

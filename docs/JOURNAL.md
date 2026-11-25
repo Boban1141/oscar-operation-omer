@@ -21,6 +21,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Cédric figé en croix : squelette en copies emboîtées (v1.26.1)
+**Vu sur le PC (v1.26.0)** : Oscar en tenue militaire est enfin dans le bon sens (on voit son dos) ; Eva est bien assise au bord du lit de camp, tête basse, mains sur les genoux. Cédric a son vrai visage et ses vêtements, mais reste en pose de départ (bras en croix, jambes droites dans le lit).
+**Cause** : l'export Unreal contient chaque os en 6 copies emboîtées (une par morceau : corps, débardeur, pantalon, chaussures, yeux, cils), les copies intérieures sans décalage. Le jeu animait la dernière copie trouvée (la plus intérieure) : les morceaux attachés aux copies extérieures ne bougeaient pas. Une première idée (recopier les copies entre elles) faisait disparaître Cédric : écartée.
+**Correction (tous les corps scannés)** : on anime la première copie trouvée (la plus extérieure) — les copies intérieures suivent — et la pose de repos est lue sur cette même copie. Sans effet sur les corps Renderpeople (une seule copie par os).
+
 ## 2026-11-25 — Claude — Cédric a un vrai corps d'enfant ; à la fin, ils courent vers Oscar (v1.26.0)
 **Demande** : Boban a téléchargé un garçon scanné et des animations de course : à la fin de la mission, la femme d'Oscar et son fils doivent courir vers lui.
 **Fichiers** (Téléchargements de Boban) : « black-boy-rigged-ready-for-ue4 » (squelette Unreal, textures PNG 2048 non liées dans le FBX) ; Mixamo Fast Run, Excited, Crying, Waving.
