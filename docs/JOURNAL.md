@@ -21,6 +21,10 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Un seul Oscar (v1.11.1)
+- Vérifié sur le PC de Boban (commit a64f29d) : Oscar porte bien la tenue de Nathan (t-shirt gris, jean), marche sur le passage piéton, pieds au sol, sans erreur.
+- Signalé par Boban : Oscar apparaissait en double. Le chargement de son modèle était lancé deux fois en même temps, par l'écran titre et par les réglages, d'où deux corps. Le second restait figé, superposé au premier : invisible à l'arrêt, visible en marchant. C'était sans doute aussi une cause de l'impression de glissade. Correction : un seul chargement à la fois (`OM.loading`), et l'ancien corps est retiré si le modèle est remonté.
+
 ## 2026-11-25 — Claude — Oscar change de tenue, pieds au sol (v1.11.0)
 - Demande de Boban : changer les vêtements d'Oscar et le rendre plus humain. Il traversait le sol et les tables, et glissait sans qu'on voie ses pieds.
 - Tenue : Boban a choisi Nathan, scanné par Renderpeople (visage réel, tenue civile). Le soldat Mixamo reste invisible dessous : il garde les animations, les armes et les cinématiques, et Nathan le suit à chaque image (`dressOscar`, `rpDrive`). Nathan est retiré des passants, pour qu'on ne croise pas de sosie d'Oscar.

@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.11.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.11.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4234,7 +4234,7 @@ function reorientClips(clips,srcRoot,dstRoot){
     return k;});}
 async function firstOk(urls,load){for(const u of urls){try{const r=await load(u);if(r)return r;}catch(e){}}return null;}
 async function loadOscarModel(){
-  if(SET.oscarModel==='classic'||OM.ready)return;
+  if(SET.oscarModel==='classic'||OM.ready||OM.loading)return;OM.loading=true;
   try{
     const [{GLTFLoader},{FBXLoader}]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/loaders/FBXLoader.js')]);
     const fbx=new FBXLoader(),glb=new GLTFLoader();
@@ -4259,8 +4259,9 @@ async function loadOscarModel(){
       setupOscarModel({scene:root,animations:clips});
       if(OM.ready)await dressOscar(fbx);
     }else if(soldier&&soldier.scene){OM.src='modele-exemple';setupOscarModel({scene:soldier.scene,animations:loco});}
-  }catch(e){console.warn('Modèle 3D d’Oscar indisponible, Oscar classique conservé.',e);}}
+  }catch(e){console.warn('Modèle 3D d’Oscar indisponible, Oscar classique conservé.',e);}finally{OM.loading=false;}}
 function setupOscarModel(gl){
+  if(OM.root&&OM.root.parent)OM.root.parent.remove(OM.root);   // jamais deux Oscar
   const h=oscarMesh,model=gl.scene,root=new THREE.Group();root.add(model);h.g.add(root);
   const B=n=>model.getObjectByName('mixamorig'+n);if(!B('Hips')||!B('RightArm')){h.g.remove(root);return;}
   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
