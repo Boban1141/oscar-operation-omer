@@ -307,7 +307,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.6.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.6.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1584,8 +1584,9 @@ function updateEnvironment(clock,rainAmt,cloud,center,dt,t,indoor=false){
   M.asphalt.roughness=lerp(.92,.32,rainAmt);M.asphalt.color.set(rainAmt>.3?'#232529':'#2b2d32');
   rain.material.opacity=rainAmt*.55;rain.visible=rainAmt>.02;
   // reflets mouillés sur l'asphalte
-  M.asphalt.metalness=lerp(.25,.65,rainAmt);M.asphalt.roughness=lerp(.92,.28,rainAmt);
-  M.asphalt.color.set(rainAmt>.3?'#1e2025':'#2b2d32');
+  // bitume : jamais métallique (sans reflet du ciel, il deviendrait noir) ; mouillé = plus lisse, brillant et un peu plus sombre
+  M.asphalt.metalness=0;M.asphalt.roughness=lerp(.9,.3,rainAmt);
+  M.asphalt.color.set(rainAmt>.3?'#2c2f35':'#45484e');
   if(rain.visible){
     const a=rainGeo.attributes.position.array,wx=WIND.x*WIND.str,wz=WIND.z*WIND.str;
     for(let i=0;i<RAIN_N;i++){const k=i*6;a[k+1]-=dt*26;a[k]+=wx*dt*22;a[k+2]+=wz*dt*22;if(a[k]>45)a[k]-=90;if(a[k]<-45)a[k]+=90;if(a[k+2]>45)a[k+2]-=90;if(a[k+2]<-45)a[k+2]+=90;if(a[k+1]<0)a[k+1]+=45;a[k+3]=a[k]-wx*.8;a[k+4]=a[k+1]-.6;a[k+5]=a[k+2]-wz*.8;}

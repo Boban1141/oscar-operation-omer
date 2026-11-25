@@ -31,6 +31,7 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
   5. performances : effets de cinéma réglables (Options) et coupés automatiquement si la qualité graphique baisse ; voile de pluie sans réallocation à chaque image ; post-traitement redimensionné avec la fenêtre ;
   6. documentation mise à jour.
 - Tests : 124/124 (nouvelle vérification : météo affichée, pas de doublon Jour/heure).
+- Vérifié sur le PC de Boban (v1.6.0) : niveaux sans plantage, météo affichée, feuillage d'érables réel. v1.6.1 : la rue était presque noire (bitume rendu métallique par le code de pluie) → bitume jamais métallique, plus clair par temps sec, plus lisse et brillant sous la pluie.
 - Rappel pour tous les agents (Codex, Kimi, Claude) : lancer `python tests/run_logic_tests.py` et mettre à jour JOURNAL/ROADMAP avant chaque envoi (AGENTS.md).
 
 ## 2026-11-21 — Claude — Arbres, écorce et bancs réalistes (v1.5.0)
