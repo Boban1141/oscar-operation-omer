@@ -4310,7 +4310,7 @@ const PNJ_CLIPS={walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'ass
 const HUMANS=[];let RFRAME=0;
 const RH={ready:false,loading:false,clips:{},base:{},pending:{},free:{},bound:new Set(),selT:0,fbx:null,SU:null,pruneT:0};
 const rhNorm=n=>n.replace(/^mixamorig\d+/,'mixamorig');
-function rhMax(){return SET.people==='classic'?0:COMF.q==='low'?5:COMF.q==='medium'?10:16;}
+function rhMax(){if(SET.people==='classic')return 0;const n=COMF.q==='low'?8:COMF.q==='medium'?12:18;const I=S&&INTERIORS[S.location];return I&&I.indoor?Math.max(n,12):n;}
 function rhRole(h){if(h.role)return h.role;const L=h.look||{};if((L.height||1)<.8)return 'enfant';return L.type==='woman'||L.long&&!L.beard?'femme':'homme';}
 function rhHash(L){const s=JSON.stringify([L.skin,L.jacket,L.pants,L.hair,L.height]);let x=0;for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))|0;return Math.abs(x);}
 function rhChar(h){if(!h.rchar){const list=PNJ_CHARS[rhRole(h)]||PNJ_CHARS.homme;h.rchar=list[rhHash(h.look||{})%list.length];}return h.rchar;}
@@ -4378,7 +4378,7 @@ function updateRealHumans(dt){
   if(N===0||!RH.ready){if(RH.bound.size)for(const h of [...RH.bound])rhUnbind(h);if(N>0&&!RH.loading&&OM.ready!==undefined)rhInit();return;}
   RH.pruneT-=dt;if(RH.pruneT<=0){RH.pruneT=3;for(let i=HUMANS.length-1;i>=0;i--){const h=HUMANS[i];let x=h.g,d=0;for(;x&&d<40&&x!==scene;x=x.parent,d++);if(x!==scene){rhUnbind(h);HUMANS.splice(i,1);}}}
   RH.selT-=dt;
-  if(RH.selT<=0){RH.selT=.3;const cp=camera.position,R=COMF.q==='low'?26:40,c=[];
+  if(RH.selT<=0){RH.selT=.3;const cp=camera.position,R=45,c=[];
     for(const h of HUMANS){if(h===oscarMesh||!h.rs||RFRAME-h.rs.f>3||!rhVisible(h.g))continue;h.g.getWorldPosition(_rv);const d=_rv.distanceTo(cp);if(d<R)c.push([d,h]);}
     c.sort((a,b)=>a[0]-b[0]);const want=new Set();
     for(const [,h] of c){if(want.size>=N)break;const nm=rhChar(h);const B=RH.base[nm];if(!B){rhLoadChar(nm);continue;}if(B==='none')continue;want.add(h);}

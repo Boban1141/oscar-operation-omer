@@ -37,6 +37,8 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Les passants des villes de province marchent maintenant, avant ils restaient figés hors de Toronto.
 - Option ajoutée : « Passants et personnages » : vrais humains ou simples (plus léger).
 - Tests : 144/144.
+- Vérifié sur le PC de Boban (commit 19ca5f7) : aucun message d'erreur ; vrais humains assis et qui discutent au diner, passants à Toronto, hommes d'Omer au port ; 31 images/s en qualité basse.
+- Retouche après vérification : plus de vrais humains à la fois (8 en basse, 12 en moyenne, 18 en haute, au moins 12 à l'intérieur) et rayon porté à 45 m, car au diner certains clients restaient simples.
 
 ## 2026-11-24 — Claude — Villes ouvertes des provinces, complètes comme Toronto (v1.7.0)
 - Demande de Boban : remettre les villes que Kimi voulait créer, mais complètes comme Toronto.
