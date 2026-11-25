@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Les personnages assis font face à leur table (v1.23.1)
+**Constat en vérifiant la v1.23.0 sur le PC** : au diner, les 9 clients ont bien leur couvert (crêpes, café, ketchup-moutarde…), mais au refuge Marie-Rose et Réjean étaient assis **dos à leur table** : ni couvert, ni mains sur la table.
+**Cause commune** : l'orientation des personnages nommés assis était écrite à la main, lieu par lieu, sans vérifier où est la table.
+**Correction pour TOUT le jeu** : `faceTable` (appelé par `fixSeats` au chargement) cherche le plateau le plus proche tout autour de chaque personnage nommé assis (24 directions, jusqu'à 85 cm), le tourne vers lui s'il est de travers (> 50°) et le rapproche si la table est trop loin. La chaise est construite ensuite dans la bonne direction. Concerne Earl, Bridget, Wilf, Dale, Sam, Bernie, Nadia, Louis, Marie-Rose, Réjean et tout futur personnage assis.
+Crochet `__oscar.seated()`.
+
 ## 2026-11-25 — Claude — Ce qui est sur la table (v1.23.0)
 **Demande** : les gens assis aux tables n'ont rien devant eux ; un restaurant doit avoir ce qui va avec, un bar aussi, etc.
 **Cause commune** : les tables des lieux étaient nues ; rien ne reliait une personne assise à ce que sert l'endroit.
