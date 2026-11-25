@@ -21,6 +21,16 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Plus personne ne se marche dessus (v1.13.1)
+- Signalé par Boban : les personnages se traversaient, entraient dans leur ami, et les voitures roulaient sur les humains.
+- Passants :
+  - Chacun garde sa droite : deux files sur le trottoir selon le sens de marche.
+  - Derrière quelqu'un qui va dans le même sens, on ralentit ou on s'arrête. Devant quelqu'un qui arrive en face ou qui est arrêté, on s'écarte en douceur.
+  - Les groupes qui discutent se tenaient parfois au milieu d'un bâtiment, tournés n'importe comment. Ils sont maintenant sur le trottoir, côté façades, en cercle serré et face les uns aux autres.
+- Véhicules : chaque voiture, taxi, moto ou vélo regarde devant son capot, sur une distance qui grandit avec la vitesse. Elle s'arrête pour un piéton, une personne arrêtée ou un autre véhicule, y compris aux carrefours (à égalité, un seul passe, pour éviter le blocage).
+- Soldat KSK : sur le PC de Boban (commit e77cf2b), la tenue civile s'affiche bien et la touche G fonctionne, mais la tenue militaire reste noire. Hors du jeu, le même modèle s'affiche texturé, y compris en marchant. Le jeu laisse maintenant FBXLoader charger lui-même les images `Tex_*.jpg`. Un point de diagnostic `__oscar.skin()` est ajouté pour la vérification suivante.
+- Test ajouté : 30 secondes de ville simulées, aucun passant l'un dans l'autre, aucune voiture sur un piéton (146/146).
+
 ## 2026-11-25 — Claude — Oscar change de tenue (v1.13.0)
 - Question de Boban : Oscar peut-il changer de vêtements ? En tenue militaire dans certains lieux, il ferait peur aux gens. Choix de Boban : changement automatique, plus une touche.
 - Deux tenues sur le même corps animé :

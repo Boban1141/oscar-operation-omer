@@ -310,7 +310,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.13.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.13.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -782,12 +782,13 @@ function spawnAgents(){
   // groupes qui discutent sur les trottoirs
   for(let k=0;k<3;k++){
     const b=CITY.blocks[Math.floor(r()*CITY.blocks.length)];
-    const gx=b.cx+(r()-.5)*40,gz=b.cz+(r()-.5)*40;
+    // sur le trottoir, côté façades (les passants marchent côté rue), jamais au milieu d'un bâtiment
+    const sd=Math.floor(r()*4),tt=(r()-.5)*40,ring=27.1;const gx=b.cx+(sd===0?tt:sd===1?ring:sd===2?tt:-ring),gz=b.cz+(sd===0?-ring:sd===1?tt:sd===2?ring:tt);
     const groupSize=2+Math.floor(r()*3);
     for(let m=0;m<groupSize;m++){
       const look=mkLook(r);
       const angle=(m/groupSize)*Math.PI*2;
-      peds.push({cx:gx,cz:gz,half:3,u:0,dir:1,speed:0,pause:0,thresh:r(),umb:false,x:gx+Math.cos(angle)*1.2,z:gz+Math.sin(angle)*1.2,heading:angle+Math.PI,anim:r()*6,moving:false,look,behavior:'talk',looking:false,talking:true,sitting:false,bench:false,group:true});
+      peds.push({cx:gx,cz:gz,half:3,u:0,dir:1,speed:0,pause:0,thresh:r(),umb:false,x:gx+Math.cos(angle)*.6,z:gz+Math.sin(angle)*.6,heading:Math.atan2(-Math.cos(angle),-Math.sin(angle)),anim:r()*6,moving:false,look,behavior:'talk',looking:false,talking:true,sitting:false,bench:false,group:true});
     }
   }
   const mkV=(kind,lane,max)=>{let a=pick(r,NODES);let nb=neighbors(a);while(!nb.length){a=pick(r,NODES);nb=neighbors(a);}const b=pick(r,nb);
@@ -815,13 +816,23 @@ function stepAgents(dt){
     const fwd=dx*Math.sin(a.heading)+dz*Math.cos(a.heading);
     if(a.visible&&Math.hypot(dx,dz)<1.5&&fwd>0){a.moving=false;continue;}
     a.moving=true;
-    const per=a.half*8;a.u=((a.u+a.dir*a.speed*dt)%per+per)%per;
+    // ne pas marcher à travers les autres : ralentir derrière quelqu'un qui va dans le même sens, s'écarter devant les autres
+    const hs=Math.sin(a.heading),hc=Math.cos(a.heading);let slow=1,side=0;
+    for(const o of peds){if(o===a||!o.visible)continue;const rx=o.x-a.x,rz=o.z-a.z;if(rx*rx+rz*rz>2.6)continue;
+      const f=rx*hs+rz*hc,l=rx*hc-rz*hs;if(f<=0||f>1.5||Math.abs(l)>.7)continue;
+      const same=o.moving&&Math.sin(o.heading)*hs+Math.cos(o.heading)*hc>.6;
+      if(same&&Math.abs(l)<.45)slow=Math.min(slow,f<.8?0:.45);else side+=l>0?-1:1;}
+    for(const o of idlers){const rx=o.x-a.x,rz=o.z-a.z,f=rx*hs+rz*hc,l=rx*hc-rz*hs;if(f>0&&f<1.6&&Math.abs(l)<.8)side+=l>0?-1:1;}
+    a.avo=lerp(a.avo||0,clamp(side,-1,1)*.8,1-Math.exp(-dt*3));
+    const per=a.half*8;a.u=((a.u+a.dir*a.speed*slow*dt)%per+per)%per;if(slow<.5)a.moving=slow>0;
     if(simRand()<.0012)a.pause=1.5+simRand()*4;
     const L2=a.half*2,seg=Math.floor(a.u/L2),t=a.u%L2-a.half,h=a.half;
     let x,z,hx,hz;
     if(seg===0){x=a.cx+t;z=a.cz-h;hx=1;hz=0}else if(seg===1){x=a.cx+h;z=a.cz+t;hx=0;hz=1}
     else if(seg===2){x=a.cx-t;z=a.cz+h;hx=-1;hz=0}else{x=a.cx-h;z=a.cz-t;hx=0;hz=-1}
-    a.x=x;a.z=z;a.heading=Math.atan2(hx*a.dir,hz*a.dir);a.anim+=a.speed*dt*2.4;
+    // chacun garde sa droite : deux files sur le trottoir selon le sens de marche
+    const off=(a.dir>0?-.55:.55)+(a.avo||0)*a.dir;
+    a.x=x+hz*off;a.z=z-hx*off;a.heading=Math.atan2(hx*a.dir,hz*a.dir);a.anim+=a.speed*slow*dt*2.4;
   }
   for(const v of vehicles){
     v.visible=dens>v.thresh;
@@ -830,6 +841,12 @@ function stepAgents(dt){
     const px=P.x-v.x,pz=P.z-v.z,ah=px*ux+pz*uz,lat=Math.abs(-px*uz+pz*ux);
     if(ah>0&&ah<(v.kind==='bike'?4:9)&&lat<2.3)blocked=true;
     if(!blocked)for(const o of vehicles){if(o!==v&&o.visible&&o.a===v.a&&o.b===v.b&&o.lane===v.lane&&o.s>v.s&&o.s-v.s<(v.kind==='bike'?3.5:8.5)){blocked=true;break;}}
+    // devant le capot : piétons, gens arrêtés, autres véhicules aux carrefours (à égalité, le premier de la liste passe)
+    v.blk=null;if(!blocked&&v.visible){const hx=Math.sin(v.heading),hz=Math.cos(v.heading),reach=v.kind==='bike'?3:3+v.speed*.6,wide=v.kind==='bike'||v.kind==='moto'?.9:1.45;
+      const hit=(x,z)=>{const rx=x-v.x,rz=z-v.z,f=rx*hx+rz*hz;return f>.5&&f<reach&&Math.abs(rx*hz-rz*hx)<wide;};
+      for(const o of peds)if(o.visible&&hit(o.x,o.z)){blocked=true;break;}
+      if(!blocked)for(const o of idlers)if(hit(o.x,o.z)){blocked=true;break;}
+      if(!blocked)for(const o of vehicles)if(o!==v&&o.visible&&hit(o.x,o.z)){if(o.blk===v&&vehicles.indexOf(o)>vehicles.indexOf(v))continue;v.blk=o;blocked=true;break;}}
     if(!v.visible)blocked=false;
     v.speed=lerp(v.speed,blocked?0:v.max,1-Math.exp(-dt*(blocked?7:1.4)));
     v.s+=v.speed*dt;
@@ -4256,10 +4273,7 @@ async function loadOscarModel(){
         const o=await firstOk(['assets/'+path,'../assets/'+path],u=>fbx.loadAsync(u));
         if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);const tr=c.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
           if(tr&&hipsRest>1&&tr.values[1]>1){const r=hipsRest/tr.values[1];for(let i=0;i<tr.values.length;i++)tr.values[i]*=r;}inPlace(c);c.name=name;clips.push(c);}}));
-      // textures du KSK : fournies à côté du modèle (le FBX d'origine pointait vers l'ordinateur de son auteur)
-      const KSK_TEX={'mat0':'Tex_0002_0','mat0.001':'Tex_0006_0','mat0.002':'Tex_0010_0','mat0.003':'Tex_0010_0'},tl=new THREE.TextureLoader(),texC={};
-      charObj.traverse(x=>{if(!x.isMesh)return;for(const m of [].concat(x.material)){const f=m&&KSK_TEX[m.name];if(!f||(m.map&&m.map.image))continue;
-        const t=texC[f]||(texC[f]=tl.load('../assets/characters/'+f+'.jpg',undefined,undefined,()=>tl.load('assets/characters/'+f+'.jpg')));t.colorSpace=THREE.SRGBColorSpace;m.map=t;m.color.set('#ffffff');m.needsUpdate=true;}});
+      // textures du KSK : fichiers Tex_*.jpg à côté du modèle, trouvés par FBXLoader lui-même (vérifié à l'écran)
       const root=new THREE.Group();charObj.scale.setScalar(.01);root.add(charObj);OM.src=charObj.getObjectByName('mixamorigHips')&&charObj.getObjectByName('mixamorigHips').position.y>500?'soldat-ksk':'soldat-camouflage';
       setupOscarModel({scene:root,animations:clips});
       if(OM.ready&&OSCAR_LOOK)await dressOscar(fbx);
@@ -4867,7 +4881,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
