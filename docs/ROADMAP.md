@@ -196,6 +196,11 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Personnes âgées et jogging
 - [x] Cyclistes : pédalage recopié du squelette simple (pas d'animation de vélo Mixamo)
 
+## Bloc 19 — Vrais véhicules `[~]` (v1.9.0)
+- [x] 7 modèles CC-BY (3 voitures, taxi, police, moto, vélo), crédits dans le jeu
+- [x] Conducteurs au volant, motos dans la circulation
+- [ ] Vérifier à l'écran le sens avant/arrière de chaque modèle
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)

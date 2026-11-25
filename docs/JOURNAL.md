@@ -21,6 +21,19 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Vrais véhicules, conducteurs et motos (v1.9.0)
+- Boban a téléchargé 7 modèles Sketchfab, tous sous licence CC-BY 4.0. Les auteurs sont cités dans `CREDITS.md` et dans Options → Crédits des modèles 3D.
+  - Voitures : Honda Civic, Toyota Corolla AE86, Range Rover Evoque.
+  - Taxi Crown Victoria, Chevrolet Tahoe de police, moto Honda CB 750, vélo classique.
+  - Animation Mixamo « Driving », pour les conducteurs.
+- `tools/glb_shrink.py` réduit les textures à 512 px (taxi 12,5 → 2,2 Mo, Evoque 8,3 → 2,4 Mo) dans `assets/vehicles/`.
+- Section 12 : chaque véhicule créé est inscrit dans `CARS`. Les plus proches de la caméra (22, 14 ou 8 selon la qualité, jusqu'à 90 m) reçoivent le vrai modèle, mis à la bonne longueur et posé au sol.
+  - Concernés : voitures, taxis, police, VUS d'Omer, vélos et motos.
+- Chaque voiture en circulation a maintenant un conducteur, qui devient un vrai humain au volant quand il est proche.
+- Des motos circulent avec les voitures, environ une pour six voitures.
+- Les voitures de police des cinématiques utilisent le Tahoe, et les VUS noirs d'Omer l'Evoque.
+- Tests : 145/145.
+
 ## 2026-11-25 — Claude — Tout le monde devient humain (v1.8.0)
 - Demande de Boban : « rend tout le monde en humain », sans exception.
 - Boban a téléchargé sur Mixamo 11 personnages réalistes et 9 animations. Les deux personnages de style dessin animé (« Breathing Idle (1) » et « (2) ») sont écartés.

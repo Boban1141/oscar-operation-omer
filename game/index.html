@@ -204,7 +204,8 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <label for="oTips">Astuces à l’écran</label><input id="oTips" type="checkbox">
     <label for="oFps">Afficher les images par seconde</label><input id="oFps" type="checkbox">
   </div>
-  <p class="small" id="oDiffTxt"></p><p class="small">Le chronomètre de chaque niveau ne change jamais, quelle que soit la difficulté.</p>
+  <p class="small" id="oDiffTxt"></p><p class="small">Le chronomètre de chaque niveau ne change jamais, quelle que soit la difficulté.</p><details class="small" style="margin-top:6px"><summary>Crédits des modèles 3D</summary>Personnages et animations : Mixamo (Adobe). Matières, écorce et bancs : Poly Haven (CC0).
+Véhicules, licence CC-BY 4.0 (Sketchfab) : Honda Civic EG6 1991 par rifdanzz · Toyota Corolla AE86 Trueno par Lexyc16 · Range Rover Evoque par minghauLoh · Crown Victoria Taxi 2001 par 8sianDude · Chevrolet Tahoe Police par Racing Carz U3D · Honda CB 750 F 1970 par Alex.Ka. · Classic Bicycle par by__Rx. Textures réduites pour le jeu.</details>
   <div class="keys">
     <div><kbd>Stick gauche</kbd> se déplacer</div><div><kbd>Stick droit</kbd> regarder</div><div><kbd>LB</kbd> courir</div><div><kbd>A</kbd> interagir / sauter</div>
     <div><kbd>B</kbd> s’accroupir</div><div><kbd>X</kbd> coup de pied / recharger</div><div><kbd>Y</kbd> bloquer</div><div><kbd>RB</kbd> neutraliser / fouiller</div>
@@ -308,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.8.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.9.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -793,6 +794,7 @@ function spawnAgents(){
   for(let k=0;k<L.density.cars;k++)mkV('car',3.2,11);
   for(let k=0;k<L.density.taxis;k++)mkV('taxi',3.2,12);
   for(let k=0;k<L.density.bikes;k++)mkV('bike',5.7,5);
+  for(let k=0;k<Math.max(1,Math.round(L.density.cars/6));k++)mkV('moto',3.2,12);
   if((CITY.prof||{}).trams!==false)trams.push({x:-120,z:1.8,dir:1,speed:0,max:8.5},{x:60,z:-1.8,dir:-1,speed:0,max:8.5});
   for(const d of CITY.idlers)idlers.push({...d,look:mkLook(r),anim:r()*6});
 }
@@ -1553,6 +1555,7 @@ function createCar(kind,color){
   if(isTaxi){const sign=new THREE.Mesh(new THREE.BoxGeometry(.7,.2,.3),new THREE.MeshStandardMaterial({color:'#ffffff',emissive:'#ffe9a0',emissiveIntensity:.6,roughness:.4}));sign.position.set(0,1.7,-.15);g.add(sign);}
   // lumière sous la voiture (reflet au sol)
   const underGlow=new THREE.PointLight(carColor,0,2,2);underGlow.position.set(0,.1,0);g.add(underGlow);g.underGlow=underGlow;
+  CARS.push({g,kind,color,id:CAR_ID++});
   return g;
 }
 function createBike(look){
@@ -1560,6 +1563,7 @@ function createBike(look){
   for(const z of [-.55,.55]){const w=new THREE.Mesh(tg,M.dark);w.position.set(0,.36,z);g.add(w);}
   addBox(.05,.05,1.05,fm,0,.62,0,g);addBox(.05,.5,.05,fm,0,.62,-.25,g);addBox(.05,.55,.05,fm,0,.72,.45,g);addBox(.5,.04,.04,fm,0,1,.45,g);addBox(.14,.05,.25,M.dark,0,.9,-.28,g);
   const h=createHuman({...look,prop:'none',rolled:0});h.g.position.set(0,-.12,-.2);g.add(h.g);
+  CARS.push({g,kind:'bike',id:CAR_ID++,rider:h});
   return{g,h};
 }
 function createTram(){
@@ -1665,7 +1669,8 @@ function syncView(dt,t){
     animRig(h,dt,t+i*.7,speed,mode,0,d<22);});
   vehicles.forEach((v,i)=>{const m=vehMeshes[i];m.g.visible=v.visible;if(!v.visible)return;
     const k=1-Math.exp(-dt*12);m.g.position.x=lerp(m.g.position.x,v.x,k);m.g.position.z=lerp(m.g.position.z,v.z,k);m.g.rotation.y=angLerp(m.g.rotation.y,v.heading,1-Math.exp(-dt*6));
-    if(m.h)animRig(m.h,dt,t,v.speed,'bike',0,Math.hypot(v.x-cx,v.z-cz)<22);
+    if(m.h)animRig(m.h,dt,t,v.kind==='moto'?0:v.speed,'bike',0,Math.hypot(v.x-cx,v.z-cz)<22);
+    if(m.drv){animRig(m.drv,dt,t,0,'sit',0,false);m.drv.rs.mode='drive';}
     // feux de freinage
     if(m.g.brakeLights){const braking=v.speed<.5||v.speed<(v.max*.3);for(const bl of m.g.brakeLights){bl.material.emissiveIntensity=braking?2.5:.4;}}});
   trams.forEach((tr,i)=>{tramMeshes[i].position.set(tr.x,0,tr.z);tramMeshes[i].rotation.y=tr.dir>0?Math.PI/2:-Math.PI/2;});
@@ -3463,7 +3468,7 @@ function buildWestmount(){
   const cr=new THREE.Group();cr.position.set(-40,0,-220);I.group.add(cr);const cm=new THREE.MeshBasicMaterial({color:'#e8eeff'});gb(cr,1.2,30,1.2,cm,0,60,0,0,false);gb(cr,14,1.2,1.2,cm,0,66,0,0,false);
   // police (finale only)
   const pol=new THREE.Group();I.group.add(pol);pol.visible=false;WMT.police=pol;WMT.polLights=[];
-  for(const [x,z,ry] of [[36,6,Math.PI/2],[46,8.6,1.2]]){const c=createCar('car','#f4f4f4');c.position.set(x,0,z);c.rotation.y=ry;pol.add(c);const lb=new THREE.Mesh(new THREE.BoxGeometry(.3,.12,1.2),mat('#222'));lb.position.set(x,1.55,z);lb.rotation.y=ry;pol.add(lb);
+  for(const [x,z,ry] of [[36,6,Math.PI/2],[46,8.6,1.2]]){const c=createCar('police','#f4f4f4');c.position.set(x,0,z);c.rotation.y=ry;pol.add(c);const lb=new THREE.Mesh(new THREE.BoxGeometry(.3,.12,1.2),mat('#222'));lb.position.set(x,1.55,z);lb.rotation.y=ry;pol.add(lb);
     for(const [col,o] of [['#ff2a2a',-.5],['#2a5aff',.5]]){const l=new THREE.PointLight(col,0,16,2);l.position.set(x+Math.cos(ry)*o,1.8,z-Math.sin(ry)*o);pol.add(l);WMT.polLights.push(l);}}
   branchMesh(I);
   for(const [a,b,c,d] of [[-71,-70,-51,51],[70,71,-51,51],[-71,71,-51,-50],[-71,71,50,51]])I.cols.push({x0:I.ox+a,x1:I.ox+b,z0:I.oz+c,z1:I.oz+d});
@@ -3804,7 +3809,7 @@ function buildCineSets(){
   A.w1=cactor({skin:'#8d5524',jacket:'#9d0208',pants:'#9d0208',hair:'#1a1a1a',long:true,height:.98,build:.88,prop:'cup'});
   A.w2=cactor({skin:'#ffdbac',jacket:'#1f5c4a',pants:'#1f5c4a',hair:'#d9b382',long:true,height:.96,build:.86});
   A.m1=cactor({skin:'#e0ac69',jacket:'#5a4a3a',pants:'#22223b',hair:'#3b2a1e',prop:'cup'});
-  A.suv1=createCar('car','#0b0b0c');A.suv2=createCar('car','#0b0b0c');A.taxi=createCar('taxi');
+  A.suv1=createCar('suv','#0b0b0c');A.suv2=createCar('suv','#0b0b0c');A.taxi=createCar('taxi');
   for(const c of [A.suv1,A.suv2]){c.scale.set(1.08,1.25,1.1);}for(const c of [A.suv1,A.suv2,A.taxi]){c.visible=false;scene.add(c);}
   A.headlight=new THREE.SpotLight('#fff4dc',0,40,.4,.6,1.5);scene.add(A.headlight,A.headlight.target);
 }
@@ -4173,7 +4178,7 @@ function frame(now){
     if(mode==='ui'){hudT-=dt;if(hudT<=0){hudT=.2;updateHUD();}}
   }
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classList.remove('on');}
-  updateOscarModel(dt);updateRealHumans(dt);
+  updateOscarModel(dt);updateRealHumans(dt);updateRealVehicles(dt);
   updateRainOverlay(dt,S?S.weather.rain:0);
   if(composer&&SET.postfx!==false&&COMF.q==='high')composer.render();else renderer.render(scene,camera);
 }
@@ -4308,7 +4313,7 @@ function updateOscarModel(dt){
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
 const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige'],
   omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
-const PNJ_CLIPS={walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
+const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
   deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux'};
 const RH_ONCE=new Set(['deathB','deathF','kneelDown','punch','hit','hit2']),RH_WALK=/^(walkM|walkF|textWalk|oldWalk|jog|pistolWalk)$/;
@@ -4376,6 +4381,7 @@ function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.c
   if(L.type==='elder'&&r.mode==='walk'){if(sp>.3&&A.oldWalk)return 'oldWalk';if(sp<=.3&&A.oldIdle&&!L.prop)return 'oldIdle';}
   if(sp>2.2&&sp<=3.4&&A.jog)return 'jog';
   if(r.mode==='sit')return (rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
+  if(r.mode==='drive')return A.drive?'drive':'sit';
   if(r.mode==='bike')return 'sit';
   if(r.mode==='talk')return L.prop==='phone'&&I.acts.phone?'phone':'talk';
   if(sp>3.4&&I.acts.run)return 'run';
@@ -4404,9 +4410,54 @@ function updateRealHumans(dt){
     const cs=h.cs,busy=cs&&(cs.down||cs.surrender||cs.swing||cs.hit),full=cine||(h.g.rotation.x<-.5),arms=full||(!!h.gun&&!busy)||!!(h.umb&&h.umb.visible);
     if(arms||full){h.g.updateMatrixWorld(true);if(full)for(const t of I.legs)retarget(...t,1);for(const t of I.arms)retarget(...t,1);}
     // seated (bench, bike): put the real hips where the simple rig's hips are
-    const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
+    const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||m==='drive'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
     else I.root.position.y=lerp(I.root.position.y,0,k);}
+}
+
+/* ---------------- 12. VRAIS VÉHICULES ----------------
+   Modèles Sketchfab CC-BY 4.0 (auteurs dans CREDITS.md et l'écran Crédits), textures réduites par tools/glb_shrink.py.
+   Comme pour les humains : les véhicules proches de la caméra reçoivent le vrai modèle, les autres gardent la forme simple. */
+const VEH_DIR='assets/vehicles/';
+const VEH_MODELS={civic:{len:4.1,flip:false},corolla:{len:4.2,flip:false},evoque:{len:4.37,flip:false},taxi:{len:5.4,flip:false},police:{len:5.1,flip:true},moto:{len:2.15,flip:false},velo:{len:1.75,flip:false}};
+const CARS=[];let CAR_ID=0;
+const RV={loading:false,ready:false,tpl:{},free:{},bound:new Set(),selT:0,pruneT:0};
+function rvMax(){return SET.realTex===false?0:COMF.q==='low'?8:COMF.q==='medium'?14:22;}
+function rvModel(c){if(c.kind==='taxi')return 'taxi';if(c.kind==='police')return 'police';if(c.kind==='bike')return 'velo';if(c.kind==='moto')return 'moto';if(c.kind==='suv')return 'evoque';
+  if(c.g.scale.y>1.3)return null;return ['civic','corolla','evoque'][c.id%3];}
+async function rvInit(){
+  if(RV.loading||RV.ready||rvMax()===0)return;RV.loading=true;
+  try{const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const ld=new GLTFLoader();
+    await Promise.all(Object.entries(VEH_MODELS).map(async([k,cfg])=>{const gl=await firstOk([VEH_DIR+k+'.glb','../'+VEH_DIR+k+'.glb'],u=>ld.loadAsync(u));if(!gl)return;
+      const inner=gl.scene,wrap=new THREE.Group(),tpl=new THREE.Group();wrap.add(inner);tpl.add(wrap);
+      inner.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;for(const m of [].concat(o.material))if(m&&m.envMapIntensity!==undefined)m.envMapIntensity=.9;}});
+      let b=new THREE.Box3().setFromObject(wrap),sz=b.getSize(new THREE.Vector3());
+      if(sz.x>sz.z)wrap.rotation.y=Math.PI/2;if(cfg.flip)wrap.rotation.y+=Math.PI;
+      wrap.updateMatrixWorld(true);b=new THREE.Box3().setFromObject(wrap);sz=b.getSize(new THREE.Vector3());
+      const s=cfg.len/Math.max(sz.z,1e-6);wrap.scale.setScalar(s);wrap.updateMatrixWorld(true);b=new THREE.Box3().setFromObject(wrap);
+      const c=b.getCenter(new THREE.Vector3());wrap.position.set(-c.x,-b.min.y,-c.z);
+      RV.tpl[k]=tpl;}));
+    RV.ready=Object.keys(RV.tpl).length>0;
+  }catch(e){console.warn('Vrais véhicules indisponibles, formes simples conservées.',e);}
+}
+function rvBind(c,name){
+  const f=(RV.free[name]||(RV.free[name]=[]));const inst=f.length?f.pop():RV.tpl[name].clone();
+  const keep=c.rider?c.rider.g:null;c.hide=[];
+  c.g.traverse(o=>{if(o.isMesh&&!(keep&&isIn(o,keep))&&!(c.drv&&isIn(o,c.drv.g))){c.hide.push([o,o.visible]);o.visible=false;}});
+  inst.scale.set(1/(c.g.scale.x||1),1/(c.g.scale.y||1),1/(c.g.scale.z||1));c.g.add(inst);c.real={name,inst};RV.bound.add(c);}
+function rvUnbind(c){if(!c.real)return;c.g.remove(c.real.inst);(RV.free[c.real.name]||(RV.free[c.real.name]=[])).push(c.real.inst);
+  for(const [o,v] of c.hide||[])o.visible=v;c.hide=null;c.real=null;RV.bound.delete(c);}
+function updateRealVehicles(dt){
+  const N=rvMax();
+  if(N===0||!RV.ready){if(RV.bound.size)for(const c of [...RV.bound])rvUnbind(c);if(N>0&&!RV.loading)rvInit();return;}
+  RV.pruneT-=dt;if(RV.pruneT<=0){RV.pruneT=3;for(let i=CARS.length-1;i>=0;i--){let x=CARS[i].g,d=0;for(;x&&d<40&&x!==scene;x=x.parent,d++);if(x!==scene){rvUnbind(CARS[i]);CARS.splice(i,1);}}}
+  RV.selT-=dt;if(RV.selT>0)return;RV.selT=.4;
+  const cp=camera.position,c=[];
+  for(const v of CARS){if(!rhVisible(v.g))continue;v.g.getWorldPosition(_rv);const d=_rv.distanceTo(cp);if(d<90)c.push([d,v]);}
+  c.sort((a,b)=>a[0]-b[0]);const want=new Set();
+  for(const [,v] of c){if(want.size>=N)break;const nm=rvModel(v);if(nm&&RV.tpl[nm])want.add(v);}
+  for(const v of [...RV.bound])if(!want.has(v))rvUnbind(v);
+  for(const v of want)if(!v.real)rvBind(v,rvModel(v));
 }
 
 /* ---------------- 9. LIEUX RÉALISTES : matières photographiées (Poly Haven, licence CC0) ----------------
@@ -4522,7 +4573,9 @@ let BUILDING_WORLD=false;
 const attached=o=>{let x=o;for(let d=0;x&&d<64;d++,x=x.parent)if(x===scene)return true;return false;};
 function buildAgentMeshes(){
   for(const p of peds){const h=createHuman(p.look,{umbrella:p.umb});scene.add(h.g);pedMeshes.push(h);}
-  for(const v of vehicles){let m;if(v.kind==='bike'){m=createBike(v.look);}else{m={g:createCar(v.kind,v.color)};}m.g.position.set(v.x,0,v.z);scene.add(m.g);vehMeshes.push(m);}
+  for(const v of vehicles){let m;if(v.kind==='bike'||v.kind==='moto'){m=createBike(v.look);if(v.kind==='moto'){const c=CARS[CARS.length-1];c.kind='moto';m.h.g.position.set(0,-.05,-.05);}}
+    else{m={g:createCar(v.kind,v.color)};const dl=mkLook(mulberry32(CAR_ID*13+7));m.drv=createHuman({...dl,prop:'none',rolled:0});m.drv.g.position.set(.38,0,-.05);m.g.add(m.drv.g);CARS[CARS.length-1].drv=m.drv;}
+    m.g.position.set(v.x,0,v.z);scene.add(m.g);vehMeshes.push(m);}
   for(const t of trams){const g=createTram();scene.add(g);tramMeshes.push(g);}
   for(const i of idlers){const h=createHuman({...i.look,prop:i.look.prop==='phone'?'cup':i.look.prop});h.g.position.set(i.x,.15,i.z);h.g.rotation.y=i.a;scene.add(h.g);idlerMeshes.push(h);}
 }
@@ -4713,7 +4766,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

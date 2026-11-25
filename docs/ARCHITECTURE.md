@@ -96,3 +96,7 @@ Le jeu est solo et scénarisé ; le multijoueur se fera par **sessions** (coopé
 - `createHuman` inscrit chaque personnage dans `HUMANS` ; `animRig` note sa vitesse et son mode dans `h.rs`.
 - `updateRealHumans(dt)` (chaque image) choisit les N plus proches de la caméra (`rhMax()` selon la qualité), charge à la demande leur personnage (`assets/characters/pnj`), les habille d'un clone `SkeletonUtils` animé (`assets/animations/pnj`) et cache le corps simple. Les clones sont réutilisés (`RH.free`).
 - Rôle : `h.role='omer'` pour les ennemis, sinon femme / homme / enfant selon le `look`.
+
+## Vrais véhicules (section 12)
+- `createCar` et `createBike` inscrivent chaque véhicule dans `CARS` (`kind` : car, taxi, police, suv, bike, moto).
+- `updateRealVehicles(dt)` remplace les plus proches par un clone du modèle `assets/vehicles/*.glb`, normalisé dans `rvInit` : axe long sur Z, demi-tour si `VEH_MODELS[k].flip`, longueur réelle, posé au sol. Les clones sont réutilisés (`RV.free`).
