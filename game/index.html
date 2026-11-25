@@ -309,7 +309,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.11.3', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.12.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4201,7 +4201,8 @@ function syncTitle(dt,t){
    visée, tir, rechargement, impact. L'ancien squelette tourne toujours en coulisse : ses poses sont recopiées pour ce qui
    n'a pas d'animation (accroupi, chute, étranglement, déplacement arme au poing, cinématiques). Repli : modèle d'exemple,
    puis Oscar classique. */
-const OSCAR_CHAR=['assets/characters/candidat5_camouflage.fbx','../assets/characters/candidat5_camouflage.fbx'];
+// Oscar : opérateur KSK (Sketchfab, passé par Mixamo), visage réel, casque et gilet tactique ; textures intégrées et réduites (tools/fbx_shrink.py)
+const OSCAR_CHAR=['assets/characters/oscar_ksk.fbx','../assets/characters/oscar_ksk.fbx','assets/characters/candidat5_camouflage.fbx','../assets/characters/candidat5_camouflage.fbx'];
 const OSCAR_GLB=['https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/models/gltf/Soldier.glb','https://threejs.org/examples/models/gltf/Soldier.glb'];
 const OSCAR_CLIPS={punch:'animations/Jab Cross.fbx',kick:'animations/Kicking.fbx',guard:'animations/Boxing.fbx',aim:'animations/shooter/rifle aiming idle.fbx',
   fire:'animations/shooter/firing rifle.fbx',reload:'animations/shooter/reloading.fbx',hit:'animations/shooter/hit reaction.fbx'};
@@ -4251,17 +4252,19 @@ async function loadOscarModel(){
       if(mine.Idle&&mine.Walk){clips=clips.filter(c=>!mine[c.name]);clips.push(...Object.values(mine));}
       await Promise.all(Object.entries(OSCAR_CLIPS).map(async([name,path])=>{
         const o=await firstOk(['assets/'+path,'../assets/'+path],u=>fbx.loadAsync(u));
-        if(o&&o.animations&&o.animations[0]){const c=inPlace(o.animations[0]);c.name=name;clips.push(c);}}));
-      const root=new THREE.Group();charObj.scale.setScalar(.01);root.add(charObj);OM.src='soldat-camouflage';
+        if(o&&o.animations&&o.animations[0]){const c=o.animations[0];for(const t of c.tracks)t.name=rhNorm(t.name);const tr=c.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
+          if(tr&&hipsRest>1&&tr.values[1]>1){const r=hipsRest/tr.values[1];for(let i=0;i<tr.values.length;i++)tr.values[i]*=r;}inPlace(c);c.name=name;clips.push(c);}}));
+      const root=new THREE.Group();charObj.scale.setScalar(.01);root.add(charObj);OM.src=charObj.getObjectByName('mixamorigHips')&&charObj.getObjectByName('mixamorigHips').position.y>500?'soldat-ksk':'soldat-camouflage';
       setupOscarModel({scene:root,animations:clips});
-      if(OM.ready)await dressOscar(fbx);
+      if(OM.ready&&OSCAR_LOOK)await dressOscar(fbx);
     }else if(soldier&&soldier.scene){OM.src='modele-exemple';setupOscarModel({scene:soldier.scene,animations:loco});}
   }catch(e){console.warn('Modèle 3D d’Oscar indisponible, Oscar classique conservé.',e);}finally{OM.loading=false;}}
 function setupOscarModel(gl){
   if(OM.root&&OM.root.parent)OM.root.parent.remove(OM.root);   // jamais deux Oscar
   const h=oscarMesh,model=gl.scene,root=new THREE.Group();root.add(model);h.g.add(root);
   const B=n=>model.getObjectByName('mixamorig'+n);if(!B('Hips')||!B('RightArm')){h.g.remove(root);return;}
-  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
+    for(const m of [].concat(o.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=Math.min(m.shininess,14);if(m.specular)m.specular.setScalar(.06);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;m.side=THREE.DoubleSide;}}}});
   const mixer=new THREE.AnimationMixer(model),acts={};for(const a of gl.animations)acts[a.name]=mixer.clipAction(a);
   for(const [n,a] of Object.entries(acts)){if(ONCE.has(n)){a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;}a.play();a.setEffectiveWeight(n==='Idle'?1:0);}
   mixer.update(0);
@@ -4293,7 +4296,7 @@ function rpPrepare(o){
   const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=!!(fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z);
   const bb=new THREE.Box3().setFromObject(o);return {obj:o,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}
 // Oscar porte le corps scanné de Nathan (Renderpeople) : visage et vêtements réels ; le corps Mixamo invisible garde animations et armes
-const OSCAR_LOOK='nathan';
+const OSCAR_LOOK=null;   // Boban a choisi le soldat KSK : plus de tenue scannée par-dessus (mettre 'nathan' pour la remettre)
 async function dressOscar(fbx){
   try{const o=await firstOk(['assets/characters/rp/'+OSCAR_LOOK+'.fbx','../assets/characters/rp/'+OSCAR_LOOK+'.fbx'],u=>fbx.loadAsync(u));if(!o)return;
     const P=rpPrepare(o);if(!P)return;const h=oscarMesh,B=n=>OM.model.getObjectByName('mixamorig'+n);
@@ -4353,7 +4356,7 @@ function updateOscarModel(dt){
    animations capturées (assets/animations/pnj). Le squelette simple continue de tourner en coulisse : il donne la position,
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
-const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
+const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:nathan','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
   omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['enfant']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',

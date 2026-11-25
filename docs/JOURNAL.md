@@ -21,6 +21,13 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Oscar devient l'opérateur KSK (v1.12.0)
+- Boban a téléchargé deux soldats sur Sketchfab (« German KSK operator rigged », « American soldier rigged ») et a choisi le KSK : visage réel, casque, gilet tactique, camouflage.
+- Le fichier (déjà passé par Mixamo, squelette `mixamorig`) pointait vers des textures .dds d'un autre ordinateur. Elles ont été intégrées dans le FBX (`embed.py`, à partir des PNG fournis), puis réduites par `fbx_shrink.py` : 16 Mo → 2,4 Mo, `assets/characters/oscar_ksk.fbx`. Le camouflage de l'ancien soldat reste en secours.
+- Ce modèle utilise des unités 20 fois plus grandes : la taille est recalée à la hauteur de la tête, et les clés de bassin de toutes les animations d'Oscar (marche, course, coups, armes) sont recalées sur son corps.
+- La tenue scannée de Nathan n'est plus portée par Oscar (`OSCAR_LOOK=null`). Nathan retourne parmi les passants.
+- Licence : modèle Sketchfab, auteur et licence à confirmer avec la page d'origine (à ajouter dans `CREDITS.md`).
+
 ## 2026-11-25 — Claude — Chiens tenus en laisse (v1.11.3)
 - Vérifié sur le PC de Boban (commit 6260884) : un seul Oscar, tenue de Nathan, en marchant comme à l'arrêt.
 - Signalé par Boban : des animaux traversaient la route seuls, en zigzag. Les chiens ajoutés par Kimi erraient au hasard dans la ville. Leur modèle regardait sur le côté, si bien qu'ils avançaient en crabe.
