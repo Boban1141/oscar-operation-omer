@@ -21,6 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Emplois du temps, objets reconnaissables, parler régional, pas de pluie sous un toit (v1.24.0)
+**Demande** : « Vas-y fais-le » — vérifier à l'écran puis faire les trois prolongements restants.
+**Vérifié sur le PC (v1.23.1)** : les 10 personnages nommés assis font face à leur table ; couverts au diner, bar, pub, café, soupe populaire, refuge. Mode immersif, téléphone (M), lecture sans pause, phrases entendues (« Leafs lost again ») et sous-sol (camion rouge, dessin « PAPA ») fonctionnent.
+**Défauts trouvés en vérifiant, corrigés pour tout le jeu** :
+- La bougie du refuge était prise pour le plateau (Réjean sans couvert) → `isTop` : un plateau est une surface large (rayon > 30 cm) et horizontale ; utilisé par les mains, les couverts et l'orientation.
+- Éclaboussures de pluie, oiseaux et avions visibles à l'intérieur (refuge, sous-sol) → cachés dès qu'on est sous un toit (`updateEnvironment`).
+- Marie-Rose (peau foncée) a un corps scanné de femme blanche : la couleur de peau des 13 corps n'est pas connue du code. Outil `__oscar.lineup()` ajouté pour les aligner devant la caméra ; correction à la prochaine vérification.
+**Nouveau, pour TOUT le jeu** :
+- Section 19 `assignSchedules`/`schedStep` : 28 % des passants ont une maison et un commerce précis dans leur ville. Ils sortent par leur porte le matin (6 h 30–8 h 30), marchent, entrent au travail, rentrent entre 16 h et 18 h 30 ; 30 % ressortent en soirée. Changement de pâté de maisons uniquement hors de vue (> 45 m). Chiens promenés seulement le matin, à midi et le soir.
+- Section 20 `lootStolen` : en fouillant un homme d'Omer, 55 % de chances de prendre un objet gravé à son nom (montre, chevalière au corbeau, chaîne, téléphone, briquet). Les objets visibles font repérer Oscar plus vite par les autres hommes d'Omer (« c'est la montre de Marco ! »). Taché de sang, ils inquiètent les civils au dialogue. Touche L pour s'en débarrasser ; liste dans le carnet.
+- Section 21 `REGIONAL` : 21 personnages accueillent Oscar dans le parler de leur province à la première conversation (anglais traduit, acadien, franco-manitobain, michif, québécois).
+- Test du feu sous la pluie rendu stable (≤ 6 foyers contre 13–20 par temps sec).
+**Tests** : 165 vérifications (emplois du temps, objets volés, parler régional ajoutés).
+
 ## 2026-11-25 — Claude — Les personnages assis font face à leur table (v1.23.1)
 **Constat en vérifiant la v1.23.0 sur le PC** : au diner, les 9 clients ont bien leur couvert (crêpes, café, ketchup-moutarde…), mais au refuge Marie-Rose et Réjean étaient assis **dos à leur table** : ni couvert, ni mains sur la table.
 **Cause commune** : l'orientation des personnages nommés assis était écrite à la main, lieu par lieu, sans vérifier où est la table.

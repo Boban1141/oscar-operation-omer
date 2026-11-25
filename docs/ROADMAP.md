@@ -204,11 +204,14 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 ## Bloc 20 — Réalisme total (liste de Boban, adaptée au Canada moderne) `[~]`
 - [x] Corps et blessures : blessures localisées, saignement, infection et fièvre, froid qui engourdit, trousses (v1.15.0)
 - [x] Physique du monde : élan selon l'équipement, sol mouillé et flaques glissants, eau + courant électrique, barils, feu qui se propage avec le vent, fumée (v1.16.0)
-- [~] Vie des passants (v1.17.0 : peur et fuite, regards, heures d'ouverture ; v1.18.0 : réputation qui circule, méfiance et négociation avant de parler, personne n'apparaît sous les yeux) — reste : emplois du temps détaillés (commerces qui ouvrent et ferment, retour à la maison), réputation qui circule entre villes, confiance et méfiance, regards et micro-réactions, refus et négociation
-- [~] Économie (v1.19.0 : prix selon la province, la météo et l'heure ; espèces et carte avec trace bancaire) — reste : objets volés reconnaissables
+- [x] Vie des passants (v1.17.0 : peur et fuite, regards, heures d'ouverture ; v1.18.0 : réputation qui circule, méfiance et négociation avant de parler, personne n'apparaît sous les yeux ; v1.24.0 : emplois du temps — maison et travail précis, sortie le matin, retour le soir, sortie en soirée, chiens promenés aux bonnes heures)
+- [x] Économie (v1.19.0 : prix selon la province, la météo et l'heure ; espèces et carte avec trace bancaire ; v1.24.0 : objets pris sur les hommes d'Omer reconnaissables, touche L)
 - [x] Hygiène et odeur : saleté selon le temps, la météo et les lieux ; passants qui s'écartent, chiens qui flairent, méfiance ; se laver dans 8 lieux (v1.20.0)
 - [x] Interface invisible : mode immersif sans mini-carte ni marqueur, carte sur le téléphone (M), lecture sans pause (v1.21.0)
 - [x] Décors qui racontent et accents régionaux : répliques surprises dans 7 parlers, traces de captivité au sous-sol (v1.21.0)
+- [x] Parler régional dans les dialogues principaux : 21 personnages accueillent Oscar dans le parler de leur province (v1.24.0)
+- [x] Nuit lisible (vrais lampadaires, adaptation de l'œil, v1.22.0) ; couverts sur les tables selon le lieu, personnages face à leur table (v1.23.x)
+- [ ] Couleur de peau des corps scannés accordée à chaque personnage (Marie-Rose a un corps de femme blanche) — outil `__oscar.lineup()` prêt
 
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
