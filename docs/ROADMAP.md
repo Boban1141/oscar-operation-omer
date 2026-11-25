@@ -203,7 +203,7 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 
 ## Bloc 20 — Réalisme total (liste de Boban, adaptée au Canada moderne) `[~]`
 - [x] Corps et blessures : blessures localisées, saignement, infection et fièvre, froid qui engourdit, trousses (v1.15.0)
-- [ ] Physique du monde : inertie selon l'équipement, sol mouillé et flaques glissants, eau + courant électrique, feu qui se propage avec le vent, fumée
+- [x] Physique du monde : élan selon l'équipement, sol mouillé et flaques glissants, eau + courant électrique, barils, feu qui se propage avec le vent, fumée (v1.16.0)
 - [ ] Vie des passants : emplois du temps (commerces qui ouvrent et ferment, retour à la maison), réputation qui circule entre villes, confiance et méfiance, regards et micro-réactions, refus et négociation
 - [ ] Économie : prix selon la province et les événements (route coupée, tempête), espèces et carte, objets volés reconnaissables
 - [ ] Hygiène et odeur : les gens s'écartent si Oscar sort des égouts ou ne s'est pas lavé depuis des jours, les chiens le flairent

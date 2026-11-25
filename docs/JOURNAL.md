@@ -21,6 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Physique du monde (v1.16.0)
+- Bloc 2 de la liste de Boban, appliqué à tout le jeu (section 14).
+- Poids et élan : le fusil, le pistolet et la tenue militaire pèsent (`playerLoad`). Plus Oscar porte lourd, plus il met de temps à démarrer, s'arrêter et tourner, et sa vitesse baisse un peu.
+- Sol mouillé : sous la pluie, dehors, l'adhérence baisse jusqu'à 35 %.
+- Flaques (`PUD`) : 70 sur les rues de chaque ville, 24 dans chaque zone extérieure, hors obstacles. Elles apparaissent quand il pleut, sombres et brillantes. Courir dedans peut faire glisser et tomber Oscar.
+- Courant électrique (`ELEC`) : le fil tombé de Westmount électrise l'eau autour de lui. Sous la pluie ou le verglas, la zone dangereuse passe de 1,1 à 3,5 m environ, et suit les flaques qui le touchent. Oscar y est électrocuté et projeté. Les hommes d'Omer qui y passent tombent.
+- Barils de carburant : jusqu'à 4 par lieu de mission, posés contre les caisses et les murs. Une balle les fait exploser : souffle qui renverse et blesse dans un rayon de 4,5 m, hommes d'Omer compris, alerte, incendie.
+- Feu (`FIRE`) :
+  - il se propage sous le vent si le sol brûle : forêt 0,9, ranch (foin) 0,85, silos (poussière de grain) 0,5, port (caisses) 0,4… La pluie et la neige l'empêchent presque ;
+  - il brûle quiconque reste dedans ;
+  - il dégage une fumée qui monte et part avec le vent. Dans la fumée, Oscar tousse, s'essouffle, puis suffoque.
+- Tout est remis à zéro au début de chaque niveau.
+- Tests : 156/156, dont le poids, la propagation au sec et sous la pluie, l'explosion d'un baril et le fil électrique sous la pluie.
+
 ## 2026-11-25 — Claude — Corps et blessures (v1.15.0)
 - Boban a partagé une longue liste d'idées de réalisme (vie des passants, économie, physique, corps, interface invisible, décors qui racontent). Elle est adaptée à Oscar (Canada moderne) et notée dans la feuille de route, bloc 20. Il a choisi de commencer par « Corps et blessures ».
 - Appliqué à tout le jeu, par la règle commune des dégâts (`hurtPlayer` → `woundPlayer`). Chaque coup touche une partie du corps : tête, torse, bras droit, bras gauche, jambe droite ou jambe gauche. La partie dépend du coup :

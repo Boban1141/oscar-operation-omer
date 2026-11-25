@@ -160,6 +160,14 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
              const h1=o.S.player.health;for(let i=0;i<300;i++)o.player(1/60);ok(o.S.player.health<h1,'une plaie qui saigne fait perdre de la santé');
              o.treat();const b2=o.body();ok(b2.kits===1&&!Object.values(b2.wounds).some(w=>w.bleed||w.dirty),'la trousse (touche B) arrête le saignement et désinfecte');
              ok(b.fx.speed<=1&&b.fx.melee<=1,'les blessures gênent la marche, les coups et le tir');window.__oscarGod=true;}
+            {o.startLevel(null,'toronto');o.S.location='outside';o.S.weather.rain=1;for(let i=0;i<5;i++)o.player(1/60);o.tick(.05);
+             const l0=o.phys().load;o.S.player.weapons=['rifle','pistol'];const l1=o.phys().load;ok(l1>l0,'l’équipement pèse : plus d’élan à prendre ('+l0.toFixed(2)+' → '+l1.toFixed(2)+')');
+             o.player(1/60);for(let i=0;i<3;i++)o.player(1/60);}
+            {o.startLevel(null,'bc');o.S.location='forest';o.S.weather.rain=0;o.S.weather.snow=0;o.S.weather.windStr=.8;o.ignite(o.S.player.x+30,o.S.player.z);const f0=o.phys().fires;for(let i=0;i<20;i++)o.tick(.5);const f1=o.phys();
+             ok(f1.fires>f0&&f1.smoke>0,'le feu se propage dans la forêt par temps sec et venteux ('+f0+' → '+f1.fires+' foyers, fumée)');}
+            {o.startLevel(null,'bc');o.S.location='forest';o.S.weather.rain=1;o.ignite(o.S.player.x+30,o.S.player.z);for(let i=0;i<20;i++)o.tick(.5);const f2=o.phys();ok(f2.fires<=4,'sous la pluie le feu ne se propage presque pas ('+f2.fires+' foyers)');}
+            {o.startLevel(null,'toronto');o.S.location='port';o.tick(.1);const ok1=o.boom();const ph=o.phys();ok(ok1&&ph.fires>0,'un baril de carburant touché explose et met le feu ('+ph.barrels.length+' barils dans l’entrepôt)');}
+            {o.startLevel(null,'mtl');o.S.weather.rain=1;o.tick(.2);const e=o.phys().elec;ok(e.length>0&&parseFloat(e[0].split(':')[1])>1.1,'sous la pluie, le fil tombé électrise l’eau autour ('+(e[0]||'aucun')+' m)');}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');

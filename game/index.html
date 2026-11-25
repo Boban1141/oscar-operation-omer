@@ -313,7 +313,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.15.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.16.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -689,6 +689,7 @@ function stepWeather(dt){
   W.temp=lerp(L.temp.min,L.temp.max,.5+.5*Math.sin((h/24-.375)*Math.PI*2))-W.rain*2;
   if(L.wind){const g=L.wind;W.windStr=clamp(g.base+g.gust*Math.max(0,Math.sin(S.clock*.11)*Math.sin(S.clock*.37+1))+W.rain*.15,0,1);W.windDir=g.dir+Math.sin(S.clock*.013)*.6;}else{W.windStr=0;W.windDir=0;}
 }
+function indoorNowG(){const I=INTERIORS[S.location];return !!(I&&I.indoor);}
 function stepPlayer(dt){
   const p=S.player, L=LEVELS[S.level];
   const fx=-Math.sin(S.camYaw), fz=-Math.cos(S.camYaw), rx=Math.cos(S.camYaw), rz=-Math.sin(S.camYaw);
@@ -697,9 +698,11 @@ function stepPlayer(dt){
   if(CB.lockT>0){mx=0;mz=0;}
   const BF=bodyFx();
   const running=cmd.run&&ml>0&&p.stamina>4&&!CB.crouch&&!CB.aim&&!CB.block&&CB.lockT<=0&&!BF.noRun;
-  const sp=(ml>0&&CB.lockT<=0)?(running?6.6:CB.crouch?1.7:3.2)*(CB.aim?.6:1)*(CB.block?.5:1)*BF.speed:0;
+  const sp=(ml>0&&CB.lockT<=0)?(running?6.6:CB.crouch?1.7:3.2)*(CB.aim?.6:1)*(CB.block?.5:1)*BF.speed*(1-.12*playerLoad()):0;
   const icy=INTERIORS[S.location]&&INTERIORS[S.location].ice&&!S.flags.crampons&&S.weather.temp<=1;
-  const k=1-Math.exp(-dt*(icy?1.8:10));
+  // élan : plus Oscar porte lourd, plus il met du temps à partir, s'arrêter et tourner ; la pluie et les flaques retirent de l'adhérence
+  const load=playerLoad(),wetG=indoorNowG()?0:clamp(S.weather.rain||0,0,1)*.35,pud=inPuddle(p.x,p.z);
+  const k=1-Math.exp(-dt*(icy?1.8:pud?3.2:10*(1-wetG))/(1+load));
   const indoorNow=INTERIORS[S.location]&&INTERIORS[S.location].indoor,ws=indoorNow?0:(S.weather.windStr||0),wdx=Math.sin(S.weather.windDir||0),wdz=Math.cos(S.weather.windDir||0);
   const against=ml>0?Math.max(0,-(mx*wdx+mz*wdz)):0;const deep=INTERIORS[S.location]&&INTERIORS[S.location].snow&&!onPlowed(p.x,p.z)?(S.flags.boots?.85:.62):1;const spW=sp*(1-.45*ws*against)*deep;
   p.vx=lerp(p.vx,mx*spW,k);p.vz=lerp(p.vz,mz*spW,k);p.x+=wdx*ws*ws*.6*dt;p.z+=wdz*ws*ws*.6*dt;
@@ -712,6 +715,7 @@ function stepPlayer(dt){
   cmd.jump=false;
   p.vy-=15*dt;p.y+=p.vy*dt;if(p.y<=g){p.y=g;p.vy=0;}
   p.anim+=gs*dt*2.4;p.speed=gs;
+  if(pud&&running&&gs>4.5&&CB.lockT<=0&&Math.random()<dt*.5){hurtPlayer(6,false,{kind:'fall',push:.6});toast('Tu glisses dans une flaque !');}
   if(icy&&running&&gs>4.2&&CB.lockT<=0&&Math.random()<dt*.4){CB.lockT=1.4;CB.fall=1.4;S.flags.fell=true;p.health=Math.max(1,p.health-6);sfx('down');if(!S.flags.slipToast||S.clock-S.flags.slipToast>60){S.flags.slipToast=S.clock;toast('Tu glisses sur le verglas et tu tombes ! Ne cours pas sur la glace.');}}if(gs>.5)stepFootprints(p);
   p.stamina=clamp(p.stamina+(running?-14/Math.max(.4,BF.stamina):9*BF.stamina)*dt,0,100);
   // Cold & rain: the climate is an opponent (stronger in later provinces).
@@ -2253,6 +2257,7 @@ function tryFire(){
     const ox=e.x-o.x,oz=e.z-o.z,a=dir.x*dir.x+dir.z*dir.z,b=ox*dir.x+oz*dir.z,t=b/a;if(t<0||t>tmax)continue;
     const cx=o.x+dir.x*t-e.x,cz=o.z+dir.z*t-e.z;if(cx*cx+cz*cz>.36*.36)continue;const y=o.y+dir.y*t;if(y<0||y>1.85)continue;tmax=t;hitE=e;hy=y;}
   const end=o.clone().addScaledVector(dir,Math.min(tmax,120));addTracer(oscarMuzzle(),end,'#ffe7a0');
+  {const tb=shootBarrels(o,dir,tmax);if(tb!==null&&tb<tmax){tmax=tb;hitE=null;}}
   if(hitE){damageEnemy(hitE,W.dmg*(hy>1.55?2.2:1),'shot');}
   else if(AR()&&!AS().alarm)alarm('Les coups de feu ont été entendus.');
   if(!W.auto)CB.firing=false;
@@ -3416,6 +3421,7 @@ const inHouse=p=>{const x=p.x-MANOIR.ox,z=p.z-MANOIR.oz;return x>-22&&x<22&&z>-3
 const kitchenWindow=()=>{const m=((S.clock%1440)+1440)%1440;return m<15;};
 // falling ice-laden branches (outdoors in the storm) and a downed live wire
 function stormHazards(p,I,inside){
+  if(I===WMT&&!ELEC.some(s=>s.id==='wmt'))ELEC.push({id:'wmt',loc:'westmount',x:WMT.ox+14,z:WMT.oz+11,r0:1.1,on:()=>!S.flags.wireSafe});
   if(I===WMT&&!S.flags.wireSafe){const d=Math.hypot(p.x-(WMT.ox+14),p.z-(WMT.oz+11));if(d<1.1&&!(CB.wireCd>0)){CB.wireCd=2;hurtPlayer(40,false,{kind:'fall',from:{x:WMT.ox+14,z:WMT.oz+11},push:1.5});toast('Une décharge te projette en arrière : le fil tombé est encore sous tension !');}}
   CB.wireCd=Math.max(0,(CB.wireCd||0)-1/60);
   const br=I.branch;if(!br)return;
@@ -4145,6 +4151,7 @@ function interact(){if(activeZone&&activeZone.act)activeZone.act();}
 /* --- game flow --- */
 function show(id,on){$(id).classList.toggle('hidden',!on)}
 function startLevel(fromSave,levelId){
+  if(typeof resetPhysics==='function')resetPhysics();
   ensureCity((fromSave&&fromSave.level)||levelId||'toronto');
   S=fromSave||createState(levelId||'toronto');S.status='playing';
   camYaw=S.camYaw||0;timeScale=1;
@@ -4194,7 +4201,7 @@ function frame(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;stepComfort(dt,t);
   if(mode==='play'){
     readInput();acc+=dt;let n=0;
-    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto'||S.location==='outside')stepAgents(STEP);stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);stepMission();acc-=STEP;n++;}
+    while(acc>=STEP&&n<6){stepClock(STEP);stepWeather(STEP);stepPlayer(STEP);if(S.level==='toronto'||S.location==='outside')stepAgents(STEP);stepCombat(STEP);stepPhysics(STEP,performance.now()/1000);stepCameras(STEP);stepShredder(STEP);stepMission();acc-=STEP;n++;}
     if(n===6)acc=0;
     updateCamera(dt);syncView(dt,t);
     activeZone=null;let best=1e9;
@@ -4638,6 +4645,82 @@ function treatWounds(){const p=S.player,W=bodyOf(p);if(!S||S.status!=='playing')
 function woundsText(){const W=bodyOf(S.player),L=[];for(const [k,w] of Object.entries(W)){if(w.sev<.05&&!w.inf)continue;
   L.push(BODY_PARTS[k]+(w.bleed?' (saigne)':w.inf>.3?' (infectée)':w.dirty?' (sale)':' (pansée)'));}return L.join(' · ');}
 
+/* ---------------- 14. PHYSIQUE DU MONDE (tout le jeu) ----------------
+   Poids et élan, sol mouillé et flaques, courant électrique conduit par l'eau, barils de carburant, feu qui se propage avec le vent,
+   fumée qui étouffe. */
+function playerLoad(){const p=S.player,w=p.weapons||[];return (w.includes('rifle')?.45:0)+(w.includes('pistol')?.1:0)+(OM&&OM.outfit==='militaire'?.35:0);}
+// --- flaques : là où il pleut, sur la chaussée et les trottoirs ---
+const PUD={loc:null,list:[],group:null,mat:null};
+function puddleArea(){const loc=S.location;if(loc==='outside')return {ox:0,oz:0,hw:160,hd:160,city:true};const I=INTERIORS[loc];if(!I||I.indoor||!I.group)return null;return {ox:I.ox,oz:I.oz,hw:I.hw,hd:I.hd};}
+function buildPuddles(){if(PUD.group){scene.remove(PUD.group);PUD.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}PUD.list=[];PUD.loc=S.location+':'+(CITY&&CITY.id);
+  const A=puddleArea();if(!A){PUD.group=null;return;}
+  PUD.mat=PUD.mat||new THREE.MeshStandardMaterial({color:'#0e1116',roughness:.04,metalness:.55,transparent:true,opacity:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+  const g=new THREE.Group();const r=mulberry32(77+(A.ox|0)+(A.oz|0)),n=A.city?70:24;
+  for(let i=0;i<n;i++){let x,z;
+    if(A.city){const road=ROADS[Math.floor(r()*ROADS.length)];const along=(r()-.5)*300,off=(r()<.5?-1:1)*(1.5+r()*5);if(r()<.5){x=along;z=road+off;}else{x=road+off;z=along;}}
+    else{x=A.ox+(r()-.5)*A.hw*1.7;z=A.oz+(r()-.5)*A.hd*1.7;const I=INTERIORS[S.location];if(I&&I.cols.some(c=>x>c.x0-.5&&x<c.x1+.5&&z>c.z0-.5&&z<c.z1+.5))continue;}
+    const rx=.6+r()*1.4,rz=.4+r()*.9;const m=new THREE.Mesh(new THREE.CircleGeometry(1,20),PUD.mat);m.rotation.x=-Math.PI/2;m.rotation.z=r()*6;m.scale.set(rx,rz,1);
+    m.position.set(x,groundHeight(x,z)+.012,z);m.receiveShadow=true;g.add(m);PUD.list.push({x,z,r:Math.max(rx,rz)*.85});}
+  scene.add(g);PUD.group=g;}
+function inPuddle(x,z){const wet=S.weather.rain||0;if(wet<.25)return false;for(const q of PUD.list)if(Math.hypot(x-q.x,z-q.z)<q.r)return true;return false;}
+function stepPuddles(){const key=S.location+':'+(CITY&&CITY.id);if(PUD.loc!==key)buildPuddles();if(PUD.mat){const w=S.weather.rain||0;PUD.mat.opacity=lerp(PUD.mat.opacity,clamp((w-.1)*1.4,0,.75),.02);}}
+// --- courant électrique : un fil tombé électrise l'eau autour de lui ---
+const ELEC=[];   // {x,z,r0,loc,on()}
+function elecRadius(s){const I=INTERIORS[s.loc]||{};const wet=(S.weather.rain||0)>.2||(I.ice&&S.weather.temp<=1);let r=s.r0;if(wet)r+=2.4;for(const q of PUD.list)if(Math.hypot(q.x-s.x,q.z-s.z)<r+q.r&&wet)r=Math.max(r,Math.hypot(q.x-s.x,q.z-s.z)+q.r);return r;}
+function stepElectric(dt){const p=S.player;for(const s of ELEC){if(s.loc!==S.location||!s.on())continue;const R=elecRadius(s);s.R=R;
+    if(Math.hypot(p.x-s.x,p.z-s.z)<R&&!(CB.shockCd>0)&&R>s.r0+.1){CB.shockCd=2.2;hurtPlayer(28,false,{kind:'fall',from:{x:s.x,z:s.z},push:1.6});toast('L’eau conduit le courant du fil tombé : tu es électrocuté ! Évite les flaques autour.');}
+    const AS2=AS();if(AS2)for(const e of AS2.enemies)if(!e.down&&Math.hypot(e.x-s.x,e.z-s.z)<R){e.down=true;e.hp=0;if(e.type==='boss'){e.surrender=true;S.flags.bossDown=true;}sfx('down');}}
+  CB.shockCd=Math.max(0,(CB.shockCd||0)-dt);}
+// --- barils de carburant et feu ---
+const FIRE={list:[],smoke:[],barrels:{},group:new THREE.Group(),flameGeo:new THREE.ConeGeometry(.5,1.4,7,1,true),
+  flameMat:new THREE.MeshBasicMaterial({color:'#ff8a2a',transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}),
+  smokeMat:new THREE.MeshBasicMaterial({color:'#3b3b3b',transparent:true,opacity:.35,depthWrite:false}),smokeGeo:new THREE.SphereGeometry(1,8,6)};
+scene.add(FIRE.group);
+const FLAMMABLE={forest:.9,ranch:.85,yard:.35,port:.4,silos:.5,trawler:.25,office:.2,manoir:.3,vanport:.3,harbour:.2,halifax:.15,winnipeg:.2,westmount:.15};
+function barrelsFor(loc){if(FIRE.barrels[loc])return FIRE.barrels[loc];const AD=ARENAS[loc],A=AD&&AD.area;const L=[];FIRE.barrels[loc]=L;if(!A||!A.group)return L;
+  const r=mulberry32(loc.length*97+13),cols=A.cols.slice(0,40);const red=new THREE.MeshStandardMaterial({color:'#9e1b1b',roughness:.5,metalness:.4}),band=new THREE.MeshStandardMaterial({color:'#d8c23a',roughness:.6});
+  for(let i=0;i<cols.length&&L.length<4;i++){const c=cols[Math.floor(r()*cols.length)];const side=Math.floor(r()*4);
+    const x=side===0?c.x0-.55:side===1?c.x1+.55:(c.x0+c.x1)/2,z=side===2?c.z0-.55:side===3?c.z1+.55:(c.z0+c.z1)/2;
+    if(A.cols.some(o=>x>o.x0-.4&&x<o.x1+.4&&z>o.z0-.4&&z<o.z1+.4))continue;if(L.some(b=>Math.hypot(b.x-x,b.z-z)<6))continue;
+    const g=new THREE.Group();const b=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.9,14),red);b.position.y=.45;b.castShadow=true;g.add(b);
+    const s=new THREE.Mesh(new THREE.CylinderGeometry(.305,.305,.08,14),band);s.position.y=.6;g.add(s);
+    g.position.set(x-A.ox,0,z-A.oz);A.group.add(g);L.push({x,z,g,hp:1});}
+  return L;}
+function igniteAt(x,z,big){if(FIRE.list.length>60)return;const m=new THREE.Mesh(FIRE.flameGeo,FIRE.flameMat);m.position.set(x,.7,z);FIRE.group.add(m);
+  const light=FIRE.list.length<8?new THREE.PointLight('#ff7a2a',big?14:6,big?14:8,2):null;if(light){light.position.set(x,1.2,z);FIRE.group.add(light);}
+  FIRE.list.push({x,z,m,light,life:(big?35:18)+Math.random()*14,spreadT:1+Math.random(),s:big?1.6:.9,loc:S.location});}
+function explodeBarrel(b){if(b.hp<=0)return;b.hp=0;b.g.visible=false;CB.shake=Math.max(CB.shake||0,1);sfx('shot');sfx('down');
+  igniteAt(b.x,b.z,true);for(let k=0;k<3;k++)igniteAt(b.x+(Math.random()-.5)*3,b.z+(Math.random()-.5)*3,false);
+  const p=S.player,d=Math.hypot(p.x-b.x,p.z-b.z);if(d<4.5)hurtPlayer(Math.round(45*(1-d/4.5))+10,false,{kind:'fall',from:{x:b.x,z:b.z},push:2});
+  const A=AS();if(A)for(const e of A.enemies){const de=Math.hypot(e.x-b.x,e.z-b.z);if(!e.down&&de<4.5)damageEnemy(e,120*(1-de/4.5)+20,'shot');}
+  if(A&&!A.alarm&&typeof alarm==='function')alarm('Une explosion a été entendue.');
+  toast('Le baril de carburant explose ! Le feu se propage avec le vent.');}
+function shootBarrels(o,dir,tmax){const L=barrelsFor(S.location);for(const b of L){if(b.hp<=0)continue;const ox=b.x-o.x,oz=b.z-o.z,a=dir.x*dir.x+dir.z*dir.z,t=(ox*dir.x+oz*dir.z)/a;if(t<0||t>tmax)continue;
+    const cx=o.x+dir.x*t-b.x,cz=o.z+dir.z*t-b.z;if(cx*cx+cz*cz>.35*.35)continue;const y=o.y+dir.y*t;if(y<0||y>1)continue;explodeBarrel(b);return t;}return null;}
+function stepFire(dt,t){const p=S.player,W=S.weather,fl=FLAMMABLE[S.location]||0,wet=clamp((W.rain||0)+(W.snow||0)*.8,0,1);
+  const wx=Math.sin(W.windDir||0),wz=Math.cos(W.windDir||0),ws=W.windStr||0;
+  for(let i=FIRE.list.length-1;i>=0;i--){const f=FIRE.list[i];const here=f.loc===S.location;f.m.visible=here;if(f.light)f.light.visible=here;
+    f.life-=dt*(1+wet*1.5);f.spreadT-=dt;const k=clamp(f.life/6,0,1);
+    f.m.scale.set(f.s*k*(1+.15*Math.sin(t*13+i)),f.s*k*(1+.25*Math.sin(t*9+i*2)),f.s*k);f.m.rotation.z=ws*.35*Math.sin(t*3+i)*.3;if(f.light)f.light.intensity=(6+4*Math.sin(t*17+i))*k;
+    // propagation : surtout sous le vent, si le sol brûle (herbe, foin, sciure, caisses) et s'il ne pleut pas trop
+    if(here&&f.spreadT<=0){f.spreadT=1.4+Math.random();if(Math.random()<fl*(1-wet*.85)){const d=1.2+Math.random()*1.4+ws*1.5;const a=Math.random()*Math.PI*2;
+        const nx=f.x+wx*d*ws+Math.cos(a)*d*(1-ws*.6),nz=f.z+wz*d*ws+Math.sin(a)*d*(1-ws*.6);if(!FIRE.list.some(o=>Math.hypot(o.x-nx,o.z-nz)<1))igniteAt(nx,nz,false);}}
+    // fumée qui monte et part avec le vent
+    if(here&&Math.random()<dt*3){const s=new THREE.Mesh(FIRE.smokeGeo,FIRE.smokeMat.clone());s.position.set(f.x,1.4,f.z);s.scale.setScalar(.4);FIRE.group.add(s);FIRE.smoke.push({m:s,life:5});}
+    if(here){const d=Math.hypot(p.x-f.x,p.z-f.z);if(d<.9*f.s&&!(CB.burnCd>0)){CB.burnCd=.8;hurtPlayer(8,false,{kind:'shot',from:{x:f.x,z:f.z}});toast('Tu brûles ! Sors du feu.');}
+      const A=AS();if(A)for(const e of A.enemies)if(!e.down&&Math.hypot(e.x-f.x,e.z-f.z)<.9*f.s)damageEnemy(e,25*dt,'silent');}
+    if(f.life<=0){FIRE.group.remove(f.m);if(f.light)FIRE.group.remove(f.light);FIRE.list.splice(i,1);}}
+  CB.burnCd=Math.max(0,(CB.burnCd||0)-dt);
+  let smokeHere=0;for(let i=FIRE.smoke.length-1;i>=0;i--){const s=FIRE.smoke[i];s.life-=dt;s.m.position.y+=dt*1.1;s.m.position.x+=wx*ws*dt*2.5;s.m.position.z+=wz*ws*dt*2.5;
+    s.m.scale.multiplyScalar(1+dt*.35);s.m.material.opacity=.35*clamp(s.life/5,0,1);if(Math.hypot(p.x-s.m.position.x,p.z-s.m.position.z)<s.m.scale.x&&s.m.position.y<2.6)smokeHere++;
+    if(s.life<=0){FIRE.group.remove(s.m);s.m.material.dispose();FIRE.smoke.splice(i,1);}}
+  // la fumée étouffe : on tousse, on s'essouffle, on suffoque si on y reste
+  if(smokeHere>2){p.stamina=Math.max(0,p.stamina-12*dt);if(smokeHere>6)p.health=Math.max(1,p.health-2.5*dt);if(!(CB.coughT>0)){CB.coughT=4;toast('La fumée te fait tousser : sors-en, baisse-toi (X).');}}
+  CB.coughT=Math.max(0,(CB.coughT||0)-dt);}
+function resetPhysics(){for(const f of FIRE.list){FIRE.group.remove(f.m);if(f.light)FIRE.group.remove(f.light);}for(const sm of FIRE.smoke){FIRE.group.remove(sm.m);sm.m.material.dispose();}FIRE.list.length=0;FIRE.smoke.length=0;
+  for(const L of Object.values(FIRE.barrels))for(const b of L){if(b.g.parent)b.g.parent.remove(b.g);}FIRE.barrels={};}
+function stepPhysics(dt,t){if(!S||S.status!=='playing')return;stepPuddles();stepElectric(dt);if(AR())barrelsFor(S.location);stepFire(dt,t);}
+
 /* ---------------- 9. LIEUX RÉALISTES : matières photographiées (Poly Haven, licence CC0) ----------------
    Les textures dessinées par programme sont remplacées par de vraies photos de matières, ramenées à la même
    luminosité moyenne et teintées par la couleur d'origine : les couleurs choisies pour chaque lieu restent justes.
@@ -4948,7 +5031,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
