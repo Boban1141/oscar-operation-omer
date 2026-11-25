@@ -21,6 +21,18 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-24 — Kimi (contribution) + Claude (intégration) — v1.6.0
+- Apport de Kimi (fichier `game/index.html` transmis par Boban, sans journal ni commit) : passants plus vivants (assis sur les bancs, groupes qui discutent, téléphone, regards), oiseaux, chiens, avions, vie dans les intérieurs (clients), pluie plus réaliste (éclaboussures, asphalte mouillé, voile de pluie à l'écran), voitures détaillées (jantes, feux de freinage), visages plus humains (grain de peau, rousseur, joues, nez asymétrique, silhouettes féminines), post-traitement (halo, vignettage, grain, aberration chromatique), HUD plus compact.
+- Corrigé par Claude à la demande de Boban (version de Kimi conservée) :
+  1. plantage au lancement de chaque niveau (`initPlanes` : variable `r` manquante ; traînées non retirées) ;
+  2. « villes ouvertes » par province retirées : générateurs sans bâtiments qui faisaient planter les niveaux 2 à 7, et inutiles (ces niveaux ont leurs propres décors) ; plus de reconstruction du monde à chaque niveau ; densités des niveaux 2 à 7 remises à 0 ;
+  3. Toronto rétabli : lac Ontario et digue, trottoirs, carte (King St, Lac Ontario, Tour CN) ;
+  4. météo de retour dans le HUD, doublon Jour/heure supprimé ;
+  5. performances : effets de cinéma réglables (Options) et coupés automatiquement si la qualité graphique baisse ; voile de pluie sans réallocation à chaque image ; post-traitement redimensionné avec la fenêtre ;
+  6. documentation mise à jour.
+- Tests : 124/124 (nouvelle vérification : météo affichée, pas de doublon Jour/heure).
+- Rappel pour tous les agents (Codex, Kimi, Claude) : lancer `python tests/run_logic_tests.py` et mettre à jour JOURNAL/ROADMAP avant chaque envoi (AGENTS.md).
+
 ## 2026-11-21 — Claude — Arbres, écorce et bancs réalistes (v1.5.0)
 - Les arbres 3D de Poly Haven sont des numérisations de cinéma (66 Mo à 958 Mo, 1,6 à 17 millions de triangles) : inutilisables dans un navigateur. À la place : feuillage en grappes de feuilles/aiguilles avec transparence (cartes instanciées, teintées par arbre), fonctionne hors ligne ; écorce photographiée (bark_brown_02) sur les troncs.
 - Bancs des parcs de Toronto : vrai modèle Poly Haven `painted_wooden_bench` (1 000 triangles).

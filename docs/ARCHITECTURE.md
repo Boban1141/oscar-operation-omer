@@ -1,6 +1,11 @@
 # Architecture technique
 
-## État actuel (v1.4.1)
+## État actuel (v1.6.0)
+- Vie (Kimi) : `initBirds/updateBirds`, `initDogs/updateDogs`, `initPlanes/updatePlanes` (lancés par `startLevel`), `initInteriorLife/updateInteriorLife` (à l'entrée d'un intérieur) ; comportements des passants (`behavior` : walk, phone_walk, look_around, group, sit).
+- Rendu (Kimi) : `initComposer()` (EffectComposer : RenderPass, UnrealBloomPass, vignettage, grain, aberration) ; utilisé seulement si `SET.postfx` et qualité `high` ; `updateRainOverlay()` (canvas `#rainOverlay`).
+- Une seule ville extérieure : Toronto (`generateCity`). Les niveaux 2 à 7 se jouent dans leurs lieux (`INTERIORS`).
+
+## État v1.4.1
 - Section 8 : Oscar = `assets/characters/candidat5_camouflage.fbx` (FBXLoader) + clips `OSCAR_CLIPS` ; `reorientClips()` adapte les clips d'un squelette tourné ; `inPlace()` bloque le déplacement des hanches ; superpositions `OM.over` (punch, kick, guard, aim, fire, reload, hit) ; `OM.gunAnchor` suit la main droite. Chemins essayés : `assets/...` (GitHub Pages) puis `../assets/...` (dépôt).
 - Section 9 : `loadRealSurfaces()` ; `realSwap(texture, idPolyHaven, saturation, relief)` remplace l'image d'une texture canvas existante par une photo ramenée à la même couleur moyenne (`detailCanvas`) et ajoute une carte de normales ; `FACADES` + `paintFacade()` repeignent les façades sur fond photo.
 - Section 10 : `TREES` (couronnes instanciées + matériau du tronc + type broad/conifer/snow) → `buildFoliage()` au démarrage ; `realTrees()` (écorce), `phModel(id)` (charge un modèle glTF Poly Haven via l'API), `BENCHES` → `realBenches()`.

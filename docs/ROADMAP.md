@@ -175,6 +175,13 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Feuillage réaliste (feuilles/aiguilles), écorce photographiée, vrais bancs 3D (v1.5.0)
 - [ ] Lampadaires et bornes-fontaines réels près d'Oscar ; voitures ; ciels photographiés (HDRI)
 
+## Bloc 16 — Contribution de Kimi intégrée `[x]` (v1.6.0)
+- [x] Passants vivants (bancs, groupes, téléphone), oiseaux, chiens, avions, clients dans les intérieurs
+- [x] Pluie réaliste (éclaboussures, asphalte mouillé, voile), voitures détaillées, visages plus humains
+- [x] Effets de cinéma (réglables), HUD compact
+- [x] Corrections : plantage des niveaux, villes de province cassées retirées, Toronto rétabli, météo du HUD, performances
+- [ ] Vérification visuelle sur le PC de Boban après envoi
+
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
 - [ ] Décider l'identité du personnage mystérieux (suite possible)

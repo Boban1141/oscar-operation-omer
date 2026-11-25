@@ -145,6 +145,7 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             C.openMenu('trophies','pause');ok(document.querySelectorAll('#trophyList .got').length>=3,'écran des trophées');C.closeMenu('trophies');
             C.openMenu('options','pause');const el=document.getElementById('oSens');el.value=1.7;el.dispatchEvent(new Event('input'));ok(JSON.parse(localStorage.getItem('oscar.settings')).sens===1.7,'options sauvegardées');C.closeMenu('options');
             C.applyGfx('low');ok(C.q==='low','qualité graphique basse');C.applyGfx('high');
+            o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');
             return r;});});});});});});});
   return new Promise(res=>setTimeout(()=>{ok(o.mode==='win','écran de fin de niveau');res(r)},900));}'''
