@@ -21,6 +21,17 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Eva et Cédric captifs, chacun le corps de sa couleur de peau (v1.25.0)
+**Demande** : la femme d'Oscar peut rester blanche, mais elle et son fils doivent être de vraies personnes, bien assis, montrant qu'ils sont vraiment captifs.
+**Constat** : au sous-sol, Eva et Cédric étaient debout en mode « discussion » (bras qui gesticulent). Leurs corps étaient tirés au hasard ; Cédric avait le seul corps d'enfant disponible, un garçon de dessin animé (Mixamo « Boy01 », grands yeux, lunettes).
+**Planche des 14 corps** (rendu de chaque visage par le moteur du jeu sur le PC de Boban) : peau claire = tshirt_blanc, chemise_jean, veste_brune, fleurs, Claudia, Sophia ; mate = sweat_blanc, Manuel, pull_beige ; foncée = capuche, Eric, rayures, Carla.
+**Corrections pour TOUT le jeu** :
+- `CHAR_TONE` + `toneOf` : chaque personnage (passants, personnages nommés, cinématiques) reçoit un corps de sa couleur de peau ; les personnages nommés prennent un corps scanné Renderpeople quand il en existe un de leur couleur. Marie-Rose → Carla.
+- Eva a un corps scanné réservé (Sophia, brune aux cheveux longs), le même partout : maison, message vidéo, sous-sol, fin.
+- Sous-sol : nouveau mode `captive` — Eva assise sur le matelas serre Cédric contre elle, la cheville gauche enchaînée à un tuyau du mur ; Cédric recroquevillé contre elle, tête basse, qui se balance un peu. Le vrai corps recopie la pose (`h.posed` → recopie complète, comme en cinématique).
+**Reste** : un vrai corps d'enfant scanné pour Cédric (aucun gratuit prêt à l'emploi trouvé) — à fournir par Boban.
+**Tests** : 166 vérifications (attribution des corps ajoutée).
+
 ## 2026-11-25 — Claude — Emplois du temps, objets reconnaissables, parler régional, pas de pluie sous un toit (v1.24.0)
 **Demande** : « Vas-y fais-le » — vérifier à l'écran puis faire les trois prolongements restants.
 **Vérifié sur le PC (v1.23.1)** : les 10 personnages nommés assis font face à leur table ; couverts au diner, bar, pub, café, soupe populaire, refuge. Mode immersif, téléphone (M), lecture sans pause, phrases entendues (« Leafs lost again ») et sous-sol (camion rouge, dessin « PAPA ») fonctionnent.

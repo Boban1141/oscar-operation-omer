@@ -211,7 +211,8 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Décors qui racontent et accents régionaux : répliques surprises dans 7 parlers, traces de captivité au sous-sol (v1.21.0)
 - [x] Parler régional dans les dialogues principaux : 21 personnages accueillent Oscar dans le parler de leur province (v1.24.0)
 - [x] Nuit lisible (vrais lampadaires, adaptation de l'œil, v1.22.0) ; couverts sur les tables selon le lieu, personnages face à leur table (v1.23.x)
-- [ ] Couleur de peau des corps scannés accordée à chaque personnage (Marie-Rose a un corps de femme blanche) — outil `__oscar.lineup()` prêt
+- [x] Couleur de peau des corps accordée à chaque personnage ; Eva corps scanné réservé ; Eva et Cédric captifs au sous-sol (v1.25.0)
+- [ ] Cédric : vrai corps d'enfant scanné (à fournir)
 
 ## Après la v1.1 `[ ]`
 - [ ] Test humain complet des 7 niveaux, réglage de la difficulté et des chronomètres
