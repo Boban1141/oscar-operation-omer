@@ -169,7 +169,6 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
       <div><kbd>Maj</kbd> courir</div>
       <div><kbd>Espace</kbd> sauter</div>
       <div><kbd>E</kbd> interagir / entrer</div>
-      <div><kbd>G</kbd> changer de tenue (civile / militaire)</div>
       <div><kbd>B</kbd> se soigner (trousse de premiers soins)</div>
       <div><kbd>L</kbd> se débarrasser des objets pris sur les hommes d’Omer</div>
       <div><kbd>M</kbd> carte sur le téléphone (interface immersive)</div>
@@ -323,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.26.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.27.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -865,7 +864,7 @@ function density(){
 }
 // Peur : une arme sortie, la tenue militaire en ville, un coup de feu ou une explosion font reculer et fuir les passants (tout le jeu).
 function publicThreat(){if(!S||S.location!=='outside')return 0;const sh=S.flags.lastShot;if(sh&&S.clock-sh.c<15)return 28;
-  const armed=playerWeapon()!=='fists';if(armed&&CB.aim)return 12;if(armed)return 8;if(typeof OM!=='undefined'&&OM.outfit==='militaire')return 5;return 0;}
+  const armed=playerWeapon()!=='fists';if(armed&&CB.aim)return 12;if(armed)return 8;return 0;}
 function stepAgents(dt){
   const dens=density(),thr=publicThreat();let scared=0;
   for(const a of peds){
@@ -2132,7 +2131,7 @@ function noteViolence(n){if(!S)return;if(typeof HOSTILE!=='undefined'&&HOSTILE.h
   if(r0<30&&S.rep>=30)toast('On parle de toi : « un homme armé » fait les nouvelles. Les gens se méfient davantage.');}
 const WARY_SKIP=/Omer|Garde|Sentinelle|Pasteur|Tiago|Viktor|Éleveur|Notaire|Porte|Bras droit|lieutenant/i;
 function waryReason(id){const D=DIALOGUES[id];if(!D||WARY_SKIP.test(D.who)||S.flags['calm_'+id])return null;
-  if(playerWeapon()!=='fists')return 'weapon';if(typeof OM!=='undefined'&&OM.outfit==='militaire'&&!(typeof HOSTILE!=='undefined'&&HOSTILE.has(S.location)))return 'outfit';
+  if(playerWeapon()!=='fists')return 'weapon';
   if(stolenShown().some(o=>o.blood))return 'stolen';if((S.rep||0)>=30)return 'rep';if((S.player.dirt||0)>=75)return 'smell';return null;}
 /* --- 21. PARLER RÉGIONAL : la première fois qu'on parle à quelqu'un, il accueille Oscar dans le parler de sa province (TOUT le jeu).
    Les anglophones parlent anglais (traduction entre parenthèses) ; Acadiens, Franco-Manitobains, Métis et Québécois gardent leurs mots. */
@@ -3860,7 +3859,7 @@ function CINES_finale(){const s=SOUSSOL,sx=x=>s.ox+x,sz=z=>s.oz+z,Wm=WMT,wx=x=>W
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(sx(0),0,lerp(sz(3.2),sz(.6),ease(clamp(k*1.6,0,1))));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,k<.6?1:0,'walk',.4,true);
       // Cédric reconnaît son père : il bondit de joie, puis court vers lui ; Eva se lève en pleurant et court à son tour
       const C=A.cedric,E=A.eva;
-      if(t<1.3){C.forceClip=null;place(C,sx(-2.42),sz(-2.98),-.15,'sit',T,dt);C.head.rotation.x=.4;}
+      if(t<1.3){C.forceClip=null;place(C,sx(-2.42),sz(-2.93),-.15,'sit',T,dt,0,.13);C.head.rotation.x=.4;}
       else if(t<2.1){C.forceClip='excited';place(C,sx(-2.42),sz(-2.55),.6,'walk',T,dt);}
       else{const q=clamp((t-2.1)/1.9,0,1);C.forceClip=q<1?'run':'excited';walkTo(C,[sx(-2.42),sz(-2.55)],[sx(-.15),sz(.15)],q,1.9,T,dt);}
       if(t<2.0){E.forceClip=null;place(E,sx(-3.0),sz(-2.98),0,'sit',T,dt);pose.protect(E);}
@@ -3931,9 +3930,10 @@ const pose={
 const CAPT={chain:null,ring:null,tmp:new THREE.Vector3(),tmp2:new THREE.Vector3()};
 // Assis au bord du lit de camp avec la vraie animation « assis » (la même que les clients du diner) ; par-dessus, sur le vrai corps :
 // tête basse, Cédric penché contre sa mère. Quand Oscar approche, ils relèvent la tête vers lui (regard).
-const CAPT_P={eva:{x:-3.0,z:-2.98,a:0,bow:.5,lean:0},cedric:{x:-2.42,z:-2.98,a:-.15,bow:.55,lean:.28}};
+const CAPT_P={eva:{x:-3.0,z:-2.98,a:0,y:0,bow:.5,lean:0},cedric:{x:-2.42,z:-2.93,a:-.15,y:.13,bow:.55,lean:.28}};
 function captivePose(n,t,dt){const h=n.h,P=CAPT_P[n.id]||CAPT_P.eva;h.posed=false;h.noTalk=true;n.x=SOUSSOL.ox+P.x;n.z=SOUSSOL.oz+P.z;n.a=P.a;
-  h.g.position.set(n.x,0,n.z);h.g.rotation.set(0,P.a,0);animRig(h,dt,t+n.x,0,'sit',0,true);
+  // l'animation « assis » est faite pour un siège d'adulte : un enfant est remonté au niveau du lit
+  h.g.position.set(n.x,P.y||0,n.z);h.g.rotation.set(0,P.a,0);animRig(h,dt,t+n.x,0,'sit',0,true);
   if(!h.extraPose)h.extraPose=(I)=>{const near=S&&Math.hypot(S.player.x-n.x,S.player.z-n.z)<3;const k=near?.25:1,tt=performance.now()/1000;
     const hd=I.bn('Head'),nk=I.bn('Neck'),sp=I.bn('Spine2')||I.bn('Spine1');
     if(nk)nk.rotateX(P.bow*.45*k);if(hd)hd.rotateX(P.bow*.55*k+Math.sin(tt*.6)*.02);
@@ -4315,7 +4315,6 @@ addEventListener('keydown',e=>{
   if(mode!=='play')return;
   if(e.code==='KeyC'){openNotebook();return;}
   if(e.code==='KeyH'){drinkThermos();return;}
-  if(e.code==='KeyG'){toggleOutfit();return;}
   if(e.code==='KeyB'){treatWounds();return;}
   if(e.code==='KeyL'&&mode==='play'){dropStolen();return;}
   if(e.code==='KeyM'){COMF.phoneT=7;toast('Oscar sort son téléphone : la carte s’affiche quelques secondes.');return;}
@@ -4574,16 +4573,15 @@ async function dressOscar(fbx){
     OM.src+='+civil';
   }catch(e){console.warn('Tenue scannée d’Oscar indisponible',e);}
 }
-// Deux tenues : civile (en ville, chez les gens) et militaire (missions de combat). Le jeu choisit selon le lieu ; la touche G change à la main.
-function setOutfit(o,silent){if(!OM.ready)return;OM.outfit=o;const civ=o==='civil'&&!!OM.rp;
+// Oscar porte toujours ses vêtements normaux (corps scanné de Nathan), partout : demande de Boban (v1.27.0).
+// Le soldat KSK (mal construit : flou, plaques noires) ne sert plus que de squelette invisible pour les animations et les armes ;
+// on ne le montre que si le corps scanné n'a pas pu se charger.
+function setOutfit(o,silent){if(!OM.ready)return;const civ=!!OM.rp;OM.outfit=civ?'civil':'militaire';
   if(OM.kskMeshes)for(const m of OM.kskMeshes)m.visible=!civ;if(OM.rp)OM.rp.model.visible=civ;
-  OM.hand=civ?OM.handN:(OM.handK||OM.hand);OM.fore=civ?OM.foreN:(OM.foreK||OM.fore);
-  if(!silent&&S)toast(civ?'Oscar enfile sa tenue civile : t-shirt, jean, rien qui inquiète les gens.':'Oscar enfile sa tenue militaire : casque, gilet, camouflage.');}
-function autoOutfit(){if(!OM.ready||!S)return;const loc=S.location;if(OM.outLoc===loc)return;OM.outLoc=loc;OM.manual=false;
-  setOutfit(HOSTILE.has(loc)?'militaire':'civil',true);}
+  OM.hand=civ?OM.handN:(OM.handK||OM.hand);OM.fore=civ?OM.foreN:(OM.foreK||OM.fore);}
+function autoOutfit(){if(!OM.ready||!S)return;const key=S.location+'|'+!!OM.rp;if(OM.outLoc===key)return;OM.outLoc=key;setOutfit('civil',true);}
 // lieux de mission armée : là, Oscar part équipé. Les rues des villes (Vanport, port de St. John's, Halifax, Winnipeg, Westmount…) restent en civil.
 const HOSTILE=new Set(['port','forest','trawler','ranch','office','silos','manoir','soussol','yard']);
-function toggleOutfit(){if(!OM.ready||!OM.rp)return;OM.manual=true;setOutfit(OM.outfit==='civil'?'militaire':'civil');}
 function isIn(o,root){for(let x=o;x;x=x.parent)if(x===root)return true;return false;}
 function applyOscarModel(){if(!OM.ready)return;const on=SET.oscarModel!=='classic';OM.root.visible=on;for(const m of OM.body)m.visible=!on;
   if(oscarMesh.guns)for(const k in oscarMesh.guns){const g=oscarMesh.guns[k];(on?OM.gunAnchor:oscarMesh.armR.wr).add(g);}}
@@ -4868,8 +4866,9 @@ const RP_PAIRS=[['spine_01','neck','Spine','Neck'],['neck','head','Neck','Head']
 // squelettes Unreal (UE4 : pelvis, thigh_l, calf_l, clavicle_l…) : mêmes os, autres noms (corps de Cédric)
 const RP_ALIAS={pelvis:'hip',thigh_l:'upperleg_l',thigh_r:'upperleg_r',calf_l:'lowerleg_l',calf_r:'lowerleg_r',clavicle_l:'shoulder_l',clavicle_r:'shoulder_r',neck_01:'neck'};
 const rpBoneName=n=>{if(RP_ALIAS[n])return RP_ALIAS[n];for(const b of RP_BONES)if(n===b||n.endsWith('_'+b))return b;return null;};
-// Cédric : garçon scanné (squelette Unreal) ; ses textures sont fournies à part (assets/characters/rp/cedric/), il est animé par le pantin enfant
-const RP_KIDS={'rp:cedric':{h:1.28,tex:{Body:'body',Eye:'body',Top:'top',Bottom:'bottom',Shoe:'shoes'}}};
+// Cédric : garçon scanné (squelette Unreal) ; ses textures sont fournies à part (assets/characters/rp/cedric/), il est animé par le pantin enfant.
+// Même taille que le pantin (la taille d'enfant vient déjà de sa silhouette, 0,72) : le réduire une 2e fois le rendait minuscule et désarticulé.
+const RP_KIDS={'rp:cedric':{tex:{Body:'body',Eye:'body',Top:'top',Bottom:'bottom',Shoe:'shoes'}}};
 function rpKidTextures(name,o){const K=RP_KIDS[name];if(!K)return;const TL=new THREE.TextureLoader(),dir=RP_DIR+name.slice(3)+'/',cache={};
   const tex=(f,srgb)=>cache[f]||(cache[f]=(()=>{const t=TL.load(dir+f+'.jpg',undefined,undefined,()=>TL.load('../'+dir+f+'.jpg',t2=>{t.image=t2.image;t.needsUpdate=true;}));if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t;})());
   o.traverse(x=>{if(!x.isMesh)return;x.material=[].concat(x.material).map(m=>{const nm=(m&&m.name)||'';
@@ -4991,7 +4990,7 @@ function woundsText(){const W=bodyOf(S.player),L=[];for(const [k,w] of Object.en
 /* ---------------- 14. PHYSIQUE DU MONDE (tout le jeu) ----------------
    Poids et élan, sol mouillé et flaques, courant électrique conduit par l'eau, barils de carburant, feu qui se propage avec le vent,
    fumée qui étouffe. */
-function playerLoad(){const p=S.player,w=p.weapons||[];return (w.includes('rifle')?.45:0)+(w.includes('pistol')?.1:0)+(OM&&OM.outfit==='militaire'?.35:0);}
+function playerLoad(){const p=S.player,w=p.weapons||[];return (w.includes('rifle')?.45:0)+(w.includes('pistol')?.1:0);}
 // --- flaques : là où il pleut, sur la chaussée et les trottoirs ---
 const PUD={loc:null,list:[],group:null,mat:null};
 function puddleArea(){const loc=S.location;if(loc==='outside')return {ox:0,oz:0,hw:160,hd:160,city:true};const I=INTERIORS[loc];if(!I||I.indoor||!I.group)return null;return {ox:I.ox,oz:I.oz,hw:I.hw,hd:I.hd};}
@@ -5407,7 +5406,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={capt:CAPT_P,bodies:()=>Object.fromEntries(interiorNPCs.map(n=>[n.id,rhChar(n.h)])),dlgText:()=>document.getElementById('dText').textContent,regional:()=>Object.keys(REGIONAL).filter(k=>!DIALOGUES[k]),stolen:{loot:(e)=>lootStolen(e),shown:()=>stolenShown(),drop:()=>dropStolen(),get list(){return S.player.stolen||[]}},sched:(min,sec)=>{if(min!=null)S.clock=min;P.x=S.player.x;P.z=S.player.z;for(let i=0;i<(sec||0)*60;i++)stepAgents(STEP);const C2=peds.filter(a=>a.sched);return {commuters:C2.length,home:C2.filter(a=>a.inside&&a.where==='home').length,work:C2.filter(a=>a.inside&&a.where==='work').length,outside:C2.filter(a=>!a.inside).length,door:C2.filter(a=>a.door).length};},lineup:()=>{const names=[...PNJ_CHARS.homme,...PNJ_CHARS.femme,...PNJ_CHARS.enfant];const p=S.player,fx=Math.sin(p.heading),fz=Math.cos(p.heading),sx=fz,sz=-fx;names.forEach((n,i)=>{const h=createHuman(mkLook(mulberry32(i+1)));h.rchar=n;h.role=n.startsWith('femme')||/claudia|carla|sophia/.test(n)?'femme':n==='enfant'?'enfant':'homme';const k=i-(names.length-1)/2;const x=p.x+fx*4+sx*k*.9,z=p.z+fz*4+sz*k*.9;h.g.position.set(x,0,z);h.g.rotation.y=p.heading+Math.PI;scene.add(h.g);interiorLife.push({h,x,z,mode:'stand',type:'lineup',patrol:[{x,z},{x,z}],patrolI:0,patrolT:0});});return names;},seated:()=>interiorNPCs.filter(n=>n.mode==='sit').map(n=>n.id+':'+(n.facedTable?'table':'—')+':'+(n.h.tw?n.h.tw.children.length:0)),twCheck:()=>Object.values(TW_MENU).every(v=>v.flat().every(i=>i===null||!!TW_ITEMS[i]))&&Object.values(TW_KIND).every(k=>!!TW_MENU[k])&&['diner','bar','pub','cafe','mission','refuge','manoir','stop','office'].every(l=>!!TW_KIND[l]),tableware:()=>({kind:TW_KIND[S.location]||'maison',sets:TW.list.filter(e=>e.g).map(e=>e.g.children.length),tried:HUMANS.filter(h=>h.rs&&h.rs.mode==='sit'&&h.g.parent===scene).length}),night:(c)=>{if(c!=null){S.clock=c;S.location='outside';NL.scanT=0;updateEnvironment(S.clock,0,0,S.player,.1,0,false);}return {spots:NL.spots.length,on:NL.lights.filter(l=>l.intensity>0).length,fill:+NL.fill.intensity.toFixed(2),exp:+renderer.toneMappingExposure.toFixed(2),nightF:+nightF.toFixed(2)};},price:(c)=>({p:priceOf(c),m:payMode(c)}),rep:()=>S.rep||0,wary:(id)=>waryReason(id),crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={capt:CAPT_P,bodies:()=>Object.fromEntries(interiorNPCs.map(n=>[n.id,rhChar(n.h)])),dlgText:()=>document.getElementById('dText').textContent,regional:()=>Object.keys(REGIONAL).filter(k=>!DIALOGUES[k]),stolen:{loot:(e)=>lootStolen(e),shown:()=>stolenShown(),drop:()=>dropStolen(),get list(){return S.player.stolen||[]}},sched:(min,sec)=>{if(min!=null)S.clock=min;P.x=S.player.x;P.z=S.player.z;for(let i=0;i<(sec||0)*60;i++)stepAgents(STEP);const C2=peds.filter(a=>a.sched);return {commuters:C2.length,home:C2.filter(a=>a.inside&&a.where==='home').length,work:C2.filter(a=>a.inside&&a.where==='work').length,outside:C2.filter(a=>!a.inside).length,door:C2.filter(a=>a.door).length};},lineup:()=>{const names=[...PNJ_CHARS.homme,...PNJ_CHARS.femme,...PNJ_CHARS.enfant];const p=S.player,fx=Math.sin(p.heading),fz=Math.cos(p.heading),sx=fz,sz=-fx;names.forEach((n,i)=>{const h=createHuman(mkLook(mulberry32(i+1)));h.rchar=n;h.role=n.startsWith('femme')||/claudia|carla|sophia/.test(n)?'femme':n==='enfant'?'enfant':'homme';const k=i-(names.length-1)/2;const x=p.x+fx*4+sx*k*.9,z=p.z+fz*4+sz*k*.9;h.g.position.set(x,0,z);h.g.rotation.y=p.heading+Math.PI;scene.add(h.g);interiorLife.push({h,x,z,mode:'stand',type:'lineup',patrol:[{x,z},{x,z}],patrolI:0,patrolT:0});});return names;},seated:()=>interiorNPCs.filter(n=>n.mode==='sit').map(n=>n.id+':'+(n.facedTable?'table':'—')+':'+(n.h.tw?n.h.tw.children.length:0)),twCheck:()=>Object.values(TW_MENU).every(v=>v.flat().every(i=>i===null||!!TW_ITEMS[i]))&&Object.values(TW_KIND).every(k=>!!TW_MENU[k])&&['diner','bar','pub','cafe','mission','refuge','manoir','stop','office'].every(l=>!!TW_KIND[l]),tableware:()=>({kind:TW_KIND[S.location]||'maison',sets:TW.list.filter(e=>e.g).map(e=>e.g.children.length),tried:HUMANS.filter(h=>h.rs&&h.rs.mode==='sit'&&h.g.parent===scene).length}),night:(c)=>{if(c!=null){S.clock=c;S.location='outside';NL.scanT=0;updateEnvironment(S.clock,0,0,S.player,.1,0,false);}return {spots:NL.spots.length,on:NL.lights.filter(l=>l.intensity>0).length,fill:+NL.fill.intensity.toFixed(2),exp:+renderer.toneMappingExposure.toFixed(2),nightF:+nightF.toFixed(2)};},price:(c)=>({p:priceOf(c),m:payMode(c)}),rep:()=>S.rep||0,wary:(id)=>waryReason(id),crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

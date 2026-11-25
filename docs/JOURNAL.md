@@ -21,6 +21,14 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Oscar toujours en vêtements normaux (v1.27.0)
+**Demande** : « Oscar peut porter les vêtements normaux, retire celui de militaire. »
+**Pourquoi** : le soldat KSK rendait mal (vu en direct sur le PC : plat et flou avec la lueur ajoutée, plaques noires sans elle ; camouflage en basse résolution).
+**Changement pour TOUT le jeu** :
+- Oscar porte toujours le corps scanné de Nathan (t-shirt, jean), dans les 7 niveaux, les lieux de mission et les cinématiques. Le KSK reste seulement le squelette invisible qui porte les animations et les armes (montré uniquement si le corps scanné ne se charge pas).
+- Cédric (vu sur le PC en v1.26.1) : il bouge enfin (bras le long du corps, tête basse), mais il était réduit deux fois (le pantin est déjà à la taille d'un enfant) : environ 92 cm au lieu de 1,22 m, membres trop courts, jambes écartées. Même taille que le pantin désormais (vérifié en direct : proportions d'enfant). L'animation « assis » est faite pour un siège d'adulte : Cédric est remonté de 13 cm au niveau du lit. À revoir à l'écran : la position des jambes.
+- Retirés : la touche G, le changement automatique de tenue selon le lieu, la peur des passants et la méfiance au dialogue liées à la tenue militaire, le poids de l'équipement militaire. Restent : la peur et la méfiance face à une arme sortie, la réputation, l'odeur.
+
 ## 2026-11-25 — Claude — Cédric figé en croix : squelette en copies emboîtées (v1.26.1)
 **Vu sur le PC (v1.26.0)** : Oscar en tenue militaire est enfin dans le bon sens (on voit son dos) ; Eva est bien assise au bord du lit de camp, tête basse, mains sur les genoux. Cédric a son vrai visage et ses vêtements, mais reste en pose de départ (bras en croix, jambes droites dans le lit).
 **Cause** : l'export Unreal contient chaque os en 6 copies emboîtées (une par morceau : corps, débardeur, pantalon, chaussures, yeux, cils), les copies intérieures sans décalage. Le jeu animait la dernière copie trouvée (la plus intérieure) : les morceaux attachés aux copies extérieures ne bougeaient pas. Une première idée (recopier les copies entre elles) faisait disparaître Cédric : écartée.
