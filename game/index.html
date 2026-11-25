@@ -314,7 +314,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.19.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.19.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4536,6 +4536,18 @@ function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.c
   if(sp>.3){if(L.prop==='phone'&&I.acts.textWalk)return 'textWalk';return rhRole(h)==='femme'&&I.acts.walkF?'walkF':(I.acts.walkM?'walkM':'walkF');}
   if(L.prop==='phone'&&I.acts.text)return 'text';return 'idle';}
 const _rv=new THREE.Vector3(),_rv2=new THREE.Vector3(),_rq3=new THREE.Quaternion();
+const _tray=new THREE.Raycaster(),_tv=new THREE.Vector3(),_tf=new THREE.Vector3(),_ta=new THREE.Vector3(),_tb=new THREE.Vector3();
+function findTableTop(h){const I=INTERIORS[S.location];if(!I||!I.group||h.g.parent!==scene)return null;const root=I.group;h.g.updateMatrixWorld(true);h.g.getWorldPosition(_tv);
+  const yaw=h.g.rotation.y;_tf.set(Math.sin(yaw),0,Math.cos(yaw));
+  for(const dist of [.42,.62]){const o=_tv.clone().addScaledVector(_tf,dist);o.y=1.6;_tray.set(o,new THREE.Vector3(0,-1,0));_tray.far=1.6;
+    const hit=_tray.intersectObject(root,true).find(x=>x.point.y>.55&&x.point.y<1.2&&!isIn(x.object,h.g));if(hit){h.tableF=_tf.clone();h.tableD=dist;return hit.point.y;}}
+  return null;}
+function handsOnTable(h,I){h.g.getWorldPosition(_tv);const f=h.tableF,y=h.tableY+.03,sx=f.z,sz=-f.x;
+  for(const side of [1,-1]){const sh=I.bn(side>0?'RightArm':'LeftArm'),fo=I.bn(side>0?'RightForeArm':'LeftForeArm'),ha=I.bn(side>0?'RightHand':'LeftHand');if(!sh||!fo||!ha)continue;
+    // main : sur le plateau, devant soi, écartée de l'épaule ; coude : un peu plus bas et sur le côté
+    const rd=(h.tableD||.42)>.5?.5:.36;const hx=_tv.x+f.x*rd+sx*side*-.17,hz=_tv.z+f.z*rd+sz*side*-.17;sh.getWorldPosition(_ta);
+    const ex=(_ta.x+hx)/2+sx*side*-.12,ez=(_ta.z+hz)/2+sz*side*-.12,ey=Math.min(_ta.y-.12,y-.02);
+    retarget(sh,fo,v=>v.copy(_ta),v=>v.set(ex,ey,ez),1);fo.getWorldPosition(_tb);retarget(fo,ha,v=>v.copy(_tb),v=>v.set(hx,y,hz),1);}}
 function updateRealHumans(dt){
   RFRAME++;const N=rhMax();
   if(N===0||!RH.ready){if(RH.bound.size)for(const h of [...RH.bound])rhUnbind(h);if(N>0&&!RH.loading&&OM.ready!==undefined)rhInit();return;}
@@ -4566,6 +4578,8 @@ function updateRealHumans(dt){
     const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||m==='drive'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
     else I.root.position.y=lerp(I.root.position.y,0,k);
+    // assis à une table ou à un comptoir : les mains se posent SUR le plateau au lieu de le traverser (tout le jeu)
+    if(!busy&&!cine&&h.rs&&h.rs.mode==='sit'){if(h.tableY===undefined)h.tableY=findTableTop(h);if(h.tableY){I.root.updateMatrixWorld(true);handsOnTable(h,I);}}
     if(I.rp){I.root.updateMatrixWorld(true);rpDrive(I);}}
 }
 

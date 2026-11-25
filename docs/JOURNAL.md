@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Les mains se posent sur les tables (v1.19.1)
+- Signalé par Boban : dans les lieux, les mains des gens assis traversaient les tables.
+- Cause : les animations « assis » de Mixamo posent les mains sur les cuisses ou font des gestes à hauteur de plateau, sans savoir qu'il y a une table devant.
+- Correction, pour tout le jeu : chaque vrai humain assis dans un lieu cherche une seule fois s'il a une table, un comptoir ou un bar juste devant lui (rayon vers le bas à 42 et 62 cm devant lui, plateau entre 55 cm et 1,2 m). S'il y en a un, ses avant-bras se posent sur le plateau : coude légèrement plus bas, mains devant lui et écartées. C'est valable pour les personnages Mixamo comme pour les personnages scannés.
+- Concerne le diner (tables, banquettes, comptoir), le bar, le pub, le café, le refuge, le relais routier et la mission. Les bancs et les tramways ne sont pas concernés.
+
 ## 2026-11-25 — Claude — Économie : prix locaux, espèces et carte (v1.19.0)
 - Bloc 4 de la liste de Boban, appliqué à tous les achats du jeu (dialogues).
 - Prix des commerces (`priceOf`), quand le montant n'est pas annoncé dans la réplique :
