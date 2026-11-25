@@ -21,6 +21,18 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Ce qui est sur la table (v1.23.0)
+**Demande** : les gens assis aux tables n'ont rien devant eux ; un restaurant doit avoir ce qui va avec, un bar aussi, etc.
+**Cause commune** : les tables des lieux étaient nues ; rien ne reliait une personne assise à ce que sert l'endroit.
+**Correction pour TOUT le jeu** (section 18 `TW`, `stepTableware` appelé par `syncView`) :
+- Chaque personne assise devant un plateau (repéré par le même rayon que les mains, `findTableTop`) reçoit un couvert propre au lieu (`TW_KIND` → `TW_MENU`) :
+  diner et relais routier (burger-frites, crêpes au sirop, œufs-toast ; café, boisson gazeuse, eau ; serviette, ketchup-moutarde), bar (bière, bouteille, whisky, arachides),
+  pub (pinte blonde ou noire, fish & chips), café (tasse sur soucoupe, pâtisserie), soupe populaire et refuge (bol de soupe, pain, gobelet de café, verre d'eau),
+  manoir d'Omer (whisky, cendrier avec cigare allumé, cartes), bureau (dossier, papiers, stylo, café), maison (tasse, assiette).
+- Le menu varie selon la personne ; chaque objet n'est posé que si le même plateau est dessous (rien dans le vide, rien à travers une banquette).
+- Un client qui disparaît (lieu reconstruit) emporte son couvert. Tout lieu futur où l'on s'assoit est couvert automatiquement (sinon : maison).
+**Test** : `tables : chaque lieu où l’on s’assoit a son menu` (162 vérifications). Crochet `__oscar.tableware()`.
+
 ## 2026-11-25 — Claude — La nuit, on voit les gens et leurs visages (v1.22.0)
 **Demande** : la nuit, dans les rues et certains endroits, on voit mal les personnages et leur visage.
 **Cause commune** : les lampadaires n'étaient que des taches lumineuses peintes au sol (`M.pools`) ; ils n'éclairaient personne. La nuit, les visages ne recevaient que la lune, souvent de dos, et un ciel bleu-noir.

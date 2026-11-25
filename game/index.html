@@ -321,7 +321,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.22.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.23.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -1729,6 +1729,7 @@ function syncView(dt,t){
   updateDogs(dt,t,{x:cx,z:cz});
   updatePlanes(dt,t);
   updateInteriorLife(dt,t);
+  stepTableware(dt);
 }
 
 /* --- post-processing --- */
@@ -4598,6 +4599,89 @@ function handsOnTable(h,I){h.g.getWorldPosition(_tv);const f=h.tableF,y=h.tableY
     const rd=(h.tableD||.42)>.5?.5:.36;const hx=_tv.x+f.x*rd+sx*side*-.17,hz=_tv.z+f.z*rd+sz*side*-.17;sh.getWorldPosition(_ta);
     const ex=(_ta.x+hx)/2+sx*side*-.12,ez=(_ta.z+hz)/2+sz*side*-.12,ey=Math.min(_ta.y-.12,y-.02);
     retarget(sh,fo,v=>v.copy(_ta),v=>v.set(ex,ey,ez),1);fo.getWorldPosition(_tb);retarget(fo,ha,v=>v.copy(_tb),v=>v.set(hx,y,hz),1);}}
+/* --- 18. CE QUI EST SUR LA TABLE : chaque personne assise à une table a devant elle ce que sert le lieu (TOUT le jeu) --- */
+// Diner = assiette + café ; bar = bière, bouteille, arachides ; pub = pinte et fish & chips ; café = tasse et pâtisserie ;
+// soupe populaire et refuge = bol de soupe, pain, gobelet ; manoir d'Omer = whisky, cendrier, cigare ; bureau = papiers et café.
+// Repéré automatiquement (rayon vers le plateau devant la personne), donc valable pour tout nouveau lieu.
+const TW={list:[],t:0,g:{},m:{}};
+const TW_KIND={diner:'diner',stop:'diner',restaurant:'diner',bar:'bar',vanport:'bar',pub:'pub',harbour:'pub',cafe:'cafe',mission:'soupe',refuge:'refuge',manoir:'luxe',soussol:'refuge',office:'bureau',winnipeg:'cafe',house:'maison'};
+function twAssets(){if(TW.g.plate)return;const G=TW.g,Mt=TW.m,St=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.6,...o});
+  G.plate=new THREE.CylinderGeometry(.12,.1,.018,20);G.saucer=new THREE.CylinderGeometry(.075,.06,.012,18);G.bowl=new THREE.SphereGeometry(.075,16,8,0,Math.PI*2,Math.PI/2,Math.PI/2);
+  G.disc=new THREE.CircleGeometry(1,18);G.mug=new THREE.CylinderGeometry(.04,.036,.09,14,1,true);G.handle=new THREE.TorusGeometry(.024,.006,6,10,Math.PI);
+  G.pint=new THREE.CylinderGeometry(.04,.032,.15,14);G.foam=new THREE.CylinderGeometry(.04,.04,.018,14);G.tumbler=new THREE.CylinderGeometry(.036,.034,.075,14);
+  G.bottle=new THREE.CylinderGeometry(.03,.03,.16,12);G.neck=new THREE.CylinderGeometry(.011,.02,.07,10);G.can=new THREE.CylinderGeometry(.033,.033,.12,12);
+  G.box=new THREE.BoxGeometry(1,1,1);G.bun=new THREE.SphereGeometry(.05,12,8);G.cup=new THREE.CylinderGeometry(.042,.032,.1,12);
+  Object.assign(Mt,{china:St('#f4f1ea',{roughness:.25}),coffee:St('#2a160b',{roughness:.15}),tea:St('#7a3d12',{roughness:.15}),
+    glass:new THREE.MeshStandardMaterial({color:'#dfeef5',roughness:.05,transparent:true,opacity:.35}),beer:new THREE.MeshStandardMaterial({color:'#d18a1c',roughness:.1,transparent:true,opacity:.85}),
+    stout:St('#1a0e08',{roughness:.15}),foam:St('#f5ecd6',{roughness:.9}),amber:new THREE.MeshStandardMaterial({color:'#b5651d',roughness:.1,transparent:true,opacity:.8}),
+    bottleG:St('#3b2a0e',{roughness:.15,metalness:.1}),bottleV:St('#1f4d2a',{roughness:.15}),label:St('#d9c9a3'),
+    bun:St('#c98b3c'),patty:St('#4a2a17'),lettuce:St('#6aa84f'),fries:St('#e8c050'),paper:St('#c0392b'),pancake:St('#d9a05b'),syrup:St('#7a3d0c',{roughness:.1}),
+    egg:St('#fbfaf2'),yolk:St('#f2a900'),toast:St('#c4823c'),fish:St('#d49a4a'),basket:St('#a33'),
+    soup:St('#b5652a',{roughness:.3}),soupV:St('#7f8f3a',{roughness:.3}),bread:St('#d6a15c'),foamCup:St('#f0eee8',{roughness:.9}),
+    steel:St('#c9ccd1',{metalness:.9,roughness:.25}),napkin:St('#f7f7f2',{roughness:1}),ketchup:St('#b3121b'),mustard:St('#e1b10f'),
+    nuts:St('#b07a3c'),coaster:St('#6b4a2b'),ash:St('#2b2b2b',{metalness:.4,roughness:.4}),cigar:St('#5a3a20'),ember:new THREE.MeshStandardMaterial({color:'#ff6a1a',emissive:'#ff4a00',emissiveIntensity:2}),
+    paperW:St('#f2f0ea',{roughness:1}),folder:St('#c9a227'),pen:St('#1d3557'),pastry:St('#d99a4a'),crumbs:St('#e0b070'),cards:St('#f5f5f5'),cardBack:St('#9b1c1c')});}
+function twMesh(g,geo,m,x,y,z,sx=1,sy=1,sz=1,ry=0){const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.rotation.y=ry;o.castShadow=false;o.receiveShadow=true;g.add(o);return o;}
+// petits objets (coordonnées locales : x = côté, z = devant la personne, y = au-dessus du plateau)
+const TW_ITEMS={
+  plateBurger(g,M,G,x,z){twMesh(g,G.plate,M.china,x,.009,z);twMesh(g,G.bun,M.bun,x-.03,.03,z,1,.45,1);twMesh(g,G.box,M.patty,x-.03,.038,z,.085,.014,.085);twMesh(g,G.bun,M.bun,x-.03,.05,z,1,.35,1);
+    for(let i=0;i<9;i++)twMesh(g,G.box,M.fries,x+.05+((i*37)%5)*.008,.024+(i%3)*.006,z-.03+((i*53)%7)*.01,.008,.008,.06,i*.7);twMesh(g,G.box,M.ketchup,x+.06,.02,z+.05,.03,.004,.02);},
+  platePancakes(g,M,G,x,z){twMesh(g,G.plate,M.china,x,.009,z);for(let i=0;i<3;i++)twMesh(g,G.plate,M.pancake,x,.022+i*.012,z,.7,.7,.7);twMesh(g,G.plate,M.syrup,x,.052,z,.5,.2,.5);},
+  plateEggs(g,M,G,x,z){twMesh(g,G.plate,M.china,x,.009,z);for(const d of [-.035,.035]){twMesh(g,G.disc,M.egg,x+d,.02,z,.04,.04,.04).rotation.x=-Math.PI/2;twMesh(g,G.bun,M.yolk,x+d,.02,z,.3,.15,.3);}twMesh(g,G.box,M.toast,x,.022,z+.06,.08,.012,.05,.3);},
+  fishChips(g,M,G,x,z){twMesh(g,G.box,M.basket,x,.025,z,.2,.05,.14);twMesh(g,G.box,M.paperW,x,.05,z,.18,.004,.12);twMesh(g,G.bun,M.fish,x-.04,.065,z,1.6,.4,.8,.3);for(let i=0;i<8;i++)twMesh(g,G.box,M.fries,x+.05,.06+(i%3)*.006,z-.03+i*.008,.008,.008,.06,i*.6);},
+  soup(g,M,G,x,z,veg){const b=twMesh(g,G.bowl,M.china,x,.075,z);b.rotation.x=Math.PI;twMesh(g,G.disc,veg?M.soupV:M.soup,x,.065,z,.068,.068,.068).rotation.x=-Math.PI/2;twMesh(g,G.box,M.steel,x+.11,.004,z,.012,.004,.14);twMesh(g,G.box,M.bread,x-.12,.02,z+.03,.08,.035,.05,.4);},
+  pastry(g,M,G,x,z){twMesh(g,G.saucer,M.china,x,.006,z,1.3,1,1.3);twMesh(g,G.bun,M.pastry,x,.025,z,1.4,.5,.8,.5);twMesh(g,G.box,M.crumbs,x+.04,.014,z+.03,.01,.003,.01);},
+  mug(g,M,G,x,z,tea){twMesh(g,G.mug,M.china,x,.045,z);twMesh(g,G.disc,M.china,x,.001,z,.036,.036,.036).rotation.x=-Math.PI/2;twMesh(g,G.disc,tea?M.tea:M.coffee,x,.08,z,.037,.037,.037).rotation.x=-Math.PI/2;twMesh(g,G.handle,M.china,x+.045,.05,z,1,1,1).rotation.z=-Math.PI/2;},
+  cupSaucer(g,M,G,x,z){twMesh(g,G.saucer,M.china,x,.006,z);twMesh(g,G.mug,M.china,x,.045,z,.85,.7,.85);twMesh(g,G.disc,M.coffee,x,.068,z,.032,.032,.032).rotation.x=-Math.PI/2;twMesh(g,G.handle,M.china,x+.04,.045,z,.8,.8,.8).rotation.z=-Math.PI/2;},
+  foamCup(g,M,G,x,z){twMesh(g,G.cup,M.foamCup,x,.05,z);twMesh(g,G.disc,M.coffee,x,.095,z,.039,.039,.039).rotation.x=-Math.PI/2;},
+  water(g,M,G,x,z){twMesh(g,G.tumbler,M.glass,x,.0375,z,1,1.3,1);},
+  soda(g,M,G,x,z){twMesh(g,G.tumbler,M.glass,x,.05,z,1.1,1.4,1.1);twMesh(g,G.tumbler,M.syrup,x,.04,z,1,1,1);twMesh(g,G.box,M.paper,x+.01,.11,z,.005,.08,.005,.3);},
+  pint(g,M,G,x,z,stout){twMesh(g,G.pint,stout?M.stout:M.beer,x,.075,z);twMesh(g,G.foam,M.foam,x,.158,z);twMesh(g,G.saucer,M.coaster,x,.003,z,.75,.4,.75);},
+  bottle(g,M,G,x,z,green){twMesh(g,G.bottle,green?M.bottleV:M.bottleG,x,.08,z,.85,1,.85);twMesh(g,G.neck,green?M.bottleV:M.bottleG,x,.195,z);twMesh(g,G.bottle,M.label,x,.075,z,.87,.35,.87);},
+  whisky(g,M,G,x,z){twMesh(g,G.tumbler,M.glass,x,.0375,z,1.1,1,1.1);twMesh(g,G.tumbler,M.amber,x,.02,z,1,.45,1);},
+  nuts(g,M,G,x,z){const b=twMesh(g,G.bowl,M.ash,x,.05,z,1,.6,1);b.rotation.x=Math.PI;twMesh(g,G.bun,M.nuts,x,.045,z,1.1,.3,1.1);},
+  ashtray(g,M,G,x,z,cigar){twMesh(g,G.saucer,M.ash,x,.008,z,.9,1.6,.9);if(cigar){const c=twMesh(g,G.box,M.cigar,x+.05,.02,z,.11,.016,.016,.3);twMesh(g,G.box,M.ember,x+.1,.02,z-.015,.006,.014,.014,.3);}},
+  napkin(g,M,G,x,z){twMesh(g,G.box,M.napkin,x,.003,z,.12,.004,.12,.2);twMesh(g,G.box,M.steel,x,.008,z,.01,.004,.15);twMesh(g,G.box,M.steel,x+.02,.008,z,.012,.004,.14);},
+  papers(g,M,G,x,z){twMesh(g,G.box,M.folder,x,.003,z,.24,.004,.3,.1);twMesh(g,G.box,M.paperW,x+.02,.007,z,.21,.003,.29,.15);twMesh(g,G.box,M.pen,x+.15,.006,z,.008,.008,.13,.4);},
+  cards(g,M,G,x,z){for(let i=0;i<5;i++)twMesh(g,G.box,i%2?M.cards:M.cardBack,x+i*.02,.003+i*.001,z+(i%2)*.01,.06,.002,.09,i*.25-.5);},
+  condiments(g,M,G,x,z){twMesh(g,G.bottle,M.ketchup,x,.08,z,1,1,1);twMesh(g,G.bottle,M.mustard,x+.07,.08,z,.9,1,.9);twMesh(g,G.box,M.steel,x+.035,.05,z+.08,.08,.1,.05);}
+};
+// menus : [plat au centre, boisson à droite, extra à gauche] tirés selon la personne
+const TW_MENU={
+  diner:[['plateBurger','platePancakes','plateEggs'],['mug','soda','mug','water'],['napkin','condiments',null]],
+  bar:[[null,'nuts',null],['pint','bottle','whisky','bottle'],['bottle',null,'nuts']],
+  pub:[['fishChips',null,null],['pint','pint','whisky'],[null,'napkin']],
+  cafe:[['pastry',null,'pastry'],['cupSaucer','mug'],[null,'napkin']],
+  soupe:[['soup'],['water','foamCup'],[null]],
+  refuge:[['soup',null],['foamCup','foamCup','water'],[null]],
+  luxe:[['cards',null],['whisky','whisky'],['ashtray']],
+  bureau:[['papers'],['mug','foamCup'],[null]],
+  maison:[[null,'plateEggs'],['mug'],[null]]};
+function twBuild(h,kind,I,ty){twAssets();const T=TW_MENU[kind]||TW_MENU.maison,rs=Math.abs(rhHash(h.look||{})+Math.round(h.g.position.x*7+h.g.position.z*13));
+  const pick=(a,k)=>a[(rs>>k)%a.length];const g=new THREE.Group();g.userData.tw=true;
+  const yaw=h.g.rotation.y,fx=Math.sin(yaw),fz=Math.cos(yaw);h.g.getWorldPosition(_tv);
+  const at=(side,fwd)=>{const sx=fz,sz=-fx;return {x:_tv.x+fx*fwd+sx*side,z:_tv.z+fz*fwd+sz*side};};
+  const fwd=(h.tableD||.42)>.5?.66:.56;let n=0;
+  const slots=[[pick(T[0],1),0,fwd],[pick(T[1],3),-.2,fwd-.04],[pick(T[2],5),.2,fwd-.02]];
+  for(const [it,side,f] of slots){if(!it||!TW_ITEMS[it])continue;const p=at(side,f);
+    // l'objet doit reposer sur le même plateau (sinon on ne le pose pas)
+    _tray.set(new THREE.Vector3(p.x,ty+.6,p.z),new THREE.Vector3(0,-1,0));_tray.far=.9;
+    const hit=_tray.intersectObject(I.group,true).find(x=>!isIn(x.object,h.g)&&!twOwn(x.object));if(!hit||Math.abs(hit.point.y-ty)>.04)continue;
+    const sub=new THREE.Group();sub.position.set(p.x,ty+.002,p.z);sub.rotation.y=yaw+Math.PI;
+    TW_ITEMS[it](sub,TW.m,TW.g,0,0,(rs>>7)&1);g.add(sub);n++;}
+  if(!n)return null;I.group.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(I.group.matrixWorld).invert();g.applyMatrix4(inv);I.group.add(g);return g;}
+function twOwn(o){for(let x=o;x;x=x.parent)if(x.userData&&x.userData.tw)return true;return false;}
+function stepTableware(dt){
+  TW.t-=dt;if(TW.t>0)return;TW.t=.5;
+  // ménage : une personne partie (lieu reconstruit, client remplacé) emporte son couvert
+  for(let i=TW.list.length-1;i>=0;i--){const e=TW.list[i];if(e.h.g.parent!==scene){if(e.g&&e.g.parent)e.g.parent.remove(e.g);e.h.tw=undefined;TW.list.splice(i,1);}}
+  const I=S&&INTERIORS[S.location];if(!I||!I.group)return;
+  const kind=TW_KIND[S.location]||'maison';
+  for(const h of HUMANS){if(h.tw!==undefined||!h.rs||h.rs.mode!=='sit'||h.g.parent!==scene)continue;
+    const x=h.g.position.x,z=h.g.position.z;if(Math.abs(x-I.ox)>I.hw+1||Math.abs(z-I.oz)>I.hd+1)continue;
+    h.twTry=(h.twTry||0)+1;const ty=findTableTop(h);if(!ty){if(h.twTry>=4)h.tw=null;continue;}
+    h.tw=twBuild(h,kind,I,ty);TW.list.push({h,g:h.tw});}
+}
 function updateRealHumans(dt){
   RFRAME++;const N=rhMax();
   if(N===0||!RH.ready){if(RH.bound.size)for(const h of [...RH.bound])rhUnbind(h);if(N>0&&!RH.loading&&OM.ready!==undefined)rhInit();return;}
@@ -5170,7 +5254,7 @@ function stepComfort(dt,T){
 applySettings();
 
 // test hook (used by automated checks and by Codex/Claude to debug)
-window.__oscar={night:(c)=>{if(c!=null){S.clock=c;S.location='outside';NL.scanT=0;updateEnvironment(S.clock,0,0,S.player,.1,0,false);}return {spots:NL.spots.length,on:NL.lights.filter(l=>l.intensity>0).length,fill:+NL.fill.intensity.toFixed(2),exp:+renderer.toneMappingExposure.toFixed(2),nightF:+nightF.toFixed(2)};},price:(c)=>({p:priceOf(c),m:payMode(c)}),rep:()=>S.rep||0,wary:(id)=>waryReason(id),crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
+window.__oscar={twCheck:()=>Object.values(TW_MENU).every(v=>v.flat().every(i=>i===null||!!TW_ITEMS[i]))&&Object.values(TW_KIND).every(k=>!!TW_MENU[k])&&['diner','bar','pub','cafe','mission','refuge','manoir','stop','office'].every(l=>!!TW_KIND[l]),tableware:()=>({kind:TW_KIND[S.location]||'maison',sets:TW.list.filter(e=>e.g).map(e=>e.g.children.length),tried:HUMANS.filter(h=>h.rs&&h.rs.mode==='sit'&&h.g.parent===scene).length}),night:(c)=>{if(c!=null){S.clock=c;S.location='outside';NL.scanT=0;updateEnvironment(S.clock,0,0,S.player,.1,0,false);}return {spots:NL.spots.length,on:NL.lights.filter(l=>l.intensity>0).length,fill:+NL.fill.intensity.toFixed(2),exp:+renderer.toneMappingExposure.toFixed(2),nightF:+nightF.toFixed(2)};},price:(c)=>({p:priceOf(c),m:payMode(c)}),rep:()=>S.rep||0,wary:(id)=>waryReason(id),crowd:(sec)=>{P.x=S.player.x;P.z=S.player.z;for(let i=0;i<sec*60;i++)stepAgents(STEP);return {afraid:peds.filter(a=>a.fear>0).length,peds:peds.length};},phys:()=>({load:playerLoad(),puddles:PUD.list.length,fires:FIRE.list.length,smoke:FIRE.smoke.length,barrels:(FIRE.barrels[S.location]||[]).map(b=>b.hp),elec:ELEC.map(e=>e.id+':'+(e.R||0).toFixed(1))}),ignite:(x,z)=>igniteAt(x,z,true),boom:()=>{const b=barrelsFor(S.location).find(b=>b.hp>0);if(b)explodeBarrel(b);return !!b;},body:()=>({wounds:JSON.parse(JSON.stringify(bodyOf(S.player))),kits:S.player.kits,fx:bodyFx()}),treat:()=>treatWounds(),dbg:f=>f({THREE,scene,OM,camera,renderer,COMF,sun,hemi}),skin:()=>{const L=[OM.root&&OM.root.scale.x,OM.outfit,OM.model&&OM.model.getObjectByName('mixamorigHead')&&OM.model.getObjectByName('mixamorigHead').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2))];if(OM.model)OM.model.traverse(x=>{if(x.isMesh){const m=[].concat(x.material)[0];L.push([x.name,x.visible,m.type,m.map&&m.map.image&&m.map.image.width,m.color.getHexString(),m.emissive&&m.emissive.getHexString(),x.isSkinnedMesh&&x.skeleton.bones[0].getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)),x.geometry.attributes.normal?1:0,m.side]);}});return L;},agents:()=>{let pp=0,vp=0;const P2=peds.filter(a=>a.visible&&a.moving);for(let i=0;i<P2.length;i++)for(let j=i+1;j<P2.length;j++)if(Math.hypot(P2[i].x-P2[j].x,P2[i].z-P2[j].z)<.3)pp++;for(const v of vehicles)if(v.visible&&v.kind!=='bike')for(const a of peds)if(a.visible&&Math.hypot(v.x-a.x,v.z-a.z)<1.2)vp++;return {peds:peds.length,cars:vehicles.length,pedOverlap:pp,carOnPed:vp};},outfit:()=>({outfit:OM.outfit,manual:!!OM.manual,civil:!!OM.rp}),toggleOutfit:()=>toggleOutfit(),rpTest:async(n)=>{rhInit&&await rhInit();rhLoadChar('rp:'+n);await new Promise(r=>setTimeout(r,4000));const B=RH.base['rp:'+n];return B&&B!=='none'?{headY:B.headY,back:B.back,bones:Object.keys(B.rest).length}:B;},rv:()=>({ready:RV.ready,tpl:Object.keys(RV.tpl),bound:[...RV.bound].map(c=>c.real.name),cars:CARS.length,max:rvMax()}),rh:()=>({ready:RH.ready,clips:Object.keys(RH.clips),bound:[...RH.bound].map(h=>h.rchar+':'+(h.real&&h.real.cur)),bases:Object.fromEntries(Object.entries(RH.base).map(([k,v])=>[k,v==='none'?'none':'ok'])),humans:HUMANS.length,max:rhMax()}),city:()=>({id:CITY.id,blocks:CITY.blocks.length,towers:CITY.towers.length,houses:CITY.houses.length,shops:CITY.shops.length,trees:CITY.trees.length,peds:peds.length,cars:vehicles.length,world:world.children.length,landmark:CITY.cn&&CITY.cn.kind,toronto:CITY===TORONTO_CITY}),real:()=>({trees:TREES.map(t=>t.kind+':'+(t.cards?t.cards.count:0)).join(' '),benches:BENCHES.length,count:REAL.count,done:!!REAL.done,facades:FACADES.length,fac:Object.keys(REAL.fac)}),oscar3d:()=>({ready:OM.ready,src:OM.src,visible:OM.ready&&OM.root.visible,over:OM.over,wa:+OM.wa.toFixed(2),wl:+OM.wl.toFixed(2),anims:OM.acts?Object.keys(OM.acts):[]}),comfort:{SET,DIFFK,requestHint,getTrophies,unlock,openMenu,closeMenu,quitToTitle,applyGfx,get q(){return COMF.q},hurt:(n)=>hurtPlayer(n,false)},endCine:()=>endCine(),wmt:()=>WMT,manoir:()=>MANOIR,whiteout:()=>whiteout(),drink:()=>drinkThermos(),tick2:(sec)=>{for(let i=0;i<sec*60;i++){stepCombat(STEP);stepCameras(STEP);stepShredder(STEP);}},weather:(dt)=>stepWeather(dt),player:(dt)=>stepPlayer(dt),playCine,endCine,get cine(){return CINE},stepCine,tick(sec){for(let i=0;i<sec*60;i++){stepCombat(STEP);stepPhysics(STEP,i*STEP);}},takedown:()=>takedownOrLoot(),damage:(e,n)=>damageEnemy(e,n,'melee'),get S(){return S},get mode(){return mode},enterInterior,exitInterior,openDialogue,choose,findClue,readNote,openNotebook,closeUI,objective,startLevel,get zones(){return ZONES},get active(){return activeZone}};
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}

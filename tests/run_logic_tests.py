@@ -177,6 +177,7 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
             {o.startLevel(null,'bc');o.S.location='forest';o.S.weather.rain=1;o.S.player.dirt=0;for(let i=0;i<600;i++)o.player(1/60);const d1=o.S.player.dirt;o.S.player.dirt=80;const w=o.wary('maggie');
              o.startLevel(null,'toronto');o.enterInterior('diner');o.S.player.dirt=80;const wz=o.zones.find(z=>z.loc==='diner'&&/laver/i.test(z.label()));if(wz)wz.act();
              ok(d1>0&&w==='smell'&&wz&&o.S.player.dirt===0,'hygiène : on se salit dehors ('+d1.toFixed(2)+' en 10 s de pluie en forêt), on sent mauvais, on se lave aux toilettes');}
+            ok(o.twCheck(),'tables : chaque lieu où l’on s’assoit a son menu (diner, bar, pub, café, soupe populaire, refuge, manoir, relais, bureau), tous les objets existent');
             {o.startLevel(null,'toronto');const d=o.night(13*60),n=o.night(23*60);ok(d.on===0&&n.spots>20&&n.on>=4&&n.fill>3&&n.exp>1.4,'nuit : vrais lampadaires allumés près de la caméra ('+n.on+'/'+n.spots+'), éclairage d’adaptation '+n.fill+', éteints le jour');}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
