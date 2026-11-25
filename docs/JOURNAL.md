@@ -40,6 +40,7 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 - Froid : en dessous de 40 de chaleur corporelle, les doigts s'engourdissent. Le tir est moins précis et le rechargement plus lent.
 - Soins : touche B, trousse de premiers soins (2 au départ de chaque niveau, 40 % de chances d'en trouver une sur un homme d'Omer fouillé). Oscar met 4 s à se soigner, sans bouger, pendant que le monde continue.
 - Interface : lignes « Blessures » et « Trousses (B) » dans le panneau, touche B dans l'aide.
+- v1.15.1 : vérifié sur le PC de Boban (commit 7020f53). Après deux coups, bras droit et jambe gauche saignent, Oscar boite et le message s'affiche. Deux défauts du panneau corrigés : le nombre de trousses ne s'affichait pas, et la ligne « Blessures » débordait (elle passe sous son titre, en rouge clair, sur plusieurs lignes).
 - Tests : 151/151, dont parties touchées, saignement, effet de la trousse et gênes.
 
 ## 2026-11-25 — Claude — Tout choc a un effet physique, dans tout le jeu (v1.14.0)

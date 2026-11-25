@@ -137,7 +137,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <div class="row" style="margin-top:4px"><span>Vies bonus en réserve</span><span id="hBonus">0 · gagnées 0/2</span></div>
     <div class="row" style="margin-top:4px"><span>Argent</span><span id="hMoney">240 $</span></div>
     <div class="row" style="margin-top:4px"><span>Lieu</span><span id="hLoc">Dehors</span></div>
-    <div class="row hidden" style="margin-top:4px" id="hWoundRow"><span>Blessures</span><span id="hWound"></span></div>
+    <div class="hidden" style="margin-top:4px;font-size:.92em" id="hWoundRow"><span style="opacity:.75">Blessures</span><div id="hWound" style="color:#ff9b8a;line-height:1.25;white-space:normal"></div></div>
     <div class="row" style="margin-top:4px"><span>Trousses (B)</span><span id="hKits">2</span></div>
     <div class="row hidden" style="margin-top:4px" id="hThermosRow"><span>Thermos (touche H)</span><span id="hThermos">0</span></div>
     <div class="bar"><label><span>Santé</span><span id="tHealth">100</span></label><i><b id="bHealth" style="background:var(--green)"></b></i></div>
@@ -313,7 +313,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.15.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.15.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4051,7 +4051,7 @@ function updateHUD(){
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
   const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
   $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
-  $('hMoney').textContent=S.money+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;$('hKits').textContent=bodyOf(S.player).kits;}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
+  $('hMoney').textContent=S.money+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
   $('hLvlK').textContent='Niveau '+L.index+' · '+L.region+' · '+L.season;$('hLvlN').textContent=L.name;
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
