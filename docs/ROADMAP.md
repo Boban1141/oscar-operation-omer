@@ -206,7 +206,7 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - [x] Physique du monde : élan selon l'équipement, sol mouillé et flaques glissants, eau + courant électrique, barils, feu qui se propage avec le vent, fumée (v1.16.0)
 - [~] Vie des passants (v1.17.0 : peur et fuite, regards, heures d'ouverture ; v1.18.0 : réputation qui circule, méfiance et négociation avant de parler, personne n'apparaît sous les yeux) — reste : emplois du temps détaillés (commerces qui ouvrent et ferment, retour à la maison), réputation qui circule entre villes, confiance et méfiance, regards et micro-réactions, refus et négociation
 - [~] Économie (v1.19.0 : prix selon la province, la météo et l'heure ; espèces et carte avec trace bancaire) — reste : objets volés reconnaissables
-- [ ] Hygiène et odeur : les gens s'écartent si Oscar sort des égouts ou ne s'est pas lavé depuis des jours, les chiens le flairent
+- [x] Hygiène et odeur : saleté selon le temps, la météo et les lieux ; passants qui s'écartent, chiens qui flairent, méfiance ; se laver dans 8 lieux (v1.20.0)
 - [ ] Interface invisible : mode sans mini-carte ni boussole (panneaux, carte papier, téléphone), inventaire et lecture sans pause
 - [ ] Décors qui racontent et accents régionaux : québécois, terre-neuvien, acadien, métis
 

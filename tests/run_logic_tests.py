@@ -174,6 +174,9 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
              ok(w==='rep'&&/coups de feu/.test(txt),'réputation : les gens méfiants demandent à être rassurés avant de parler');o.S.rep=0;}
             {const c={t:'Une soupe aux pois.',money:6},b={t:'Voilà 20 $.',money:20};o.startLevel(null,'toronto');o.S.weather.snow=0;o.S.weather.windStr=0;o.S.clock=13*60;const pT=o.price(c).p;o.startLevel(null,'nl');o.S.weather.snow=0;o.S.weather.windStr=0;o.S.clock=13*60;const pN=o.price(c).p,pB=o.price(b).p;
              o.S.money=0;const m1=o.price(c).m,m2=o.price(b).m;ok(pN>pT&&pB===20&&m1==='card'&&m2===null,'économie : prix plus élevés à Terre-Neuve ('+pT+' → '+pN+' $), pot-de-vin fixe en espèces, carte acceptée en commerce');}
+            {o.startLevel(null,'bc');o.S.location='forest';o.S.weather.rain=1;o.S.player.dirt=0;for(let i=0;i<600;i++)o.player(1/60);const d1=o.S.player.dirt;o.S.player.dirt=80;const w=o.wary('maggie');
+             o.startLevel(null,'toronto');o.enterInterior('diner');o.S.player.dirt=80;const wz=o.zones.find(z=>z.loc==='diner'&&/laver/i.test(z.label()));if(wz)wz.act();
+             ok(d1>0&&w==='smell'&&wz&&o.S.player.dirt===0,'hygiène : on se salit dehors ('+d1.toFixed(2)+' en 10 s de pluie en forêt), on sent mauvais, on se lave aux toilettes');}
             o.startLevel(null,'toronto');ok(o.city().toronto&&o.city().landmark==='cn','retour à Toronto intact (Tour CN, lac)');
             o.tick(.1);ok(document.getElementById('hWeather').textContent.length>3&&document.querySelectorAll('#hDay').length===1&&document.querySelectorAll('#hClock').length===1,'HUD : météo affichée, pas de doublon Jour/heure');
             C.quitToTitle();ok(o.mode==='title'&&!o.S,'quitter vers l’écran titre (partie sauvegardée)');

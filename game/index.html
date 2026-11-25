@@ -140,6 +140,7 @@ body.subsL #cineSub{font-size:clamp(22px,2.6vw,32px)}body.subsL #cineSub b{font-
     <div class="row" style="margin-top:4px"><span>Lieu</span><span id="hLoc">Dehors</span></div>
     <div class="hidden" style="margin-top:4px;font-size:.92em" id="hWoundRow"><span style="opacity:.75">Blessures</span><div id="hWound" style="color:#ff9b8a;line-height:1.25;white-space:normal"></div></div>
     <div class="row" style="margin-top:4px"><span>Trousses (B)</span><span id="hKits">2</span></div>
+    <div class="row hidden" style="margin-top:4px" id="hDirtRow"><span>Propreté</span><span id="hDirt"></span></div>
     <div class="row hidden" style="margin-top:4px" id="hThermosRow"><span>Thermos (touche H)</span><span id="hThermos">0</span></div>
     <div class="bar"><label><span>Santé</span><span id="tHealth">100</span></label><i><b id="bHealth" style="background:var(--green)"></b></i></div>
     <div class="bar"><label><span>Chaleur corporelle</span><span id="tHeat">100</span></label><i><b id="bHeat" style="background:var(--cold)"></b></i></div>
@@ -314,7 +315,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.19.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.20.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -728,7 +729,7 @@ function stepPlayer(dt){
   else p.heat+=.6*dt;
   p.heat=clamp(p.heat,0,100);
   if(p.heat<=0)p.health-=1.2*dt;else if(p.heat>40&&!Object.values(bodyOf(p)).some(w=>w.bleed||w.inf>.3))p.health+=.4*dt;
-  stepBody(dt);
+  stepBody(dt);stepHygiene(dt);
   p.health=clamp(p.health,0,100);
   if(p.health<=0)bus.emit('death');
   P.x=p.x;P.z=p.z;
@@ -823,6 +824,7 @@ function stepAgents(dt){
   for(const a of peds){
     // personne n'apparaît ni ne disparaît sous les yeux d'Oscar : on ne rentre chez soi (ou on sort) que hors de sa vue
     {const want=dens>a.thresh;if(a.visible===undefined||want===a.visible||Math.hypot(a.x-P.x,a.z-P.z)>45)a.visible=want;}
+    if(smells()&&a.visible&&!a.sitting&&!a.group&&Math.hypot(a.x-P.x,a.z-P.z)<2.6){a.avo=clamp((a.avo||0)+((a.x-P.x)*Math.cos(a.heading)-(a.z-P.z)*Math.sin(a.heading)>0?.08:-.08),-1,1);if(!(S.flags.smellT>S.clock)){S.flags.smellT=S.clock+120;toast('Un passant s’écarte en se bouchant le nez.');}}
     if(thr>0&&a.visible&&Math.hypot(a.x-P.x,a.z-P.z)<thr){if(!(a.fear>0))scared++;a.fear=Math.max(a.fear||0,thr>=28?12:5);}
     if(a.fear>0){a.fear-=dt;a.pause=0;if(!a.sitting&&!a.group){const fx=Math.sin(a.heading),fz=Math.cos(a.heading);if(fx*(P.x-a.x)+fz*(P.z-a.z)>0)a.dir*=-1;}}
     // comportements spéciaux : assis ou en groupe ne bougent pas
@@ -1423,7 +1425,8 @@ function updateDogs(dt,t,center){
     const vis=!!(out&&m&&m.g.visible);d.g.visible=d.leash.visible=vis;if(!vis)continue;
     const a=m.g.rotation.y,ox=m.g.position.x,oz=m.g.position.z;
     d.sniff-=dt;const lag=d.sniff<0?.5:1.15;if(d.sniff<-1.5)d.sniff=3+Math.random()*4;
-    const tx=ox+Math.cos(a)*.55*d.side+Math.sin(a)*lag,tz=oz-Math.sin(a)*.55*d.side+Math.cos(a)*lag;
+    let tx=ox+Math.cos(a)*.55*d.side+Math.sin(a)*lag,tz=oz-Math.sin(a)*.55*d.side+Math.cos(a)*lag;
+    if(S&&smells()&&Math.hypot(ox-S.player.x,oz-S.player.z)<7){const k2=.5;tx=lerp(tx,clamp(S.player.x,ox-1.4,ox+1.4),k2);tz=lerp(tz,clamp(S.player.z,oz-1.4,oz+1.4),k2);}
     const k=1-Math.exp(-dt*4);const nx=lerp(d.g.position.x,tx,k),nz=lerp(d.g.position.z,tz,k);
     const vx=(nx-d.g.position.x)/Math.max(dt,1e-3),vz=(nz-d.g.position.z)/Math.max(dt,1e-3);d.speed=lerp(d.speed,Math.hypot(vx,vz),1-Math.exp(-dt*6));
     d.g.position.set(nx,groundHeight(nx,nz),nz);
@@ -2048,10 +2051,10 @@ function noteViolence(n){if(!S)return;if(typeof HOSTILE!=='undefined'&&HOSTILE.h
 const WARY_SKIP=/Omer|Garde|Sentinelle|Pasteur|Tiago|Viktor|Éleveur|Notaire|Porte|Bras droit|lieutenant/i;
 function waryReason(id){const D=DIALOGUES[id];if(!D||WARY_SKIP.test(D.who)||S.flags['calm_'+id])return null;
   if(playerWeapon()!=='fists')return 'weapon';if(typeof OM!=='undefined'&&OM.outfit==='militaire'&&!(typeof HOSTILE!=='undefined'&&HOSTILE.has(S.location)))return 'outfit';
-  if((S.rep||0)>=30)return 'rep';return null;}
+  if((S.rep||0)>=30)return 'rep';if((S.player.dirt||0)>=75)return 'smell';return null;}
 function openDialogue(id){const D=DIALOGUES[id];const why=waryReason(id);
   if(why){const start=D.start(S),name=D.who.split(',')[0];
-    const txt={weapon:'(Les yeux fixés sur ton arme, '+name+' recule.) Rangez ça… Qu’est-ce que vous me voulez ?',outfit:'('+name+' détaille ta tenue de combat.) Vous êtes militaire ? On ne veut pas d’ennuis ici.',rep:'('+name+' te dévisage.) Vous êtes le type des coups de feu ? On en parle partout. Pourquoi je vous parlerais ?'}[why];
+    const txt={weapon:'(Les yeux fixés sur ton arme, '+name+' recule.) Rangez ça… Qu’est-ce que vous me voulez ?',outfit:'('+name+' détaille ta tenue de combat.) Vous êtes militaire ? On ne veut pas d’ennuis ici.',smell:'('+name+' recule d’un pas et plisse le nez.) Euh… Vous avez passé la nuit dehors ? Faites vite.',rep:'('+name+' te dévisage.) Vous êtes le type des coups de feu ? On en parle partout. Pourquoi je vous parlerais ?'}[why];
     D.nodes.__mef={text:txt,choices:[
       {t:'Je ne vous veux aucun mal. On a enlevé ma femme et mon fils.',next:start,min:(S.rep||0)>=60?15:6,fx:{flag:'calm_'+id}},
       {t:'Voilà 20 $ pour votre temps.',next:start,money:20,fx:{flag:'calm_'+id}},
@@ -4094,7 +4097,7 @@ function updateHUD(){
   for(const [k,v] of [['Health',p.health],['Heat',p.heat],['Stam',p.stamina]]){$('b'+k).style.width=v+'%';$('t'+k).textContent=Math.round(v);}
   const o=objective(S),tg=objectiveTarget(o);$('hObj').textContent=o.text;
   $('hDist').textContent=(tg&&S.location==='outside'?'Distance : '+Math.round(Math.hypot(p.x-tg.x,p.z-tg.z))+' m · marqueur rouge · ':'')+'Carnet : touche C';
-  $('hMoney').textContent=S.money+' $ · carte '+(S.card??500)+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
+  $('hMoney').textContent=S.money+' $ · carte '+(S.card??500)+' $';{const wt=woundsText();show('hWoundRow',!!wt);$('hWound').textContent=wt;bodyOf(S.player);$('hKits').textContent=S.player.kits;{const d=S.player.dirt||0;show('hDirtRow',d>=35);$('hDirt').textContent=d>=75?'tu sens très mauvais':d>=60?'tu sens mauvais':'un peu sale';}}show('hThermosRow',(S.thermos||0)>0);$('hThermos').textContent=(S.thermos||0)+' gorgée'+((S.thermos||0)>1?'s':'');$('hLoc').textContent=(INTERIORS[S.location]&&INTERIORS[S.location].label)||'Dehors';
   $('hLvlK').textContent='Niveau '+L.index+' · '+L.region+' · '+L.season;$('hLvlN').textContent=L.name;
   $('speedTag').classList.toggle('hidden',timeScale===1);
   const w=playerWeapon(),A=S.player.ammo[w];$('hWeapon').innerHTML=w==='fists'?'<b>Mains nues</b><span>Clic gauche poing · clic droit pied · V bloquer</span>':`<b>${WEAPONS[w].name}</b><span>${CB.reloadT>0?'Rechargement…':A.mag+' / '+A.res}</span>`;
@@ -4777,6 +4780,23 @@ function resetPhysics(){for(const f of FIRE.list){FIRE.group.remove(f.m);if(f.li
   for(const L of Object.values(FIRE.barrels))for(const b of L){if(b.g.parent)b.g.parent.remove(b.g);}FIRE.barrels={};}
 function stepPhysics(dt,t){if(!S||S.status!=='playing')return;stepPuddles();stepElectric(dt);if(AR())barrelsFor(S.location);stepFire(dt,t);}
 
+/* ---------------- 15. HYGIÈNE ET ODEUR (tout le jeu) ----------------
+   Oscar se salit avec le temps, la boue, le poisson, la poussière, la suie et le sang. Sale, il sent : les passants s'écartent en se
+   bouchant le nez, les chiens tirent sur leur laisse vers lui, les gens hésitent à lui parler. On se lave aux toilettes des lieux publics
+   et chez soi (touche E près du lavabo, 10 min). */
+const WASH_SPOTS={house:'Se laver (salle de bain)',diner:'Se laver aux toilettes du diner',bar:'Se laver aux toilettes du bar',pub:'Se laver aux toilettes du pub',
+  stop:'Prendre une douche au relais (routiers)',mission:'Se laver à la mission des marins',cafe:'Se laver aux toilettes du café',refuge:'Se laver au refuge'};
+const DIRT_SRC={forest:4,trawler:6,silos:5,ranch:5,yard:3,port:2,harbour:2,vanport:2};   // par heure de jeu, en plus du temps qui passe
+function stepHygiene(dt){const p=S.player;if(p.dirt===undefined)p.dirt=0;const hrs=dt*(timeScale||1)/60;
+  let add=1.2;const I=INTERIORS[S.location];if(!(I&&I.indoor))add+=(S.weather.rain||0)*1.5+(DIRT_SRC[S.location]||0);
+  if(p.speed>4)add*=1.6;if(Object.values(p.wounds||{}).some(w=>w.bleed))add+=4;if(typeof FIRE!=='undefined'&&FIRE.list.some(f=>f.loc===S.location&&Math.hypot(f.x-p.x,f.z-p.z)<4))add+=20;
+  const d0=p.dirt;p.dirt=clamp(p.dirt+add*hrs,0,100);if(d0<60&&p.dirt>=60)toast('Tu sens la sueur, la boue et la fumée. Les gens vont le remarquer : lave-toi dès que possible.');}
+function smells(){return !!(S&&S.player&&(S.player.dirt||0)>=60);}
+function washZones(){const Z=[];for(const [loc,label] of Object.entries(WASH_SPOTS)){const I=INTERIORS[loc];if(!I)continue;
+    Z.push({loc,x:I.ox+(I.spawn?I.spawn.x:0)+(loc==='house'?-2:2.2),z:I.oz+(I.spawn?I.spawn.z:0)-1.2,r:1.4,label:()=>label+((S.player.dirt||0)<15?' (tu es propre)':''),
+      act:()=>{addMinutes(loc==='stop'?20:10);S.player.dirt=0;for(const w of Object.values(S.player.wounds||{})){w.dirty=false;}toast('Oscar se lave : visage, mains, cou. Il se sent redevenir quelqu’un. Ses plaies sont rincées.');}});}
+  return Z;}
+
 /* ---------------- 9. LIEUX RÉALISTES : matières photographiées (Poly Haven, licence CC0) ----------------
    Les textures dessinées par programme sont remplacées par de vraies photos de matières, ramenées à la même
    luminosité moyenne et teintées par la couleur d'origine : les couleurs choisies pour chaque lieu restent justes.
@@ -5091,7 +5111,7 @@ window.__oscar={price:(c)=>({p:priceOf(c),m:payMode(c)}),rep:()=>S.rep||0,wary:(
 /* --- boot --- */
 (async()=>{
   try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();fixSeats();assignRoles();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones(),cityZones());drawMapBg();
+  resize();buildWorld();spawnAgents();buildAgents();buildStoryActors();buildCombatActors();buildBCActors();buildNLActors();buildABActors();buildNSActors();buildMBActors();buildMTLActors();fixSeats();assignRoles();buildCineSets();buildFoliage();hideAll();world.visible=true;ZONES=storyZones().concat(bcZones(),nlZones(),abZones(),nsZones(),mbZones(),mtlZones(),cityZones(),washZones());drawMapBg();
   if(store.load())show('bContinue',true);
   $('boot').remove();show('title',true);mode='title';loadOscarModel();setTimeout(loadRealSurfaces,300);
   initComposer();

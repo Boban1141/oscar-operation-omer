@@ -21,6 +21,20 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Hygiène et odeur (v1.20.0)
+- Vérifié sur le PC de Boban (commit c6ad8a6) : au diner, 12 vrais humains et aucune erreur. Les gens assis aux banquettes n'ont pas de mains qui dépassent du plateau sur les vues prises, mais une banquette cachait une partie des bras.
+- Bloc 5 de la liste de Boban, pour tout le jeu (section 15). Oscar se salit (`dirt`, 0 à 100) :
+  - avec le temps : 1,2 par heure de jeu ;
+  - dehors sous la pluie ;
+  - dans les lieux sales : forêt (boue), chalutier (poisson), silos (poussière), ranch, cour de triage, ports ;
+  - en courant, en saignant et près d'un feu (suie).
+- Effets :
+  - dès 60, il sent : un message le prévient, les passants s'écartent en se bouchant le nez, les chiens tirent sur leur laisse vers lui ;
+  - dès 75, les gens hésitent à lui parler (« Vous avez passé la nuit dehors ? Faites vite. »), avec les mêmes choix que la méfiance.
+- Se laver (touche E) : salle de bain chez Oscar, toilettes du diner, du bar, du pub et du café, douche du relais routier, mission des marins, refuge. Ça prend 10 min (20 au relais) et rince aussi les plaies, ce qui évite l'infection.
+- Panneau : ligne « Propreté » dès 35 (« un peu sale », « tu sens mauvais », « tu sens très mauvais »).
+- Tests : 160/160.
+
 ## 2026-11-25 — Claude — Les mains se posent sur les tables (v1.19.1)
 - Signalé par Boban : dans les lieux, les mains des gens assis traversaient les tables.
 - Cause : les animations « assis » de Mixamo posent les mains sur les cuisses ou font des gestes à hauteur de plateau, sans savoir qu'il y a une table devant.
