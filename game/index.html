@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.29.3', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.30.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3953,6 +3953,14 @@ function captivePose(n,t,dt){const h=n.h,P=CAPT_P[n.id]||CAPT_P.eva;h.posed=fals
       CAPT.chain.position.copy(CAPT.tmp).add(CAPT.tmp2).multiplyScalar(.5);CAPT.chain.position.y-=.04;CAPT.chain.scale.set(1,L*1.04,1);
       CAPT.chain.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),CAPT.tmp2.clone().sub(CAPT.tmp).normalize());
       const vis=S.location==='soussol'&&!S.flags.freed;CAPT.chain.visible=CAPT.ring.visible=vis;}}}
+// Sortir d'une voiture (cinématiques) : assis à sa place, on pivote vers la portière, on se lève, on pose le pied dehors.
+// c = voiture orientée vers +x (rotation π/2), côté gauche (-z) ; dx = place le long de la voiture (avant +, arrière -). o de 0 à 1.
+// Renvoie le point où la personne se trouve une fois sortie (pour enchaîner la marche).
+function carExit(h,c,dx,o,T,dt,y=0){const cx=c.position.x+dx,cz=c.position.z,seat=[cx,cz-.42],door=[cx,cz-1.02],out=[cx,cz-1.55];
+  if(o<.35)place(h,seat[0],seat[1],Math.PI/2,'sit',T,dt,0,y+.08);
+  else if(o<.75){const q=ease((o-.35)/.4);place(h,lerp(seat[0],door[0],q),lerp(seat[1],door[1],q),lerp(Math.PI/2,Math.PI,q),'walk',T,dt,.35,y);}
+  else{const q=(o-.75)/.25;place(h,door[0],lerp(door[1],out[1],q),Math.PI,'walk',T,dt,.9,y);}
+  return out;}
 function place(h,x,z,ry,mode,t,dt,speed=0,y=0){h.g.visible=true;h.g.position.set(x,y,z);h.g.rotation.set(0,ry,0);animRig(h,dt,t+x,speed,mode||'walk',0,true);}
 function walkTo(h,a,b,k,d,t,dt,y=0){const x=lerp(a[0],b[0],k),z=lerp(a[1],b[1],k),dist=Math.hypot(b[0]-a[0],b[1]-a[1]);h.g.visible=true;h.g.position.set(x,y,z);
   if(dist>.01)h.g.rotation.set(0,Math.atan2(b[0]-a[0],b[1]-a[1]),0);animRig(h,dt,t,k<1?dist/d:0,'walk',0,true);}
@@ -4152,8 +4160,11 @@ function CINES_intro(){
   {set:'city',d:6,clock:19*60+40,center:{x:hO.x,z:hO.z},cam:[[hO.x-14,1.2,hO.z+16],[hO.x-12,1.3,hO.z+15],[hO.x,1.5,hO.z+10],[hO.x+1,1.6,hO.z+9]],
     upd(t,k,dt,T){for(const [c,x0,x1] of [[A.suv1,hO.x-40,hO.x-4],[A.suv2,hO.x-52,hO.x-12]]){c.visible=true;c.position.set(lerp(x0,x1,ease(Math.min(1,k*1.6))),0,hO.z+15.3);c.rotation.y=Math.PI/2;}
       A.headlight.intensity=300;A.headlight.position.set(A.suv1.position.x+2.4,.8,A.suv1.position.z);A.headlight.target.position.set(A.suv1.position.x+12,0,A.suv1.position.z-2);
-      const o=Math.max(0,(k-.62)/.38);if(o>0){walkTo(A.omer,[hO.x-4,hO.z+13.8],[hO.x-2,hO.z+11.2],o,2.3,T,dt,.15);if(o>.4)pose.cigarMouth(A.omer,Math.min(1,(o-.4)*3));updSmoke(A.omer,T);
-        walkTo(A.t1,[hO.x-6,hO.z+13.8],[hO.x-1,hO.z+8],o,2.3,T,dt,.15);walkTo(A.t2,[hO.x-12,hO.z+13.8],[hO.x+1,hO.z+8.5],o,2.3,T,dt,.15);}}},
+      // ils DESCENDENT des 4×4 (assis → pivot → debout → dehors), puis marchent vers la maison
+      const o=Math.max(0,(k-.63)/.37);if(o>0){const e=Math.min(1,o/.42),w=Math.max(0,(o-.42)/.58);
+        const pO=carExit(A.omer,A.suv1,-.7,e,T,dt);if(w>0){walkTo(A.omer,pO,[hO.x-2,hO.z+11.2],w,2.3,T,dt,.15);if(w>.3)pose.cigarMouth(A.omer,Math.min(1,(w-.3)*3));}updSmoke(A.omer,T);
+        const p1=carExit(A.t1,A.suv1,.7,Math.min(1,e*1.15),T,dt);if(w>0)walkTo(A.t1,p1,[hO.x-1,hO.z+8],w,2.3,T,dt,.15);
+        const p2=carExit(A.t2,A.suv2,.6,Math.min(1,e*1.05),T,dt);if(w>0)walkTo(A.t2,p2,[hO.x+1,hO.z+8.5],w,2.3,T,dt,.15);}}},
   {set:'house',indoor:true,d:6,clock:19*60+41,center:{x:hx(0),z:hz(0)},cam:[[hx(-4.6),1.6,hz(-1.6)],[hx(-4.4),1.6,hz(-1.2)],[hx(0),1.4,hz(3.5)],[hx(0),1.4,hz(3.6)]],
     sub:[[.2,'',''],[1.1,'Eva','Qui êtes-vous ?! Sortez de chez moi !']],
     enter(){setTimeout(()=>csnd('bang'),250);},
@@ -4195,7 +4206,9 @@ function CINES_intro(){
   {set:'city',d:7,clock:7*60+25,center:{x:hO.x,z:hO.z},title:'Toronto — trois jours plus tard, 7 h 25',cam:[[hO.x+14,1.6,hO.z+20],[hO.x+11,1.7,hO.z+19],[hO.x,1.4,hO.z+12],[hO.x,1.5,hO.z+10]],
     enter(){houseAfter();},
     upd(t,k,dt,T){A.taxi.visible=true;A.taxi.position.set(lerp(hO.x-40,hO.x+1,ease(Math.min(1,k*1.5))),0,hO.z+15.3);A.taxi.rotation.y=Math.PI/2;
-      const o=Math.max(0,(k-.62)/.38);if(o>0){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(hO.x+.5,.15,lerp(hO.z+13.5,hO.z+11,o));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,o<1?1.2:0,'walk',.4,true);}}},
+      // Oscar descend du taxi (place arrière gauche), puis marche vers la maison
+      const o=Math.max(0,(k-.67)/.33);if(o>0){const oc=oscarMesh;oc.g.visible=true;const e=Math.min(1,o/.45),w=Math.max(0,(o-.45)/.55);
+        const pX=carExit(oc,A.taxi,-.5,e,T,dt);if(w>0){oc.g.position.set(pX[0],.15,lerp(pX[1],hO.z+11,w));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,w<1?1.2:0,'walk',.4,true);}}}},
   {set:'city',d:5,clock:7*60+26,center:{x:hO.x,z:hO.z},cam:[[hO.x+3,1.7,hO.z+12],[hO.x+2,1.75,hO.z+10],[hO.x,1.6,hO.z+4],[hO.x,1.6,hO.z+4]],
     sub:[[.6,'Oscar','La porte est ouverte… Eva ? Cédric ?']],
     upd(t,k,dt,T){const oc=oscarMesh;oc.g.visible=true;oc.g.position.set(hO.x,.15,lerp(hO.z+10,door[1]+1.2,ease(k)));oc.g.rotation.set(0,Math.PI,0);animRig(oc,dt,T,k<.95?1.1:0,'walk',.5,true);}},
@@ -4538,7 +4551,7 @@ function setupOscarModel(gl){
   if(loc(B('LeftToeBase')).z<loc(B('LeftFoot')).z)root.rotation.y=Math.PI;
   // Le soldat KSK a des unités géantes (hanches à > 500) : le test des orteils se trompe et il marchait à reculons,
   // visage et genouillères vers l'arrière (vu sur le PC de Boban). Vérifié à l'écran : un demi-tour le remet dans le sens de la marche.
-  if(String(OM.src).startsWith('soldat-ksk'))root.rotation.y=Math.PI;
+  /* (v1.25.2 forçait ici un demi-tour du KSK : le corps de Nathan, posé sur ce squelette, marchait alors à reculons — retiré en v1.30.0 ; le KSK n'est plus affiché) */
   root.updateMatrixWorld(true);
   const hy=loc(B('Head')).y,py=loc(h.head).y;if(hy>.2)root.scale.multiplyScalar(py/hy);root.updateMatrixWorld(true);
   const swap=Math.sign(loc(B('RightArm')).x)!==Math.sign(loc(h.armR.sh).x);
@@ -4719,13 +4732,13 @@ function rhBind(h,I){
           [I.bn('Spine'),I.bn('Neck'),wp(h.spine),wp(h.head)]];
   h.real=I;RH.bound.add(h);
 }
-function rhUnbind(h){const I=h.real;if(!I)return;if(I.root.parent)I.root.parent.remove(I.root);
+function rhUnbind(h){const I=h.real;if(!I)return;if(h.rphone)h.rphone.visible=false;if(I.root.parent)I.root.parent.remove(I.root);
   for(const [o,v] of h.rhide||[])o.visible=v;h.rhide=null;h.real=null;RH.bound.delete(h);(RH.free[I.name]||(RH.free[I.name]=[])).push(I);}
 function rhClip(h,I){const r=h.rs||{},L=h.look||{},sp=r.speed||0,A=I.acts,cs=h.cs;
   if(h.forceClip&&A[h.forceClip])return h.forceClip;
   if(cs){if(cs.down)return A[cs.deathKind]?cs.deathKind:'idle';if(cs.surrender)return A.kneel?'kneel':'idle';if(cs.swing&&A.punch)return 'punch';if(cs.hit&&A[cs.hitKind])return cs.hitKind;
     if(cs.aim){if(cs.rifle&&A.rifleIdle)return 'rifleIdle';if(A.pistolIdle)return sp>.3&&A.pistolWalk?'pistolWalk':'pistolIdle';}}
-  if(L.type==='elder'&&r.mode==='walk'){if(sp>.3&&A.oldWalk)return 'oldWalk';if(sp<=.3&&A.oldIdle&&!L.prop)return 'oldIdle';}
+  /* personnes âgées : plus d'animation « vieil homme » (pas traînants, dos voûté) sur des corps jeunes, qui donnait des zombies ; elles marchent normalement, plus lentement */
   if(sp>2.2&&A.jog)return 'jog';
   if(r.mode==='sit')return !h.noTalk&&(rhHash(L)&1)&&I.acts.sitTalk?'sitTalk':'sit';
   if(r.mode==='drive')return A.drive?'drive':'sit';
@@ -4861,6 +4874,9 @@ function updateRealHumans(dt){
       const want=dd<4.5&&h.gazeT<2.6&&Math.abs(df)<2?clamp(df,-1.1,1.1):0;h.gazeY=lerp(h.gazeY||0,want,1-Math.exp(-dt*4));
       if(Math.abs(h.gazeY)>.01){const n=I.bn('Neck'),hd=I.bn('Head');if(n)n.rotateY(h.gazeY*.4);if(hd)hd.rotateY(h.gazeY*.6);}}
     if(h.extraPose)h.extraPose(I,dt);
+    // téléphone dans la vraie main droite quand la personne texte ou téléphone (elle tenait ses mains vides devant elle)
+    {const ph=I.cur==='phone'||I.cur==='text'||I.cur==='textWalk';if(ph||h.rphone){if(!h.rphone){h.rphone=new THREE.Mesh(new THREE.BoxGeometry(.072,.145,.009),new THREE.MeshStandardMaterial({color:'#15171b',roughness:.3,metalness:.4}));scene.add(h.rphone);}
+      const hd=I.bn('RightHand');h.rphone.visible=ph&&!!hd&&rhVisible(h.g);if(h.rphone.visible){hd.getWorldPosition(_rv);h.rphone.position.copy(_rv);hd.getWorldQuaternion(h.rphone.quaternion);h.rphone.translateY(.06);h.rphone.translateZ(.03);}}}
     // le cigare d'Omer suit la vraie main droite (il flottait au-dessus de sa tête, accroché à la silhouette simple)
     if(h.cigar&&h.real===I){const hd=I.bn('RightHand');if(hd&&h.cigar.parent){hd.getWorldPosition(_rv);h.cigar.parent.worldToLocal(_rv);h.cigar.position.copy(_rv);}}
     // seated (bench, bike): put the real hips where the simple rig's hips are

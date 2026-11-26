@@ -21,6 +21,16 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Vérification de tous les personnages : marche, sens, assis, sortie de voiture (v1.30.0)
+**Signalé par Boban** : Oscar marchait avec le visage vers l'arrière, et pas lui seul ; des personnages marchent comme des zombies ; vérifier aussi l'assise et la sortie des véhicules.
+**Méthode** : sur le PC, portraits rendus « devant / dos » par rapport au sens de marche pour chaque corps visible (Toronto, midi), liste des animations jouées (`__oscar.rh().bound`).
+**Trouvé et corrigé (tout le jeu)** :
+- Oscar (Nathan) marchait à reculons : le demi-tour forcé du KSK (v1.25.2) faisait tourner le corps de Nathan posé sur ce squelette. Retiré (le KSK n'est plus affiché). Les passants Mixamo et scannés (Claudia, Manuel, femme en pull beige, homme en chemise en jean) étaient dans le bon sens.
+- « Zombies » : les personnes âgées jouaient l'animation « vieil homme » (pas traînants, dos voûté) sur des corps jeunes, faute de corps âgés (vu : `rp:manuel:oldWalk`). Elles marchent désormais normalement.
+- Sortie de voiture (cinématiques) : Omer et ses hommes apparaissaient debout à côté des 4×4, Oscar à côté du taxi. Nouvelle `carExit` : assis à sa place → pivot vers la portière → debout → pied dehors, puis la marche ; uniquement quand la voiture est arrêtée.
+- Téléphone : ceux qui textent ou téléphonent tiennent maintenant un téléphone dans la vraie main droite (ils avaient les mains vides devant eux).
+- Assis : bancs, diner, sous-sol vérifiés sans défaut nouveau.
+
 ## 2026-11-25 — Claude — Vérification de l'intro : ravisseurs distincts, Eva au téléphone (v1.29.3)
 **Vu sur le PC (v1.29.2, intro)** : l'équipe d'Oscar est en tenue d'intervention pendant l'assaut ; les pieds restent sur le sol de la maison ; Omer, dans son repaire, est assis en pull clair ordinaire, barbu, cigare dans la main avec sa fumée ; ses deux gardes sont distincts. Défauts : les deux ravisseurs avaient le même corps (des jumeaux) ; Eva au téléphone avait le bras derrière la tête.
 **Corrections** : chaque homme d'Omer des cinématiques a son corps (t1 chemise en jean, t2 sweat à capuche, homme de main t-shirt, gardes col roulé / veste sur chemise) ; Eva joue la vraie animation « téléphone ».
