@@ -21,6 +21,16 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Les personnages parlent (v1.31.0)
+**Demande** : il faut que les personnages parlent, qu'on entende leur voix.
+**Fait (section 22 `VOICE`, tout le jeu)** : synthèse vocale de l'ordinateur (`speechSynthesis`).
+- Dialogues : chaque réplique est lue à son affichage ; l'accueil régional en anglais (Bridget, Maggie…) par une voix anglaise du Canada, le reste en français. Les indications entre parenthèses ne sont pas lues. Arrêt à la fermeture du dialogue.
+- Cinématiques : chaque sous-titre avec un nom (Oscar, Eva, Cédric, Omer, Soldat, Voix déformée…) est lu par la voix du personnage ; arrêt quand on passe la cinématique.
+- Phrases entendues dans la rue : lues plus bas, dans leur langue.
+- Une voix par personnage : homme, femme ou enfant (voix de femme aiguë), hauteur et débit propres (Omer grave et lent, voix déformée très grave). Voix canadiennes en priorité, puis françaises ; voix « naturelles » préférées si présentes.
+- Option : Options → Voix des personnages (on/off).
+**Constat sur le PC de Boban** : le navigateur ne trouve que 5 voix, toutes anglaises (David, Richard, Linda, Mark, Zira). Le français n'est donc lu que si une voix française est installée (Windows → Paramètres → Heure et langue → Voix → Français (Canada)) ; sinon un message l'explique une fois, et seules les phrases anglaises sont dites.
+
 ## 2026-11-25 — Claude — Vérification de tous les personnages : marche, sens, assis, sortie de voiture (v1.30.0)
 **Signalé par Boban** : Oscar marchait avec le visage vers l'arrière, et pas lui seul ; des personnages marchent comme des zombies ; vérifier aussi l'assise et la sortie des véhicules.
 **Méthode** : sur le PC, portraits rendus « devant / dos » par rapport au sens de marche pour chaque corps visible (Toronto, midi), liste des animations jouées (`__oscar.rh().bound`).
