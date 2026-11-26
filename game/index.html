@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.29.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.29.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3908,9 +3908,9 @@ function makeOmer(){
   cig.position.set(.02,-.1,.05);h.armR.wr.add(cig);h.cigar=cig;
   const n=40,pos=new Float32Array(n*3);const sm=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(pos,3)),new THREE.PointsMaterial({color:'#bfbfbf',size:.06,transparent:true,opacity:.35,depthWrite:false}));
   sm.frustumCulled=false;scene.add(sm);h.smoke=sm;h.smokeP=pos;sm.visible=false;
-  // vrai corps réservé : peau mate et barbe (homme_sweat_blanc), sweat et pantalon teints en noir comme un cuir ; la chaîne en or
+  // vrai corps réservé : peau mate et barbe (homme_sweat_blanc), dans ses vêtements normaux ; la chaîne en or
   // et le cigare restent visibles sur le vrai corps (le long manteau et la cicatrice, faits pour la silhouette simple, sont cachés)
-  h.rchar='homme_sweat_blanc';h.role='homme';h.named=true;h.keep=[ch,cig];h.tint={Hoodie:'#2a2420',Pants:'#171717',Shirt:'#2a2420'};return h}
+  h.rchar='homme_sweat_blanc';h.role='homme';h.named=true;h.keep=[ch,cig];return h}   // vêtements normaux (pas tout en noir, demande de Boban)
 function updSmoke(h,t){if(!h.smoke)return;h.smoke.visible=h.g.visible;if(!h.g.visible)return;const v=new THREE.Vector3();h.cigar.getWorldPosition(v);const a=h.smokeP;
   for(let i=0;i<a.length/3;i++){const ph=((t*.35+i/(a.length/3))%1);a[i*3]=v.x+Math.sin(i*7.1+t)*.08*ph;a[i*3+1]=v.y+ph*.9;a[i*3+2]=v.z+Math.cos(i*3.3+t)*.08*ph;}h.smoke.geometry.attributes.position.needsUpdate=true;}
 // poses (applied after animRig)
@@ -4053,6 +4053,8 @@ function buildCineSets(){
   const soldier=(skin,ex)=>cactor({skin,jacket:'#4b5330',pants:'#3a3d2a',hair:'#141414',height:1+Math.random()*.05,build:1.08},{helmet:true,rifle:true,...ex});
   A.oscarSoldier=soldier('#a46a3c');A.oscarSoldier.look.beard=true;
   A.s1=soldier('#e0ac69');A.s2=soldier('#5c3a21');A.s3=soldier('#f1c27d');
+  // l'équipe d'Oscar pendant l'assaut : corps en tenue d'intervention (casque, gilet), pas des passants en t-shirt
+  for(const k of ['oscarSoldier','s1','s2','s3'])A[k].rchar='police_swat';
   A.n1=cactor({skin:'#8d5524',jacket:'#e9e6df',pants:'#3d405b',hair:'#1a1a1a'});A.n2=cactor({skin:'#c68642',jacket:'#7f5539',pants:'#2b2d42',hair:'#2b1d14',beard:true});A.n3=cactor({skin:'#a46a3c',jacket:'#264653',pants:'#3a3a3a',hair:'#1a1a1a'});
   A.eva=cactor({skin:'#e0ac69',jacket:'#d9c5a0',pants:'#3d405b',hair:'#3b2a1e',long:true,height:.97,build:.92,browAsym:.15,breath:1.7});A.eva.rchar='rp:sophia';A.eva.role='femme';A.eva.named=true;
   const ph=new THREE.Mesh(new THREE.BoxGeometry(.07,.13,.01),mat('#111418',{metalness:.5,roughness:.2}));ph.position.set(0,-.08,.035);A.eva.armR.wr.add(ph);A.eva.phone=ph;ph.visible=false;
@@ -4635,7 +4637,7 @@ function updateOscarModel(dt){
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
 const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
-  omer:['omer_noir_1','omer_noir_2','homme_capuche'],enfant:['cedric']};
+  omer:['omer_noir_1','omer_noir_2','homme_capuche','homme_chemise_jean','homme_tshirt_blanc'],enfant:['cedric']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
   deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux',run:'course_rapide',excited:'excite',cry:'pleure',wave:'salut'};
@@ -4859,10 +4861,17 @@ function updateRealHumans(dt){
       const want=dd<4.5&&h.gazeT<2.6&&Math.abs(df)<2?clamp(df,-1.1,1.1):0;h.gazeY=lerp(h.gazeY||0,want,1-Math.exp(-dt*4));
       if(Math.abs(h.gazeY)>.01){const n=I.bn('Neck'),hd=I.bn('Head');if(n)n.rotateY(h.gazeY*.4);if(hd)hd.rotateY(h.gazeY*.6);}}
     if(h.extraPose)h.extraPose(I,dt);
+    // le cigare d'Omer suit la vraie main droite (il flottait au-dessus de sa tête, accroché à la silhouette simple)
+    if(h.cigar&&h.real===I){const hd=I.bn('RightHand');if(hd&&h.cigar.parent){hd.getWorldPosition(_rv);h.cigar.parent.worldToLocal(_rv);h.cigar.position.copy(_rv);}}
     // seated (bench, bike): put the real hips where the simple rig's hips are
     const m=h.rs&&h.rs.mode;if((m==='sit'||m==='bike'||m==='drive'||full)&&!busy){h.g.updateMatrixWorld(true);const s=h.g.getWorldScale(_rv2).y||1;
       I.root.position.y+=(h.hips.getWorldPosition(_rv).y-I.hips.getWorldPosition(_rv2).y)/s;}
     else I.root.position.y=lerp(I.root.position.y,0,k);
+    // debout ou en marche quand le vrai corps recopie la silhouette (cinématiques) : ses jambes sont plus longues que celles de la
+    // silhouette, les pieds passaient sous le sol (carrelage de la maison…). On remonte le corps pour que les chevilles restent au-dessus.
+    if(full&&!busy&&m!=='sit'&&m!=='bike'&&m!=='drive'&&Math.abs(h.g.rotation.x)<.5){const fl=I.bn('LeftFoot'),fr=I.bn('RightFoot');if(fl&&fr){I.root.updateMatrixWorld(true);
+      const gy=h.g.getWorldPosition(_rv2).y,low=Math.min(fl.getWorldPosition(_rv).y,fr.getWorldPosition(_rv).y)-gy,s=h.g.getWorldScale(_rv2).y||1,ank=.085*((h.look&&h.look.height)||1);
+      if(low<ank)I.root.position.y+=(ank-low)/s;}}
     // assis à une table ou à un comptoir : les mains se posent SUR le plateau au lieu de le traverser (tout le jeu)
     if(!busy&&!cine&&h.rs&&h.rs.mode==='sit'){if(h.tableY===undefined)h.tableY=findTableTop(h);if(h.tableY){I.root.updateMatrixWorld(true);handsOnTable(h,I);}}
     if(I.rp){I.root.updateMatrixWorld(true);rpDrive(I);}}

@@ -21,6 +21,15 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Pieds au-dessus du carrelage ; Omer et ses hommes en vêtements ordinaires (v1.29.2)
+**Signalé par Boban** : les pieds d'Omer et de ses hommes rentrent dans le carrelage de la maison ; ils sont tous habillés en noir, ce n'est pas normal.
+**Pieds (tout le jeu)** : en cinématique, le vrai corps recopie la silhouette simple dont les jambes sont plus courtes ; les pieds passaient sous le sol. Désormais, debout ou en marche, le corps est remonté pour que ses chevilles restent au-dessus du sol (8,5 cm × taille).
+**Vêtements** : Omer garde ses vêtements normaux (teinture noire retirée), avec chaîne et cigare. Ses hommes en mission prennent des tenues ordinaires et variées (col roulé, veste sur chemise, sweat à capuche, chemise en jean, t-shirt).
+
+## 2026-11-25 — Claude — Portraits d'Omer ; cigare dans la main ; équipe d'Oscar en tenue d'intervention (v1.29.1)
+**Vu sur le PC (v1.29.0, intro)** : Omer est barbu, tout en noir, chaîne en or au cou ; son garde au crâne rasé est un homme noir costaud en col roulé noir. Défauts : le cigare d'Omer flottait au-dessus de sa tête (accroché à la silhouette simple) ; pendant l'assaut de l'intro, Oscar et ses soldats avaient des corps de passants en t-shirt (dont Manuel pour Oscar).
+**Corrections** : le cigare est replacé chaque image dans la vraie main droite ; Oscar et ses trois soldats de l'assaut prennent le corps en tenue d'intervention (`police_swat`, casque et gilet), libéré des hommes d'Omer.
+
 ## 2026-11-25 — Claude — Omer et ses gardes ont leurs propres corps (v1.29.0)
 **Question de Boban** : à quoi ressemblent Omer et ses gardes du corps ?
 **Constat (code + portraits des corps rendus sur le PC)** : depuis le passage aux vrais corps, Omer et ses gardes recevaient des corps de passants choisis par la couleur de peau ; le manteau, la chaîne, la cicatrice et le cigare d'Omer, attachés à la silhouette simple, disparaissaient. Les hommes d'Omer en mission pouvaient avoir le corps « t-shirt rouge et short » ou celui d'un policier SWAT.
