@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.29.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.29.3', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4064,7 +4064,7 @@ function buildCineSets(){
   A.hench=cactor({skin:'#c68642',jacket:'#2a2a2e',pants:'#141414',hair:'#1a1a1a',build:1.05});
   A.g1=cactor({skin:'#5c3a21',jacket:'#111',pants:'#111',hair:'#111',bald:true,build:1.2});A.g2=cactor({skin:'#f1c27d',jacket:'#111',pants:'#111',hair:'#2b1d14',build:1.15});
   // gardes du corps et hommes de main : corps des hommes d'Omer (tout en noir), pas des passants
-  A.g1.rchar='omer_noir_1';A.g2.rchar='omer_noir_2';for(const k of ['t1','t2','hench'])A[k].role='omer';
+  A.g1.rchar='omer_noir_1';A.g2.rchar='omer_noir_2';A.t1.rchar='homme_chemise_jean';A.t2.rchar='homme_capuche';A.hench.rchar='homme_tshirt_blanc';/* chacun son corps : plus de ravisseurs jumeaux */
   A.w1=cactor({skin:'#8d5524',jacket:'#9d0208',pants:'#9d0208',hair:'#1a1a1a',long:true,height:.98,build:.88,prop:'cup'});
   A.w2=cactor({skin:'#ffdbac',jacket:'#1f5c4a',pants:'#1f5c4a',hair:'#d9b382',long:true,height:.96,build:.86});
   A.m1=cactor({skin:'#e0ac69',jacket:'#5a4a3a',pants:'#22223b',hair:'#3b2a1e',prop:'cup'});
@@ -4148,7 +4148,7 @@ function CINES_intro(){
       place(A.cedric,hx(-2.2),hz(-1.55),0,'sit',T,dt,0,.12);pose.write(A.cedric,T);}},
   {set:'house',indoor:true,d:6,clock:19*60+36,center:{x:hx(0),z:hz(0)},cam:[[hx(-1.6),1.5,hz(-1.6)],[hx(-1.8),1.55,hz(-1.9)],[hx(-3.2),1.55,hz(-2.9)],[hx(-3.3),1.6,hz(-3)]],
     sub:[[.3,'Eva','Oscar ? Tu m’entends ? … La connexion coupe…'],[3.6,'Eva','Oscar ?']],
-    upd(t,k,dt,T){place(A.eva,hx(-3.3),hz(-3.1),Math.PI*.8,'walk',T,dt);A.eva.phone.visible=true;pose.phoneEar(A.eva);place(A.cedric,hx(-2.2),hz(-1.55),0,'sit',T,dt,0,.12);pose.write(A.cedric,T);}},
+    upd(t,k,dt,T){place(A.eva,hx(-3.3),hz(-3.1),Math.PI*.8,'walk',T,dt);A.eva.phone.visible=true;pose.phoneEar(A.eva);A.eva.forceClip='phone';/* vraie animation « téléphone » : le bras passait derrière la tête */place(A.cedric,hx(-2.2),hz(-1.55),0,'sit',T,dt,0,.12);pose.write(A.cedric,T);}},
   {set:'city',d:6,clock:19*60+40,center:{x:hO.x,z:hO.z},cam:[[hO.x-14,1.2,hO.z+16],[hO.x-12,1.3,hO.z+15],[hO.x,1.5,hO.z+10],[hO.x+1,1.6,hO.z+9]],
     upd(t,k,dt,T){for(const [c,x0,x1] of [[A.suv1,hO.x-40,hO.x-4],[A.suv2,hO.x-52,hO.x-12]]){c.visible=true;c.position.set(lerp(x0,x1,ease(Math.min(1,k*1.6))),0,hO.z+15.3);c.rotation.y=Math.PI/2;}
       A.headlight.intensity=300;A.headlight.position.set(A.suv1.position.x+2.4,.8,A.suv1.position.z);A.headlight.target.position.set(A.suv1.position.x+12,0,A.suv1.position.z-2);

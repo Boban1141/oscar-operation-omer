@@ -21,6 +21,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Vérification de l'intro : ravisseurs distincts, Eva au téléphone (v1.29.3)
+**Vu sur le PC (v1.29.2, intro)** : l'équipe d'Oscar est en tenue d'intervention pendant l'assaut ; les pieds restent sur le sol de la maison ; Omer, dans son repaire, est assis en pull clair ordinaire, barbu, cigare dans la main avec sa fumée ; ses deux gardes sont distincts. Défauts : les deux ravisseurs avaient le même corps (des jumeaux) ; Eva au téléphone avait le bras derrière la tête.
+**Corrections** : chaque homme d'Omer des cinématiques a son corps (t1 chemise en jean, t2 sweat à capuche, homme de main t-shirt, gardes col roulé / veste sur chemise) ; Eva joue la vraie animation « téléphone ».
+**Leçon** : deux fois, un commentaire `//` ajouté en milieu de ligne a masqué la suite du code et empêché le jeu de démarrer ; les tests l'ont attrapé. Utiliser `/* */` dans les lignes longues.
+
 ## 2026-11-25 — Claude — Pieds au-dessus du carrelage ; Omer et ses hommes en vêtements ordinaires (v1.29.2)
 **Signalé par Boban** : les pieds d'Omer et de ses hommes rentrent dans le carrelage de la maison ; ils sont tous habillés en noir, ce n'est pas normal.
 **Pieds (tout le jeu)** : en cinématique, le vrai corps recopie la silhouette simple dont les jambes sont plus courtes ; les pieds passaient sous le sol. Désormais, debout ou en marche, le corps est remonté pour que ses chevilles restent au-dessus du sol (8,5 cm × taille).
