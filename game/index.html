@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.28.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.28.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4672,7 +4672,12 @@ function rhLoadChar(name){
         if(m.alphaMap||/hair|eyelash|lash/i.test(m.name+x.name)){m.alphaMap=null;m.transparent=false;m.alphaTest=.42;m.side=THREE.DoubleSide;m.depthWrite=true;m.needsUpdate=true;}}}});
     o.scale.setScalar(.01);o.updateMatrixWorld(true);
     const hips=o.getObjectByName('mixamorigHips'),head=o.getObjectByName('mixamorigHead');if(!hips||!head){RH.base[name]='none';return;}
-    const v=new THREE.Vector3();const headY=head.getWorldPosition(v).y,hipsY=hips.position.y;
+    const v=new THREE.Vector3();let headY=head.getWorldPosition(v).y,hipsY=hips.position.y;
+    // un personnage livré déjà ASSIS (Cédric, « kids-sitting ») : sa tête est basse, il serait agrandi en géant. On mesure alors
+    // sa taille debout par la longueur des os (jambe + bassin→tête), qui ne dépend pas de la pose.
+    {const W=n=>{const b=o.getObjectByName('mixamorig'+n);return b?b.getWorldPosition(new THREE.Vector3()):null;};const H=W('Hips'),U=W('LeftUpLeg'),K=W('LeftLeg'),F=W('LeftFoot'),Hd=W('Head');
+      if(H&&U&&K&&F&&Hd){const leg=U.distanceTo(K)+K.distanceTo(F),standH=leg*1.07+(H.y-U.y);
+        if(H.y<standH*.8){const k=standH/H.y;hipsY*=k;headY=standH+H.distanceTo(Hd);}}}
     // the clips were captured on another body: scale the hip keys to this body
     const clips={};for(const [k,c] of Object.entries(RH.clips)){const cc=c.clone();const tr=cc.tracks.find(t=>/mixamorigHips\.position$/.test(t.name));
       if(tr&&k!=='run'){const ref=(RH.clips.idle.tracks.find(t=>/Hips\.position$/.test(t.name))||{values:[0,hipsY,0]}).values[1]||hipsY,r=hipsY/ref;for(let i=0;i<tr.values.length;i++)tr.values[i]*=r;}

@@ -21,6 +21,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Cédric n'est plus un géant (v1.28.1)
+**Vu sur le PC (v1.28.0)** : le nouveau Cédric est bien chargé (corps Mixamo, animation « assis »), mais énorme : il remplit l'écran.
+**Cause** : le fichier est livré déjà en pose assise. Le jeu calcule la taille d'un personnage d'après la hauteur de sa tête au repos : assis, elle est basse, donc le personnage est agrandi ; la hauteur du bassin (qui règle les animations) était aussi trop basse.
+**Correction (tout personnage Mixamo livré dans une pose non debout)** : si le bassin est nettement plus bas que la longueur des jambes, la taille debout est recalculée par la longueur des os (jambe + bassin→tête), qui ne dépend pas de la pose. Sans effet sur les personnages livrés debout.
+
 ## 2026-11-25 — Claude — Nouveau Cédric : un vrai garçon au squelette Mixamo (v1.28.0)
 **Fichiers de Boban** : `kid-sitting.zip` (Mixamo Ch09, personnage de dessin animé : écarté) et `kids-sitting.zip` (garçon scanné, texture photographique, cheveux bruns, vêtements bleus à col marin, squelette Mixamo standard).
 **Intégration** : `assets/characters/pnj/cedric.fbx` (textures intégrées réduites à 1024 par `tools/fbx_shrink.py`, 11,3 → 5,0 Mo). Tous les enfants du jeu (`PNJ_CHARS.enfant`) prennent ce corps : comme les autres personnages Mixamo, il reçoit directement toutes les animations (assis, course, joie, pleurs, salut), sans pantin ni recopie. Peau de Cédric (rig simple et cinématiques) remise en clair. L'ancien garçon (export Unreal) n'est plus utilisé.
