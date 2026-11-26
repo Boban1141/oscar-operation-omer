@@ -21,6 +21,15 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Nouveau Cédric : un vrai garçon au squelette Mixamo (v1.28.0)
+**Fichiers de Boban** : `kid-sitting.zip` (Mixamo Ch09, personnage de dessin animé : écarté) et `kids-sitting.zip` (garçon scanné, texture photographique, cheveux bruns, vêtements bleus à col marin, squelette Mixamo standard).
+**Intégration** : `assets/characters/pnj/cedric.fbx` (textures intégrées réduites à 1024 par `tools/fbx_shrink.py`, 11,3 → 5,0 Mo). Tous les enfants du jeu (`PNJ_CHARS.enfant`) prennent ce corps : comme les autres personnages Mixamo, il reçoit directement toutes les animations (assis, course, joie, pleurs, salut), sans pantin ni recopie. Peau de Cédric (rig simple et cinématiques) remise en clair. L'ancien garçon (export Unreal) n'est plus utilisé.
+**À vérifier à l'écran** : Cédric assis au sous-sol, la course vers Oscar à la fin.
+
+## 2026-11-25 — Claude — Retour arrière sur Cédric (v1.27.3)
+**Vu sur le PC (v1.27.2)** : le rattachement au chargement (`rpRebind`) déforme encore plus Cédric (corps étiré, jambes tordues). Annulé (la fonction reste dans le code, non appelée) : retour à l'état de la v1.27.1.
+**Conclusion** : l'export Unreal de ce garçon (os en 6 copies emboîtées, os de torsion, poses de liaison différentes par morceau) ne peut pas être réparé proprement dans le navigateur, et aucun outil 3D (Blender…) n'est disponible. Solution proposée à Boban : faire refaire le squelette du même garçon par Mixamo (« Upload Character »), comme les autres personnages. Fichier prêt dans ses Téléchargements : `cedric_pour_mixamo.zip`.
+
 ## 2026-11-25 — Claude — Cédric : la peau suit enfin les os (v1.27.2)
 **Vu sur le PC (v1.27.1)** : le pantin adulte n'a rien changé, une jambe de Cédric remontait toujours. Mesures en direct : ses os sont pourtant bien assis (genoux à 49 cm, pieds au sol, comme le pantin). C'est la peau (pantalon, jambes, chaussures) qui restait accrochée à d'autres copies d'os, et aux os de torsion (thigh_twist…) que rien n'anime.
 **Correction** (`rpRebind`, seulement pour les modèles à os dédoublés, donc Cédric) : au chargement, en pose de repos, chaque morceau est rattaché aux copies d'os les plus intérieures (celles que le jeu anime), les torsions à leur membre, avec des poses de liaison recalculées. Retour à l'animation de ces copies intérieures.

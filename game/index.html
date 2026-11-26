@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.27.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.28.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3756,7 +3756,7 @@ function buildMTLActors(){
   add('marierose',{...base,skin:'#5c3a21',jacket:'#3d3a5c',pants:'#22223b',hair:'#1a1a1a',long:false,height:.96,build:1.1,slouch:.22,browAsym:.3,breath:2,prop:'cup'},1.5,.75,Math.PI,'sit','refuge',REFUGE);
   add('rejean',{...base,skin:'#ffdbac',jacket:'#1d4f91',pants:'#2b2d42',hair:'#6f4e37',beard:true,height:1.02,build:1.15,slouch:.12,prop:'cup'},4,1.05,Math.PI,'sit','refuge',REFUGE);
   add('eva',{...base,skin:'#e0ac69',jacket:'#d9c5a0',pants:'#3d405b',hair:'#3b2a1e',long:true,height:.97,build:.92,browAsym:.15,breath:1.9,slouch:.25},-2.9,-3,.2,'captive','soussol',SOUSSOL);
-  add('cedric',{...base,skin:'#6b4226',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.15,breath:2.2},-2.45,-2.85,-.3,'captive','soussol',SOUSSOL);
+  add('cedric',{...base,skin:'#e8b9a4',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.15,breath:2.2},-2.45,-2.85,-.3,'captive','soussol',SOUSSOL);
 }
 Object.assign(CLUES,{
   rose:{title:'Marie-Rose, la cuisinière d’Omer',text:'Eva et Cédric sont vivants, au sous-sol. À minuit, pendant la relève, Marie-Rose laisse la porte de la cuisine ouverte dix minutes (ruelle de service). Mot de passe du portail ce soir : « La neige tombe sur Rio ».'},
@@ -4053,7 +4053,7 @@ function buildCineSets(){
   A.n1=cactor({skin:'#8d5524',jacket:'#e9e6df',pants:'#3d405b',hair:'#1a1a1a'});A.n2=cactor({skin:'#c68642',jacket:'#7f5539',pants:'#2b2d42',hair:'#2b1d14',beard:true});A.n3=cactor({skin:'#a46a3c',jacket:'#264653',pants:'#3a3a3a',hair:'#1a1a1a'});
   A.eva=cactor({skin:'#e0ac69',jacket:'#d9c5a0',pants:'#3d405b',hair:'#3b2a1e',long:true,height:.97,build:.92,browAsym:.15,breath:1.7});A.eva.rchar='rp:sophia';A.eva.role='femme';A.eva.named=true;
   const ph=new THREE.Mesh(new THREE.BoxGeometry(.07,.13,.01),mat('#111418',{metalness:.5,roughness:.2}));ph.position.set(0,-.08,.035);A.eva.armR.wr.add(ph);A.eva.phone=ph;ph.visible=false;
-  A.cedric=cactor({skin:'#6b4226',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.12,breath:2});
+  A.cedric=cactor({skin:'#e8b9a4',jacket:'#1d3557',pants:'#3a3a3a',hair:'#2b1d14',height:.72,build:.84,slouch:.12,breath:2});
   A.omer=makeOmer();
   A.t1=cactor({skin:'#d4a373',jacket:'#1b1b1f',pants:'#141414',hair:'#1a1a1a',build:1.1,beard:true});A.t2=cactor({skin:'#8d5524',jacket:'#22252a',pants:'#141414',hair:'#1a1a1a',bald:true,build:1.15});
   A.hench=cactor({skin:'#c68642',jacket:'#2a2a2e',pants:'#141414',hair:'#1a1a1a',build:1.05});
@@ -4630,7 +4630,7 @@ function updateOscarModel(dt){
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
 const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
-  omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['rp:cedric']};
+  omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['cedric']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
   deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux',run:'course_rapide',excited:'excite',cry:'pleure',wave:'salut'};
@@ -4890,7 +4890,7 @@ function rpLoad(name){const file=name.slice(3),gender=PNJ_CHARS.femme.includes(n
     rpKidTextures(name,o);o.animations=[];o.traverse(x=>{if(x.isBone){const b=rpBoneName(x.name);if(b)x.name='rp_'+b;}
       if(x.isMesh){x.castShadow=true;x.receiveShadow=true;x.frustumCulled=false;for(const m of [].concat(x.material)){if(!m)continue;if(m.shininess!==undefined)m.shininess=8;if(m.specular)m.specular.setScalar(.05);if(m.alphaMap){m.alphaMap=null;m.alphaTest=.42;m.transparent=false;}}}});
     o.updateMatrixWorld(true);const head=o.getObjectByName('rp_head'),hip=o.getObjectByName('rp_hip');if(!head||!hip){RH.base[name]='none';return;}
-    rpRebind(o);const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
+    const rest={};o.traverse(x=>{if(x.name&&x.name.startsWith('rp_'))rest[x.name]=x.quaternion.clone();});
     const fl=o.getObjectByName('rp_foot_l'),bl=o.getObjectByName('rp_ball_l');const back=fl&&bl&&bl.getWorldPosition(new THREE.Vector3()).z<fl.getWorldPosition(new THREE.Vector3()).z;
     const bb=new THREE.Box3().setFromObject(o);
     RH.base[name]={rp:true,obj:o,pup,headY:head.getWorldPosition(new THREE.Vector3()).y-bb.min.y,rest,back};}).catch(()=>{RH.base[name]='none';});}
