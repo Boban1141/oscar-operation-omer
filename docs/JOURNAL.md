@@ -21,6 +21,11 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Cédric à sa taille d'enfant (v1.28.2)
+**Vu sur le PC (v1.28.1)** : Cédric n'est plus géant, il est bien assis comme sa mère (mains sur les genoux, pieds au sol, tête basse), mais aussi grand qu'Eva.
+**Cause** : la taille d'un personnage (`look.height`, 0,72 pour Cédric) n'était appliquée qu'à la silhouette simple, jamais au vrai corps (tous à taille d'adulte).
+**Correction** : un enfant (taille < 0,85) garde sa taille sur son vrai corps. Vérifié en direct : Cédric a une taille d'enfant à côté d'Eva, assis au bord du lit comme elle.
+
 ## 2026-11-25 — Claude — Cédric n'est plus un géant (v1.28.1)
 **Vu sur le PC (v1.28.0)** : le nouveau Cédric est bien chargé (corps Mixamo, animation « assis »), mais énorme : il remplit l'écran.
 **Cause** : le fichier est livré déjà en pose assise. Le jeu calcule la taille d'un personnage d'après la hauteur de sa tête au repos : assis, elle est basse, donc le personnage est agrandi ; la hauteur du bassin (qui règle les animations) était aussi trop basse.

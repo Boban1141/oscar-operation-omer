@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.28.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.28.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -4700,7 +4700,8 @@ function rhVisible(o){for(let x=o,d=0;x&&d<40;x=x.parent,d++){if(!x.visible)retu
 function rhBind(h,I){
   const keep=new Set([I.root]);for(const o of [h.gun,h.umb]){if(o)o.traverse(x=>keep.add(x));}
   h.rhide=[];h.g.traverse(o=>{if(o.isMesh&&!keep.has(o)&&!isIn(o,I.root)&&!(h.gun&&isIn(o,h.gun))&&!(h.umb&&isIn(o,h.umb))){h.rhide.push([o,o.visible]);o.visible=false;}});
-  h.g.add(I.root);I.root.scale.setScalar(I.s);I.root.position.set(0,0,0);I.cur=null;for(const k in I.acts){I.w[k]=0;I.acts[k].setEffectiveWeight(0);}
+  // un enfant garde sa taille d'enfant sur son vrai corps (Cédric : 0,72 d'un adulte), sinon il serait aussi grand que sa mère
+  {const hk=(h.look&&h.look.height)||1;h.g.add(I.root);I.root.scale.setScalar(I.s*(hk<.85?hk:1));}I.root.position.set(0,0,0);I.cur=null;for(const k in I.acts){I.w[k]=0;I.acts[k].setEffectiveWeight(0);}
   const R=h.armR,Lf=h.armL;
   I.arms=[[I.bn('RightArm'),I.bn('RightForeArm'),wp(R.sh),wp(R.el)],[I.bn('RightForeArm'),I.bn('RightHand'),wp(R.el),wp(R.wr)],
           [I.bn('LeftArm'),I.bn('LeftForeArm'),wp(Lf.sh),wp(Lf.el)],[I.bn('LeftForeArm'),I.bn('LeftHand'),wp(Lf.el),wp(Lf.wr)]];
