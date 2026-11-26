@@ -19,7 +19,10 @@ SCENARIO='''()=>{const o=window.__oscar,r=[];const ok=(c,m)=>r.push((c?'OK   ':'
   ok(introDone&&nShots>=18,'introduction jouée en entier ('+nShots+' plans)');
   let failDone=false;o.playCine('fail',()=>{failDone=true});while(o.cine.shots){o.stepCine(.1,1);}ok(failDone,'cinématique d’échec');
   window.__oscarGod=true;o.startLevel(null);ok(o.objective(o.S).stage===0,'objectif 0 au départ');
-  o.enterInterior('house');ok(o.S.location==='house','entrer dans la maison');
+  const door=o.zones.find(z=>z.loc==='outside'&&z.label()==='Entrer dans la maison');
+  ok(door&&Math.abs(o.S.player.x-door.x)<.01&&o.S.player.z>door.z&&o.S.player.z-door.z<3&&o.S.camYaw===0,'Oscar apparaît devant la porte, face à la maison');
+  ok(o.objective(o.S).target==='house'&&/touche E|appuie sur E/.test(o.objective(o.S).text),'le premier objectif indique la porte et la commande');
+  door.act();ok(o.S.location==='house'&&o.objective(o.S).target===null,'entrer dans la maison masque le repère et laisse chercher les indices');
   o.readNote();o.closeUI();o.findClue('phone',10);o.closeUI();ok(o.objective(o.S).stage===1,'2 indices -> objectif voisin');
   o.exitInterior();o.openDialogue('henderson');o.choose(0);o.choose(0);o.choose(0);ok(o.S.flags.neighbor,'témoignage du voisin');
   o.enterInterior('diner');o.openDialogue('lina');o.choose(0);o.choose(0);o.choose(0);ok(o.S.tasks.tip==='active','tâche du pot à pourboires');

@@ -7,7 +7,11 @@ Mettre à jour cette page **à la fin de chaque étape** (voir `AGENTS.md`).
 - **Niveaux 1 à 5 jouables et enchaînés** (Toronto, Colombie-Britannique, Terre-Neuve, Alberta, Nouvelle-Écosse) : blocs 1 à 4 et 6 à 9 terminés.
 - **Prochaine étape proposée** : bloc 10 (niveau 6, Manitoba : blizzard à −40 °C, le Bras droit d'Omer).
 - **En attente du propriétaire** : premier test visuel humain ; validation du contenu inventé par Claude (personnages et pistes du niveau 1, voir `docs/JOURNAL.md`) ; réglage de la difficulté.
-- **Dépôt GitHub** (`Boban1141/oscar-operation-omer`) : **pas encore envoyé** — GitHub n'est pas relié à Claude. Le dépôt existe en local avec tout l'historique (zip remis au propriétaire).
+- **Dépôt GitHub** (`Boban1141/oscar-operation-omer`) : le code est disponible sur GitHub.
+
+## Prise en main à Toronto (v1.31.1)
+- [x] Départ face à la porte, objectif adapté au passage de l’extérieur à l’intérieur et repère à hauteur de l’entrée en mode classique.
+- [ ] Rétablir la publication GitHub Pages. Le dernier workflow a échoué avant l’étape de publication.
 
 ## Bloc 1 — Moteur et Toronto 3D `[x]` (v0.1.0)
 - [x] Architecture en couches : DATA / CORE / STATE / SIM / VIEW / UI

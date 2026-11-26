@@ -21,6 +21,12 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Codex — Prise en main devant la maison (v1.31.1)
+- Fait : Oscar commence face à la porte de la maison, à 2,25 m du point d’interaction. L’objectif explique comment entrer, puis indique comment examiner les objets. Le repère classique utilise le point d’interaction et s’affiche à hauteur de l’entrée. Le rendu du repère accepte une hauteur propre à chaque objectif dans tout le jeu.
+- Fichiers : `game/index.html`, `tests/run_logic_tests.py`, `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
+- Testé : syntaxe JavaScript valide, 168 vérifications logiques réussies. Essai dans Chrome avec le rendu 3D : nouvelle partie, approche, entrée avec E, changement de l’objectif et collecte du mot d’Omer. Qualité basse et rendu logiciel pour cet essai.
+- Reste à faire : publication GitHub Pages. L’adresse publique renvoie 404, le dernier workflow a ignoré la publication après l’échec du job de tests et la session n’a pas d’accès d’écriture au dépôt.
+
 ## 2026-11-25 — Claude — Les personnages parlent (v1.31.0)
 **Demande** : il faut que les personnages parlent, qu'on entende leur voix.
 **Fait (section 22 `VOICE`, tout le jeu)** : synthèse vocale de l'ordinateur (`speechSynthesis`).

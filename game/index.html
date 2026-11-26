@@ -323,7 +323,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.31.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.31.1', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -514,7 +514,11 @@ const PORT={x:60,z:156};
 function houseClues(S){return ['note','phone','cigar'].filter(c=>S.clues.includes(c)).length}
 function objective(S){return S.level==='bc'?objectiveBC(S):S.level==='nl'?objectiveNL(S):S.level==='ab'?objectiveAB(S):S.level==='ns'?objectiveNS(S):S.level==='mb'?objectiveMB(S):S.level==='mtl'?objectiveMTL(S):objectiveToronto(S);}
 function objectiveToronto(S){
-  if(houseClues(S)<2)return{stage:0,text:'Fouille la maison et le perron : trouve au moins 2 indices (touche E près des objets).',target:'house'};
+  if(houseClues(S)<2){
+    const inside=S.location==='house';
+    return{stage:0,text:inside?'Cherche deux indices dans la maison ou sur le perron. Appuie sur E près d’un objet à examiner.'
+      :'Avance vers la porte entrouverte et appuie sur E pour entrer. Cherche deux indices dans la maison ou sur le perron.',target:inside?null:'house'};
+  }
   if(!S.flags.neighbor)return{stage:1,text:'Interroge le voisin, M. Henderson, devant sa maison (à l’est de la tienne).',target:'henderson'};
   if(!S.flags.leadPort)return{stage:2,text:'Retrouve les trois hommes vus au Lina’s Diner : interroge Lina et les habitués.',target:'restaurant'};
   if(!S.flags.atPort)return{stage:3,text:'Piste : l’entrepôt 7 du port (Harbourfront). Rejoins la zone portuaire au bord du lac, près de la tour CN.',target:'port'};
@@ -643,8 +647,9 @@ function generateCity(seed,prof=CITY_PROFILES.toronto){
 function loadProgress(){try{return JSON.parse(localStorage.getItem('oscar.progress'))||{}}catch(e){return{}}}
 function createState(levelId){
   const L=LEVELS[levelId], city=CITY;
-  const h=city.oscarHouse;let sx=h.x, sz=h.z+h.d/2+5, loc='outside';
+  let sx,sz,loc='outside';
   if(L.start){const I=INTERIORS[L.start.loc];loc=L.start.loc;sx=I.ox+L.start.x;sz=I.oz+L.start.z;}
+  else{const door=city.zones.find(z=>z.id==='house');sx=door.x;sz=door.z+2.25;}
   const pr=L.index>1?loadProgress():{};
   return {
     v:GAME_VERSION, level:levelId, clock:L.startMinute, startClock:L.startMinute, rep:Math.round((pr.rep||0)*.6), card:pr.card??500, cardTrace:0,
@@ -1768,7 +1773,7 @@ function syncView(dt,t){
     if(mode==='sit')h.g.position.y=.55;
   }});
   }
-  if(M.marker){const tg=S.clues&&(!inside||S.location==='port')?objectiveTarget(objective(S)):null;M.marker.visible=!!tg&&SET.immersive!=='on';if(tg){M.marker.position.set(tg.x,4.2+Math.sin(t*2.5)*.3,tg.z);M.marker.rotation.y=t*1.5;}}
+  if(M.marker){const tg=S.clues&&(!inside||S.location==='port')?objectiveTarget(objective(S)):null;M.marker.visible=!!tg&&SET.immersive!=='on';if(tg){M.marker.position.set(tg.x,(tg.y??4.2)+Math.sin(t*2.5)*.3,tg.z);M.marker.rotation.y=t*1.5;}}
   if(S.clues){syncStory(dt,t);syncCombat(dt,t);}
   // systèmes de vie
   updateBirds(dt,t,{x:cx,z:cz});
@@ -2006,9 +2011,10 @@ const STORY_PROPS={};
 /* --- interaction zones (outside + interiors) --- */
 function storyZones(){
   const h=CITY.oscarHouse,r=CITY.restaurant,H=INTERIORS.house,D=INTERIORS.diner,pk=CITY.park;
+  const door=CITY.zones.find(z=>z.id==='house');
   const Z=[];
   const z=(o)=>{Z.push(o);return o};
-  z({loc:'outside',x:h.x,z:h.z+h.d/2+1.3,r:1.6,label:()=>'Entrer dans la maison',act:()=>enterInterior('house')});
+  z({loc:'outside',x:door.x,z:door.z,r:1.6,label:()=>'Entrer dans la maison',act:()=>enterInterior('house')});
   z({loc:'outside',x:r.x,z:r.z+r.d/2+1.2,r:2.2,label:()=>'Entrer dans le Lina’s Diner',act:()=>enterInterior('diner')});
   z({loc:'outside',x:h.x+1.1,z:h.z+h.d/2+.9,r:1.1,label:()=>S.clues.includes('cigar')?'Mégot de cigare (déjà examiné)':'Examiner le perron',act:()=>findClue('cigar',5)});
   z({loc:'outside',x:pk.cx+7.3,z:pk.cz-12.4,r:1.5,cond:()=>S.tasks.tip==='active',label:()=>'Fouiller le sac à dos abandonné',act:()=>{S.tasks.tip='found';addMinutes(5);STORY_PROPS.bag.visible=false;toast('Le pot à pourboires de Lina est dans le sac. Rapporte-le-lui au diner.');}});
@@ -2051,7 +2057,10 @@ function objectiveTarget(o){
   if(S.level==='ns'){const nt2=nsTarget(o);if(nt2!==undefined)return nt2;}
   if(S.level==='mb'){const mt=mbTarget(o);if(mt!==undefined)return mt;}
   if(S.level==='mtl'){const mt2=mtlTarget(o);if(mt2!==undefined)return mt2;}
-  if(o.target==='house')return S.location==='house'?null:{x:CITY.oscarHouse.x,z:CITY.oscarHouse.z+CITY.oscarHouse.d/2+1.3};
+  if(o.target==='house'){
+    const door=CITY.zones.find(z=>z.id==='house');
+    return{x:door.x,y:2.4,z:door.z};
+  }
   if(o.target==='henderson'){const n=interiorNPCs.find(n=>n.id==='henderson');return{x:n.x,z:n.z}}
   if(o.target==='restaurant')return S.location==='diner'?null:{x:CITY.restaurant.x,z:CITY.restaurant.z+CITY.restaurant.d/2+1.2};
   if(o.target==='port')return S.location==='port'?null:{x:PORT.x,z:PORT.z};
