@@ -322,7 +322,7 @@ window.__ok = true;
    ===================================================================== */
 
 /* ---------------- 1. DATA ---------------- */
-const GAME_VERSION = '1.28.2', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
+const GAME_VERSION = '1.29.0', SAVE_KEY = 'oscar.save.v1', STEP = 1/60;
 const LEVELS = {
   toronto: {
     id:'toronto', index:1, name:'Toronto', region:'Ontario', season:'Début de l’automne', seed:1867,
@@ -3907,7 +3907,10 @@ function makeOmer(){
   const tip=new THREE.Mesh(new THREE.SphereGeometry(.014,8,6),new THREE.MeshStandardMaterial({color:'#ff5a1a',emissive:'#ff5a1a',emissiveIntensity:2.5}));tip.position.z=.07;cig.add(tip);
   cig.position.set(.02,-.1,.05);h.armR.wr.add(cig);h.cigar=cig;
   const n=40,pos=new Float32Array(n*3);const sm=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(pos,3)),new THREE.PointsMaterial({color:'#bfbfbf',size:.06,transparent:true,opacity:.35,depthWrite:false}));
-  sm.frustumCulled=false;scene.add(sm);h.smoke=sm;h.smokeP=pos;sm.visible=false;return h}
+  sm.frustumCulled=false;scene.add(sm);h.smoke=sm;h.smokeP=pos;sm.visible=false;
+  // vrai corps réservé : peau mate et barbe (homme_sweat_blanc), sweat et pantalon teints en noir comme un cuir ; la chaîne en or
+  // et le cigare restent visibles sur le vrai corps (le long manteau et la cicatrice, faits pour la silhouette simple, sont cachés)
+  h.rchar='homme_sweat_blanc';h.role='homme';h.named=true;h.keep=[ch,cig];h.tint={Hoodie:'#2a2420',Pants:'#171717',Shirt:'#2a2420'};return h}
 function updSmoke(h,t){if(!h.smoke)return;h.smoke.visible=h.g.visible;if(!h.g.visible)return;const v=new THREE.Vector3();h.cigar.getWorldPosition(v);const a=h.smokeP;
   for(let i=0;i<a.length/3;i++){const ph=((t*.35+i/(a.length/3))%1);a[i*3]=v.x+Math.sin(i*7.1+t)*.08*ph;a[i*3+1]=v.y+ph*.9;a[i*3+2]=v.z+Math.cos(i*3.3+t)*.08*ph;}h.smoke.geometry.attributes.position.needsUpdate=true;}
 // poses (applied after animRig)
@@ -4058,6 +4061,8 @@ function buildCineSets(){
   A.t1=cactor({skin:'#d4a373',jacket:'#1b1b1f',pants:'#141414',hair:'#1a1a1a',build:1.1,beard:true});A.t2=cactor({skin:'#8d5524',jacket:'#22252a',pants:'#141414',hair:'#1a1a1a',bald:true,build:1.15});
   A.hench=cactor({skin:'#c68642',jacket:'#2a2a2e',pants:'#141414',hair:'#1a1a1a',build:1.05});
   A.g1=cactor({skin:'#5c3a21',jacket:'#111',pants:'#111',hair:'#111',bald:true,build:1.2});A.g2=cactor({skin:'#f1c27d',jacket:'#111',pants:'#111',hair:'#2b1d14',build:1.15});
+  // gardes du corps et hommes de main : corps des hommes d'Omer (tout en noir), pas des passants
+  A.g1.rchar='omer_noir_1';A.g2.rchar='omer_noir_2';for(const k of ['t1','t2','hench'])A[k].role='omer';
   A.w1=cactor({skin:'#8d5524',jacket:'#9d0208',pants:'#9d0208',hair:'#1a1a1a',long:true,height:.98,build:.88,prop:'cup'});
   A.w2=cactor({skin:'#ffdbac',jacket:'#1f5c4a',pants:'#1f5c4a',hair:'#d9b382',long:true,height:.96,build:.86});
   A.m1=cactor({skin:'#e0ac69',jacket:'#5a4a3a',pants:'#22223b',hair:'#3b2a1e',prop:'cup'});
@@ -4630,7 +4635,7 @@ function updateOscarModel(dt){
    la vitesse, le mode (marche, assis, parle, vélo) et, en cinématique ou arme au poing, sa pose est recopiée. */
 const PNJ_DIR='assets/characters/pnj/',PNJ_ANIM='assets/animations/pnj/';
 const PNJ_CHARS={homme:['homme_tshirt_blanc','homme_sweat_blanc','homme_chemise_jean','homme_capuche','rp:eric','rp:manuel'],femme:['femme_veste_brune','femme_fleurs','femme_rayures','femme_pull_beige','rp:claudia','rp:carla','rp:sophia'],
-  omer:['omer_noir_1','omer_noir_2','omer_pull_rouge','police_swat'],enfant:['cedric']};
+  omer:['omer_noir_1','omer_noir_2','homme_capuche'],enfant:['cedric']};
 const PNJ_CLIPS={drive:'conduite',walkM:'marche_homme',walkF:'marche_femme',idle:'repos',sit:'assis',sitTalk:'assis_parle',phone:'telephone',text:'texto',textWalk:'marche_texto',talk:'parle',
   oldWalk:'marche_age',oldIdle:'repos_age',jog:'jogging',pistolIdle:'pistolet_attente',pistolWalk:'pistolet_marche',rifleIdle:'fusil_vise',punch:'coup_poing',hit:'touche',hit2:'touche_2',
   deathB:'chute_arriere',deathF:'chute_avant',kneel:'a_genoux',kneelDown:'se_met_a_genoux',run:'course_rapide',excited:'excite',cry:'pleure',wave:'salut'};
@@ -4645,7 +4650,7 @@ function rhHash(L){const s=JSON.stringify([L.skin,L.jacket,L.pants,L.hair,L.heig
 // et les personnages nommés un corps scanné (Renderpeople) quand il en existe un. Le corps d'Eva (Sophia) lui est réservé.
 const CHAR_TONE={homme_tshirt_blanc:'clair',homme_sweat_blanc:'moyen',homme_chemise_jean:'clair',homme_capuche:'fonce','rp:eric':'fonce','rp:manuel':'moyen',
   femme_veste_brune:'clair',femme_fleurs:'clair',femme_rayures:'fonce',femme_pull_beige:'moyen','rp:claudia':'clair','rp:carla':'fonce','rp:sophia':'clair'};
-const RESERVED=new Set(['rp:sophia']);
+const RESERVED=new Set(['rp:sophia','homme_sweat_blanc']);   // Eva, Omer
 function toneOf(hex){const c=parseInt(String(hex||'#e0ac69').slice(1),16),l=.299*(c>>16)+.587*(c>>8&255)+.114*(c&255);return l>=175?'clair':l>=110?'moyen':'fonce';}
 function rhChar(h){if(!h.rchar){const role=rhRole(h),list=(PNJ_CHARS[role]||PNJ_CHARS.homme).filter(n=>!RESERVED.has(n));
     let c=role==='omer'||role==='enfant'?list:list.filter(n=>!CHAR_TONE[n]||CHAR_TONE[n]===toneOf((h.look||{}).skin));
@@ -4699,7 +4704,9 @@ function rhNewInstance(name){const B=RH.base[name];
 function rhVisible(o){for(let x=o,d=0;x&&d<40;x=x.parent,d++){if(!x.visible)return false;if(x===scene)return true;}return false;}
 function rhBind(h,I){
   const keep=new Set([I.root]);for(const o of [h.gun,h.umb]){if(o)o.traverse(x=>keep.add(x));}
-  h.rhide=[];h.g.traverse(o=>{if(o.isMesh&&!keep.has(o)&&!isIn(o,I.root)&&!(h.gun&&isIn(o,h.gun))&&!(h.umb&&isIn(o,h.umb))){h.rhide.push([o,o.visible]);o.visible=false;}});
+  h.rhide=[];h.g.traverse(o=>{if(o.isMesh&&!keep.has(o)&&!isIn(o,I.root)&&!(h.gun&&isIn(o,h.gun))&&!(h.umb&&isIn(o,h.umb))&&!(h.keep&&h.keep.some(k=>isIn(o,k)))){h.rhide.push([o,o.visible]);o.visible=false;}});
+  // vêtements teints pour un personnage précis (Omer : sweat blanc → veste noire), une fois par corps
+  if(h.tint&&!I.tinted){I.tinted=true;I.model.traverse(m=>{if(!m.isMesh)return;for(const k in h.tint)if(new RegExp(k,'i').test(m.name)){m.material=[].concat(m.material).map(x=>{const c=x.clone();c.color=new THREE.Color(h.tint[k]);if(c.shininess!==undefined)c.shininess=30;return c;});if(m.material.length===1)m.material=m.material[0];}});}
   // un enfant garde sa taille d'enfant sur son vrai corps (Cédric : 0,72 d'un adulte), sinon il serait aussi grand que sa mère
   {const hk=(h.look&&h.look.height)||1;h.g.add(I.root);I.root.scale.setScalar(I.s*(hk<.85?hk:1));}I.root.position.set(0,0,0);I.cur=null;for(const k in I.acts){I.w[k]=0;I.acts[k].setEffectiveWeight(0);}
   const R=h.armR,Lf=h.armL;

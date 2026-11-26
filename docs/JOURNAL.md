@@ -21,6 +21,15 @@ Entrées les plus récentes en haut. Voir le modèle dans `AGENTS.md`.
 
 ---
 
+## 2026-11-25 — Claude — Omer et ses gardes ont leurs propres corps (v1.29.0)
+**Question de Boban** : à quoi ressemblent Omer et ses gardes du corps ?
+**Constat (code + portraits des corps rendus sur le PC)** : depuis le passage aux vrais corps, Omer et ses gardes recevaient des corps de passants choisis par la couleur de peau ; le manteau, la chaîne, la cicatrice et le cigare d'Omer, attachés à la silhouette simple, disparaissaient. Les hommes d'Omer en mission pouvaient avoir le corps « t-shirt rouge et short » ou celui d'un policier SWAT.
+**Corrections** :
+- Omer : corps réservé `homme_sweat_blanc` (peau mate, barbe — conforme à sa description), sweat et pantalon teints en noir (`h.tint`, une fois par corps), chaîne en or et cigare conservés sur le vrai corps (`h.keep`). Retiré de la foule (`RESERVED`).
+- Gardes du corps des cinématiques : g1 (peau foncée, crâne rasé) → `omer_noir_1`, g2 (peau claire) → `omer_noir_2` ; hommes de main (t1, t2, hench) → corps des hommes d'Omer.
+- Hommes d'Omer en mission : `omer_noir_1`, `omer_noir_2`, `homme_capuche` (tout en noir) ; t-shirt rouge et SWAT retirés.
+**À vérifier à l'écran** : portraits d'Omer et des gardes.
+
 ## 2026-11-25 — Claude — Cédric à sa taille d'enfant (v1.28.2)
 **Vu sur le PC (v1.28.1)** : Cédric n'est plus géant, il est bien assis comme sa mère (mains sur les genoux, pieds au sol, tête basse), mais aussi grand qu'Eva.
 **Cause** : la taille d'un personnage (`look.height`, 0,72 pour Cédric) n'était appliquée qu'à la silhouette simple, jamais au vrai corps (tous à taille d'adulte).
